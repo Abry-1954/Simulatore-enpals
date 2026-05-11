@@ -33,6 +33,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .btn-fetch:disabled{opacity:.5;cursor:not-allowed;}
 .btn-gestione{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:background .15s;}
 .btn-gestione:hover{background:rgba(255,255,255,0.22);}
+.btn-stampa{background:#0f9960;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:background .15s;}
+.btn-stampa:hover{background:#0a7a4e;}
 
 /* ── LAYOUT ── */
 .layout{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 50px);}
@@ -129,47 +131,18 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
 .add-row-btn{width:100%;background:transparent;color:var(--text3);border:1px dashed var(--border2);border-radius:0 0 var(--radius) var(--radius);padding:8px;font-size:11px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:color .15s,border-color .15s;}
 .add-row-btn:hover{color:var(--text2);border-color:var(--text3);}
 </style>
-
 <style id="login-style">
-#login-overlay{
-  position:fixed;inset:0;background:#1e3a8a;z-index:9999;
-  display:flex;align-items:center;justify-content:center;
-}
-.login-box{
-  background:#fff;border-radius:12px;padding:2.5rem 2rem;
-  width:320px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;
-}
-.login-logo{
-  font-family:"DM Mono",monospace;font-size:13px;color:#2563eb;
-  letter-spacing:.1em;margin-bottom:.5rem;
-}
-.login-title{
-  font-family:"DM Sans",sans-serif;font-size:18px;font-weight:700;
-  color:#1a1a2e;margin-bottom:1.75rem;
-}
-.login-group{
-  text-align:left;margin-bottom:1rem;
-}
-.login-group label{
-  font-size:11px;font-weight:600;color:#4a4a6a;display:block;margin-bottom:4px;
-}
-.login-group input{
-  width:100%;border:1px solid #888;border-radius:6px;
-  padding:8px 10px;font-size:13px;font-family:"DM Sans",sans-serif;
-  color:#1a1a2e;background:#f7f7f7;box-sizing:border-box;
-}
+#login-overlay{position:fixed;inset:0;background:#1e3a8a;z-index:9999;display:flex;align-items:center;justify-content:center;}
+.login-box{background:#fff;border-radius:12px;padding:2.5rem 2rem;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;}
+.login-logo{font-family:"DM Mono",monospace;font-size:13px;color:#2563eb;letter-spacing:.1em;margin-bottom:.5rem;}
+.login-title{font-family:"DM Sans",sans-serif;font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:1.75rem;}
+.login-group{text-align:left;margin-bottom:1rem;}
+.login-group label{font-size:11px;font-weight:600;color:#4a4a6a;display:block;margin-bottom:4px;}
+.login-group input{width:100%;border:1px solid #888;border-radius:6px;padding:8px 10px;font-size:13px;color:#1a1a2e;background:#f7f7f7;box-sizing:border-box;}
 .login-group input:focus{outline:none;border-color:#2563eb;}
-.login-btn{
-  width:100%;background:#1e3a8a;color:#fff;border:none;
-  border-radius:6px;padding:10px;font-size:13px;font-weight:700;
-  cursor:pointer;font-family:"DM Sans",sans-serif;margin-top:.5rem;
-  transition:background .15s;
-}
+.login-btn{width:100%;background:#1e3a8a;color:#fff;border:none;border-radius:6px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-top:.5rem;}
 .login-btn:hover{background:#2563eb;}
-.login-err{
-  color:#dc2626;font-size:12px;margin-top:.75rem;
-  display:none;font-family:"DM Sans",sans-serif;
-}
+.login-err{color:#dc2626;font-size:12px;margin-top:.75rem;display:none;}
 </style>
 </head>
 <body>
@@ -177,20 +150,12 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
   <div class="login-box">
     <div class="login-logo">ENPALS / FATTURAZIONE</div>
     <div class="login-title">Accesso</div>
-    <div class="login-group">
-      <label>Utente</label>
-      <input type="text" id="login-user" placeholder="utente" autocomplete="username">
-    </div>
-    <div class="login-group">
-      <label>Password</label>
-      <input type="password" id="login-pass" placeholder="password" autocomplete="current-password"
-        onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
+    <div class="login-group"><label>Utente</label><input type="text" id="login-user" autocomplete="username"></div>
+    <div class="login-group"><label>Password</label><input type="password" id="login-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="login-btn" onclick="doLogin()">Entra</button>
     <div class="login-err" id="login-err">Utente o password errati.</div>
   </div>
 </div>
-
 
 <!-- HEADER -->
 <div class="hdr">
@@ -201,6 +166,7 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button class="btn-fetch" onclick="fetchDB()" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna DB</button>
   <button class="btn-gestione" onclick="apriGestione()" title="Apri gestione database">🗄 Gestione DB</button>
+  <button class="btn-stampa" onclick="stampaFattura()" title="Stampa fattura">🖨 Stampa Fattura</button>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
 </div>
 
@@ -219,6 +185,9 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
       <div class="nom-name" id="nom-name"></div>
       <div class="nom-badges" id="nom-badges"></div>
       <div class="nom-field">Cod. Fiscale</div><div class="nom-val" id="nom-cf"></div>
+      <div class="nom-field" style="margin-top:4px;">Indirizzo</div><div class="nom-val" id="nom-via"></div>
+      <div class="nom-field" style="margin-top:4px;">CAP / Città</div><div class="nom-val" id="nom-cap-comune"><span id="nom-cap"></span> <span id="nom-comune"></span></div>
+      <div class="nom-field" style="margin-top:4px;">Data Nascita</div><div class="nom-val" id="nom-dn"></div>
       <div class="nom-field" style="margin-top:4px;">Matricola ENPALS</div><div class="nom-val" id="nom-matr"></div>
       <div class="nom-field" style="margin-top:4px;">IBAN</div><div class="nom-val" id="nom-iban"></div>
     </div>
@@ -774,6 +743,17 @@ nomInp.addEventListener("keydown",function(e){
 });
 document.addEventListener("click",e=>{if(!nomInp.contains(e.target)&&!acList.contains(e.target))acList.style.display="none";});
 
+function fmtDataNascita(val){
+  if(!val)return "";
+  var n=parseFloat(val);
+  if(!isNaN(n)&&n>10000&&n<100000){
+    var d=new Date((n-25569)*86400*1000);
+    if(!isNaN(d.getTime()))
+      return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear();
+  }
+  if(/^\d{4}-\d{2}-\d{2}$/.test(val)){var p=val.split("-");return p[2]+"/"+p[1]+"/"+p[0];}
+  return val;
+}
 function selPersona(p){
   persona=p;
   nomInp.value=p.nominativo;
@@ -787,6 +767,10 @@ function selPersona(p){
   document.getElementById("nom-matr").textContent=p.matricola_enpals||"—";
   document.getElementById("nom-iban").textContent=p.iban||"—";
   document.getElementById("nom-box").style.display="block";
+  document.getElementById("nom-via").textContent=p.via||"—";
+  document.getElementById("nom-cap").textContent=p.cap||"";
+  document.getElementById("nom-comune").textContent=p.comune||"";
+  document.getElementById("nom-dn").textContent=fmtDataNascita(p.data_nascita||"");
 
   // Pre-compila anzianità e tipo fattura su tutte le righe attive
   for(let i=1;i<=31;i++){
@@ -1068,29 +1052,176 @@ async function fetchDB(){
   }
 }
 </script>
-
 <script id="login-script">
 (function(){
-  const U = 'alberita';
-  const P = '12111957';
-  const KEY = 'enpals_auth';
-  if(sessionStorage.getItem(KEY)==='1'){
-    document.getElementById('login-overlay').style.display='none';
-    return;
-  }
+  var U="alberita",P="12111957",K="enpals_auth";
+  if(sessionStorage.getItem(K)==="1"){document.getElementById("login-overlay").style.display="none";return;}
   window.doLogin=function(){
-    const u=document.getElementById('login-user').value.trim();
-    const p=document.getElementById('login-pass').value.trim();
-    if(u===U&&p===P){
-      sessionStorage.setItem(KEY,'1');
-      document.getElementById('login-overlay').style.display='none';
-    }else{
-      document.getElementById('login-err').style.display='block';
-      document.getElementById('login-pass').value='';
-      document.getElementById('login-pass').focus();
-    }
+    var u=document.getElementById("login-user").value.trim();
+    var p=document.getElementById("login-pass").value.trim();
+    if(u===U&&p===P){sessionStorage.setItem(K,"1");document.getElementById("login-overlay").style.display="none";}
+    else{document.getElementById("login-err").style.display="block";document.getElementById("login-pass").value="";document.getElementById("login-pass").focus();}
   };
 })();
+
+
+// ══════════════════════════════════════════════════════════════
+// STAMPA FATTURA
+// ══════════════════════════════════════════════════════════════
+function stampaFattura(){
+  var nomEl=document.getElementById("inp-nom");
+  var nominativo=nomEl?nomEl.value.trim():"";
+  if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
+  var persona=DB.persone.find(function(p){return p.nominativo===nominativo;})||{};
+  var via=document.getElementById("nom-via")?.textContent||"";
+  var comune=document.getElementById("nom-comune")?.textContent||"";
+  var cap=document.getElementById("nom-cap")?.textContent||"";
+  var cf=document.getElementById("nom-cf")?.textContent||"";
+  var iban=document.getElementById("nom-iban")?.textContent||"";
+  var matr=document.getElementById("nom-matr")?.textContent||"";
+  var piva=persona.piva||"";
+  var luogoN=persona.luogo_nascita||"";
+  var dataN=fmtDataNascita(persona.data_nascita||"");
+  var azNome=document.getElementById("az-name")?.textContent||"";
+  var azInd=document.getElementById("az-ind")?.textContent||"";
+  var azSede=document.getElementById("az-sede")?.textContent||"";
+  var azFisc=document.getElementById("az-fisc")?.textContent||"";
+  var azDest=document.getElementById("az-coddest")?.textContent||"";
+  var tf1=document.getElementById("tf_1")?.value||"";
+  var df1=document.getElementById("df_1")?.value||"";
+  var numF=df1?df1.replace(/-/g,"").substring(2):"";
+
+  var righiAttive=[];
+  for(var i=1;i<=31;i++){
+    var chk=document.getElementById("chk_"+i);
+    if(!chk||!chk.checked)continue;
+    var tit=document.getElementById("tit_"+i)?.value||"";
+    var tl=document.getElementById("tl_"+i)?.value||"";
+    var dl=document.getElementById("dl_"+i)?.value||"";
+    var gg=document.getElementById("gg_"+i)?.value||"0";
+    var tu=document.getElementById("tu_"+i)?.value||"0";
+    var ri=document.getElementById("ri_"+i)?.value||"0";
+    var resEl=document.getElementById("res_"+i);
+    var imp=resEl?parseFloat(resEl.textContent.replace(/[^0-9,.-]/g,"").replace(",",".")):0;
+    if(imp<=0)continue;
+    righiAttive.push({tit:tit,tl:tl,dl:dl,gg:gg,tu:tu,ri:ri,imp:imp});
+  }
+  if(!righiAttive.length){alert("Nessuna riga attiva con imponibile.");return;}
+
+  function getV(id){
+    var el=document.getElementById(id);
+    if(!el)return 0;
+    return parseFloat(el.textContent.replace(/[^0-9,.-]/g,"").replace(",","."))||0;
+  }
+  var totImpon=getV("t-impon"),totIva=getV("t-iva"),totFatt=getV("t-totfatt");
+  var totRa=getV("t-ra"),totNetto=getV("t-netto");
+  var totE919=getV("t-e919"),totE1=getV("t-e1"),totE25=getV("t-e25"),totE05=getV("t-e05"),totLav=getV("t-totlav");
+
+  function fE(n){return n.toFixed(2).replace(".",",");}
+  function fD(s){if(!s)return "";var p=s.split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:s;}
+
+  function nota(tipo){
+    var t=(tipo||"").toUpperCase();
+    if(t.includes("FATTURA")&&t.includes("AGEVOLATO"))
+      return "Operazione effettuata ai sensi dell'articolo 1, commi da 54 a 89, della Legge n. 190/2014 come modificato dalla Legge numero 208/2015. Si richiede la non applicazione della ritenuta alla fonte a titolo d&apos;acconto, ai sensi dell'articolo 1 comma 67 della Legge num. 190/2014.<br><br>Marca da bollo da 2 euro per importi maggiori di 77,47 euro.";
+    if(t.includes("RICEVUTA")&&t.includes("AGEVOLATO")&&t.includes("ADATTATORI"))
+      return "Operazione effettuata ai sensi dell'articolo 1, commi da 54 a 89, della Legge n. 190/2014 come modificato dalla Legge numero 208/2015. Si richiede la non applicazione della ritenuta alla fonte a titolo d&apos;acconto ai sensi dell'articolo 1 comma 67 della Legge num. 190/2014.<br><br>Marca da bollo da 2 euro per importi maggiori di 77,47 euro.";
+    if(t.includes("RICEVUTA")&&t.includes("ADATTATORI"))
+      return "IRPEF sul 75% del compenso in quanto relativo a cessione di diritti di autore.<br>Operazione fuori campo IVA ai sensi dell'art. 3 - 4&deg; comma - lettera a) del DPR N. 633/1972.";
+    return "";
+  }
+
+  var righiHtml=righiAttive.map(function(r){
+    return "<tr><td class=\"left\">"+r.tit+"</td><td>"+r.tl+"</td><td>"+fD(r.dl)+"</td><td>"+r.gg+"</td><td>"+r.tu+"</td><td>"+r.ri+"</td><td>&euro; "+fE(r.imp)+"</td></tr>";
+  }).join("");
+
+  var notaTesto=nota(tf1);
+  var html="<!DOCTYPE html><html lang=\"it\"><head><meta charset=\"UTF-8\"><title>Fattura "+nominativo+"</title>"+
+  "<style>*{box-sizing:border-box;margin:0;padding:0;}"+
+  "@page{size:A4 portrait;margin:12mm 10mm;}"+
+  "body{font-family:\"Segoe UI\",Arial,sans-serif;font-size:10px;color:#222;background:#fff;}"+
+  ".page{max-width:190mm;margin:0 auto;padding:8mm;}"+
+  ".doc-title{text-align:center;margin-bottom:10px;}"+
+  ".doc-title h1{font-size:14px;color:#1e3a8a;letter-spacing:.06em;margin-bottom:2px;}"+
+  ".doc-title h2{font-size:11px;color:#444;font-weight:500;}"+
+  ".header{display:flex;gap:10px;margin-bottom:10px;}"+
+  ".col{flex:1;border:2px solid #1e3a8a;border-radius:5px;padding:8px 10px;}"+
+  ".col-title{font-size:10px;font-weight:700;color:#fff;background:#1e3a8a;margin:-8px -10px 7px -10px;padding:4px 10px;border-radius:3px 3px 0 0;text-transform:uppercase;letter-spacing:.05em;}"+
+  ".row{display:flex;gap:4px;margin-bottom:3px;}"+
+  ".lbl{font-weight:600;color:#555;min-width:100px;font-size:9px;}"+
+  ".val{color:#222;font-size:9px;}"+
+  ".sec{font-size:10px;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:.05em;border-left:3px solid #1e3a8a;padding-left:6px;margin:10px 0 5px;}"+
+  "table{width:100%;border-collapse:collapse;margin-bottom:10px;}"+
+  "th{background:#1e3a8a;color:#fff;padding:5px 6px;font-size:9px;text-align:center;border:1px solid #1e3a8a;}"+
+  "td{padding:4px 6px;font-size:9px;border:1px solid #999;text-align:center;}"+
+  "td.left{text-align:left;}"+
+  "tr:nth-child(even) td{background:#f5f7ff;}"+
+  ".riepilogo{display:flex;gap:10px;margin-bottom:10px;}"+
+  ".tot-box{flex:1;border:2px solid #1e3a8a;border-radius:5px;padding:8px 10px;}"+
+  ".tot-title{font-size:9px;font-weight:700;color:#fff;background:#1e3a8a;margin:-8px -10px 7px -10px;padding:4px 10px;border-radius:3px 3px 0 0;text-transform:uppercase;}"+
+  ".tr{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;font-size:9px;}"+
+  ".tr:last-child{border-bottom:none;}"+
+  ".tr.bold{font-weight:700;margin-top:3px;padding-top:3px;border-top:2px solid #333;font-size:10px;}"+
+  ".tr.blue{color:#1e3a8a;font-weight:700;font-size:11px;border-top:2px double #1e3a8a;margin-top:3px;padding-top:3px;}"+
+  ".nota{background:#fffde7;border:1px solid #ffc107;border-radius:4px;padding:8px 10px;font-size:9px;line-height:1.6;margin-bottom:10px;color:#555;}"+
+  ".footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;padding-top:8px;border-top:1px solid #ccc;}"+
+  ".firma-line{border-top:1px solid #333;width:160px;margin-top:28px;font-size:9px;text-align:center;padding-top:3px;}"+
+  ".no-print{text-align:right;margin-bottom:10px;display:flex;gap:8px;justify-content:flex-end;}"+
+  "@media print{.no-print{display:none!important;} body{margin:0;}}"+
+  "</style></head><body><div class=\"page\">"+
+  "<div class=\"no-print\"><button onclick=\"window.print()\" style=\"background:#1e3a8a;color:#fff;border:none;border-radius:5px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;\">&#128424; Stampa / Salva PDF</button>"+
+  "<button onclick=\"window.close()\" style=\"background:#888;color:#fff;border:none;border-radius:5px;padding:7px 14px;font-size:12px;cursor:pointer;\">&#10005; Chiudi</button></div>"+
+  "<div class=\"doc-title\"><h1>ENPALS &mdash; FATTURAZIONE</h1><h2>"+tf1+"</h2></div>"+
+  "<div class=\"header\">"+
+  "<div class=\"col\"><div class=\"col-title\">Lavoratore</div>"+
+  "<div class=\"row\"><span class=\"lbl\">Nominativo</span><span class=\"val\"><strong>"+nominativo+"</strong></span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Indirizzo</span><span class=\"val\">"+via+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">CAP / Citt&agrave;</span><span class=\"val\">"+cap+" "+comune+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Luogo nascita</span><span class=\"val\">"+luogoN+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Data nascita</span><span class=\"val\">"+dataN+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Cod. Fiscale</span><span class=\"val\">"+cf+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">P.IVA</span><span class=\"val\">"+(piva||"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Matr. ENPALS</span><span class=\"val\">"+(matr||"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">IBAN</span><span class=\"val\">"+(iban||"&mdash;")+"</span></div></div>"+
+  "<div class=\"col\"><div class=\"col-title\">Spett.le Societ&agrave;</div>"+
+  "<div class=\"row\"><span class=\"lbl\">Ragione Sociale</span><span class=\"val\"><strong>"+(azNome||"&mdash;")+"</strong></span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Indirizzo</span><span class=\"val\">"+(azInd||"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Sede</span><span class=\"val\">"+(azSede||"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">P.IVA / C.F.</span><span class=\"val\">"+(azFisc||"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Cod. Destinatario</span><span class=\"val\">"+(azDest||"&mdash;")+"</span></div></div></div>"+
+  "<div class=\"sec\">Documento</div>"+
+  "<table><tr><th>Tipo documento</th><th>N&deg; Documento</th><th>Data documento</th><th>Giornate contributive</th></tr>"+
+  "<tr><td>"+tf1+"</td><td>"+numF+"</td><td>"+fD(df1)+"</td><td>"+righiAttive.length+"</td></tr></table>"+
+  "<div class=\"sec\">Dettagli Lavorazione</div>"+
+  "<table><tr><th style=\"text-align:left\">Titolo</th><th>Tipo Lavorazione</th><th>Data</th><th>Gg</th><th>Turni</th><th>Righe</th><th>Imponibile</th></tr>"+
+  righiHtml+"</table>"+
+  "<div class=\"sec\">Riepilogo</div>"+
+  "<div class=\"riepilogo\">"+
+  "<div class=\"tot-box\"><div class=\"tot-title\">ENPALS Lavoratore</div>"+
+  "<div class=\"tr\"><span>9,19% IVS_LAV</span><span>&euro; "+fE(totE919)+"</span></div>"+
+  "<div class=\"tr\"><span>1% ADD_LAV</span><span>&euro; "+fE(totE1)+"</span></div>"+
+  "<div class=\"tr\"><span>2,5% CON_SOL_LAV</span><span>&euro; "+fE(totE25)+"</span></div>"+
+  "<div class=\"tr\"><span>0,5% IND_DIS_LAV</span><span>&euro; "+fE(totE05)+"</span></div>"+
+  "<div class=\"tr bold\"><span>Totale ENPALS LAV</span><span>&euro; "+fE(totLav)+"</span></div></div>"+
+  "<div class=\"tot-box\"><div class=\"tot-title\">Riepilogo Fattura</div>"+
+  "<div class=\"tr\"><span>Imponibile</span><span>&euro; "+fE(totImpon)+"</span></div>"+
+  "<div class=\"tr\"><span>IVA</span><span>&euro; "+fE(totIva)+"</span></div>"+
+  "<div class=\"tr bold\"><span>Totale Fattura</span><span>&euro; "+fE(totFatt)+"</span></div>"+
+  "<div class=\"tr\"><span>Ritenuta d&apos;Acconto</span><span>- &euro; "+fE(totRa)+"</span></div>"+
+  "<div class=\"tr blue\"><span>Netto da Pagare</span><span>&euro; "+fE(totNetto)+"</span></div></div></div>"+
+  (notaTesto?"<div class=\"nota\"><strong>Note:</strong><br>"+notaTesto+"</div>":"")+
+  "<div class=\"footer\"><div style=\"font-size:9px;color:#555;\">Roma, "+fD(df1)+"</div>"+
+  "<div><div class=\"firma-line\">"+nominativo+"</div></div></div>"+
+  "</div></body></html>";
+
+  var w=window.open("","_blank","width=960,height=800");
+  if(w){w.document.write(html);w.document.close();}
+  else alert("Il browser ha bloccato il popup. Consenti i popup per questo sito.");
+}
+
+function apriGestione(){
+  window.open("gestione.html","_blank");
+}
 </script>
 </body>
 </html>
