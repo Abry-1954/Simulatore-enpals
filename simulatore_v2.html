@@ -129,8 +129,68 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
 .add-row-btn{width:100%;background:transparent;color:var(--text3);border:1px dashed var(--border2);border-radius:0 0 var(--radius) var(--radius);padding:8px;font-size:11px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:color .15s,border-color .15s;}
 .add-row-btn:hover{color:var(--text2);border-color:var(--text3);}
 </style>
+
+<style id="login-style">
+#login-overlay{
+  position:fixed;inset:0;background:#1e3a8a;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+}
+.login-box{
+  background:#fff;border-radius:12px;padding:2.5rem 2rem;
+  width:320px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;
+}
+.login-logo{
+  font-family:"DM Mono",monospace;font-size:13px;color:#2563eb;
+  letter-spacing:.1em;margin-bottom:.5rem;
+}
+.login-title{
+  font-family:"DM Sans",sans-serif;font-size:18px;font-weight:700;
+  color:#1a1a2e;margin-bottom:1.75rem;
+}
+.login-group{
+  text-align:left;margin-bottom:1rem;
+}
+.login-group label{
+  font-size:11px;font-weight:600;color:#4a4a6a;display:block;margin-bottom:4px;
+}
+.login-group input{
+  width:100%;border:1px solid #888;border-radius:6px;
+  padding:8px 10px;font-size:13px;font-family:"DM Sans",sans-serif;
+  color:#1a1a2e;background:#f7f7f7;box-sizing:border-box;
+}
+.login-group input:focus{outline:none;border-color:#2563eb;}
+.login-btn{
+  width:100%;background:#1e3a8a;color:#fff;border:none;
+  border-radius:6px;padding:10px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:"DM Sans",sans-serif;margin-top:.5rem;
+  transition:background .15s;
+}
+.login-btn:hover{background:#2563eb;}
+.login-err{
+  color:#dc2626;font-size:12px;margin-top:.75rem;
+  display:none;font-family:"DM Sans",sans-serif;
+}
+</style>
 </head>
 <body>
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">ENPALS / FATTURAZIONE</div>
+    <div class="login-title">Accesso</div>
+    <div class="login-group">
+      <label>Utente</label>
+      <input type="text" id="login-user" placeholder="utente" autocomplete="username">
+    </div>
+    <div class="login-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Entra</button>
+    <div class="login-err" id="login-err">Utente o password errati.</div>
+  </div>
+</div>
+
 
 <!-- HEADER -->
 <div class="hdr">
@@ -1007,6 +1067,30 @@ async function fetchDB(){
     btn.disabled=false;
   }
 }
+</script>
+
+<script id="login-script">
+(function(){
+  const U = 'alberita';
+  const P = '12111957';
+  const KEY = 'enpals_auth';
+  if(sessionStorage.getItem(KEY)==='1'){
+    document.getElementById('login-overlay').style.display='none';
+    return;
+  }
+  window.doLogin=function(){
+    const u=document.getElementById('login-user').value.trim();
+    const p=document.getElementById('login-pass').value.trim();
+    if(u===U&&p===P){
+      sessionStorage.setItem(KEY,'1');
+      document.getElementById('login-overlay').style.display='none';
+    }else{
+      document.getElementById('login-err').style.display='block';
+      document.getElementById('login-pass').value='';
+      document.getElementById('login-pass').focus();
+    }
+  };
+})();
 </script>
 </body>
 </html>
