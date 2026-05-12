@@ -44,13 +44,13 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .layout{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 50px);}
 
 /* ── SIDEBAR TOTALI ── */
-.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:1rem;overflow-y:auto;display:flex;flex-direction:column;gap:1rem;}
+.sidebar{background:#b0b0b0;border-right:1px solid var(--border);padding:1rem;overflow-y:auto;display:flex;flex-direction:column;gap:1rem;}
 
 .sec-label{font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.08em;color:#1e3a8a;font-weight:600;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;background:var(--sec-bg);border-left:3px solid var(--sec-border);padding:5px 8px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;}
 .sec-label::after{content:"";flex:1;height:1px;background:var(--border);}
 
 /* Nominativo box */
-.nom-box{background:var(--bg3);border:1px solid #444444;border-radius:var(--radius);padding:10px 12px;}
+.nom-box{background:#c0c0c0;border:1px solid #444444;border-radius:var(--radius);padding:10px 12px;}
 .nom-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
 .nom-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
 .badge{display:inline-block;font-size:9px;padding:1px 6px;border-radius:20px;font-weight:600;}
@@ -62,7 +62,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 
 /* Autocomplete */
 .ac-wrap{position:relative;}
-.ac-input{width:100%;background:var(--bg3);border:1px solid #444444;color:var(--text);border-radius:var(--radius-sm);padding:6px 9px;font-size:12px;font-family:"DM Sans",sans-serif;}
+.ac-input{width:100%;background:#90EE90;border:1px solid #444444;color:var(--text);border-radius:var(--radius-sm);padding:6px 9px;font-size:12px;font-family:"DM Sans",sans-serif;}
 .ac-input:focus{outline:none;border-color:var(--accent);}
 .ac-list{position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--accent);border-radius:var(--radius-sm);max-height:180px;overflow-y:auto;z-index:400;margin-top:2px;display:none;}
 .ac-item{padding:6px 9px;font-size:11px;cursor:pointer;color:var(--text);}
@@ -71,7 +71,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .ac-item:hover small,.ac-item.active small{color:#ccc;}
 
 /* Metriche */
-.metric{background:var(--bg3);border:1px solid #444444;border-radius:var(--radius);padding:10px 12px;position:relative;overflow:hidden;}
+.metric{background:#c0c0c0;border:1px solid #444444;border-radius:var(--radius);padding:10px 12px;position:relative;overflow:hidden;}
 .metric::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;}
 .metric.c-purple::before{background:var(--accent);}
 .metric.c-green::before{background:var(--green);}
@@ -83,12 +83,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 
 /* Tabella totali */
-.tot-card{background:var(--bg3);border:1px solid #444444;border-radius:var(--radius);overflow:hidden;}
+.tot-card{background:#c0c0c0;border:1px solid #444444;border-radius:var(--radius);overflow:hidden;}
 .tot-head{padding:7px 10px;border-bottom:1px solid var(--border);font-family:"DM Mono",monospace;font-size:9px;color:#1e3a8a;font-weight:600;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center;background:#e8edf5;}
 .tot-badge{font-size:9px;padding:1px 6px;border-radius:20px;}
 .tb-lav{background:rgba(108,92,231,.15);color:var(--accent);}
 .tb-dat{background:rgba(0,184,148,.15);color:var(--green);}
-.tr{display:flex;justify-content:space-between;padding:5px 10px;border-bottom:1px solid #444444;font-size:11px;}
+.tr{display:flex;justify-content:space-between;padding:5px 10px;border-bottom:1px solid #444444;font-size:11px;background:#c0c0c0;}
 .tr:last-child{border-bottom:none;}
 .tr.total{background:var(--bg4);}
 .tr-lbl{color:var(--text2);}
@@ -121,14 +121,14 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
 .row-num{font-family:"DM Mono",monospace;font-size:10px;color:var(--text3);text-align:center;}
 
 /* Select e input nelle righe */
-.cell-select,.cell-input{width:100%;background:var(--bg3);border:1px solid #444444;color:var(--text);border-radius:var(--radius-sm);padding:3px 5px;font-size:11px;font-family:"DM Sans",sans-serif;-webkit-appearance:none;appearance:none;}
+.cell-select,.cell-input{width:100%;background:#90EE90;border:1px solid #444444;color:var(--text);border-radius:var(--radius-sm);padding:3px 5px;font-size:11px;font-family:"DM Sans",sans-serif;-webkit-appearance:none;appearance:none;}
 .cell-select:focus,.cell-input:focus{outline:none;border-color:var(--accent);}
 .cell-select:disabled,.cell-input:disabled{opacity:.35;cursor:not-allowed;}
 .cell-input[type=number]{text-align:center;font-size:13px;font-weight:600;color:var(--text);font-family:"DM Mono",monospace;}
 .cell-input[type=date]{font-size:10px;}
 
 /* Imponibile risultato */
-.cell-result{font-family:"DM Mono",monospace;font-size:11px;color:var(--green);text-align:right;white-space:nowrap;}
+.cell-result{font-family:"DM Mono",monospace;font-size:13px;font-weight:600;color:#000000;text-align:right;white-space:nowrap;}
 .cell-result.zero{color:var(--text3);}
 
 /* Aggiungi righe */
