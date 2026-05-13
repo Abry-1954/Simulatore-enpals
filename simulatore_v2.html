@@ -628,28 +628,146 @@ function calcolaRiga(i){
 
   const totDat=d2381+d10+d25+d128-d128det;
 
-  return{anno,impon,iva,ra,totFatt,netto,e919,e1,e25,e05,totLav,d2381,d10,d25,d128,d128det,totDat};
+  return{anno,anz,impon,iva,ra,totFatt,netto,e919,e1,e25,e05,totLav,d2381,d10,d25,d128,d128det,totDat};
 }
 
 // ══════════════════════════════════════════════════════════════
 // RICALCOLA TUTTO E AGGIORNA SIDEBAR
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// RICALCOLA ENPALS CON impGG CORRETTO (stesso giorno)
+// Riceve il risultato base di calcolaRiga e l'impGG aggregato
+// ══════════════════════════════════════════════════════════════
+function calcolaEnpalsConImpGG(r, impGG, giorni){
+  const anno=r.anno;
+  const anz=r.anz||document.getElementById("anz_1")?.value||"SY";
+  const inps=getI(anno);
+  const IVS_LAV     = inps?.lavoratore?.IVS_LAV     || 0.0919;
+  const ADD_LAV     = inps?.lavoratore?.ADD_LAV      || 0.01;
+  const CON_SOL_LAV = inps?.lavoratore?.CON_SOL_LAV  || 0.025;
+  const IND_DIS_LAV = inps?.lavoratore?.IND_DIS_LAV  || 0;
+  const IVS_DAT     = inps?.datore?.IVS_DAT          || 0.2381;
+  const IND_DIS_DAT = inps?.datore?.IND_DIS_DAT      || 0.01;
+  const CON_SOL_DAT = inps?.datore?.CON_SOL_DAT      || 0.025;
+  const IND_MAL_DAT = inps?.datore?.IND_MAL_DAT      || 0.0128;
+  const massRetrGg  = getM(anno)||0;
+  const massMalatGg = getMalat(anno)||0;
+  const fascia      = calcolaFascia(impGG, anno)||0;
+
+  // ENPALS LAV
+  let e919=0,e1=0,e25=0,e05=0;
+  if(anz==="SC"){
+    e919=impGG*IVS_LAV*giorni;
+  }else{
+    const base919=impGG<fascia?impGG:fascia;
+    e919=base919*IVS_LAV*giorni;
+    if(impGG>=massRetrGg){
+      const baseAdd=(impGG<fascia?impGG:fascia)-massRetrGg;
+      e1=baseAdd>0?baseAdd*ADD_LAV*giorni:0;
+    }
+    if(impGG>fascia) e25=(impGG-fascia)*CON_SOL_LAV*giorni;
+    if(anno>=2024&&impGG>=fascia) e05=(impGG-fascia)*IND_DIS_LAV*giorni;
+  }
+  const totLav=e919+e1+e25+e05;
+
+  // ENPALS DAT
+  let base15=anz==="SC"?Math.round(impGG):(impGG>fascia?Math.round(fascia):Math.round(impGG));
+  const d2381=base15>0?Math.round(base15*IVS_DAT*100)/100:0;
+  const d10=Math.round(impGG)*IND_DIS_DAT;
+  const d25=anz==="SY"&&impGG>fascia?(impGG-fascia)*CON_SOL_DAT:0;
+  let base18=anz==="SC"?Math.round(impGG):(impGG>fascia?Math.round(fascia):Math.round(impGG));
+  const d128=base18>0?Math.round(base18*IND_MAL_DAT*100)/100:0;
+  let d128det=0;
+  if(IND_MAL_DAT>0&&massMalatGg>0&&impGG>0){
+    const baseDet=anz==="SC"?impGG-massMalatGg:(impGG>fascia?fascia:impGG)-massMalatGg;
+    if(baseDet>0) d128det=Math.round(baseDet*IND_MAL_DAT*100)/100;
+  }
+  const totDat=d2381+d10+d25+d128-d128det;
+
+  return {e919,e1,e25,e05,totLav,d2381,d10,d25,d128,d128det,totDat};
+}
+
 function ricalcolaTutto(){
   let anni=new Set();
   let T={impon:0,iva:0,ra:0,totFatt:0,netto:0,e919:0,e1:0,e25:0,e05:0,totLav:0,d2381:0,d10:0,d25:0,d128:0,d128det:0,totDat:0};
   let righeCalcolate=0;
 
+  // ── PASSATA 1: calcola imponibile per ogni riga ─────────────
+  const righeRisultati={};
   for(let i=1;i<=31;i++){
     const r=calcolaRiga(i);
+    righeRisultati[i]=r;
     const resEl=document.getElementById("res_"+i);
     if(r){
-      righeCalcolate++;
-      anni.add(r.anno);
-      for(const k in T)T[k]+=r[k]||0;
       if(resEl){resEl.textContent=fmt(r.impon);resEl.className="cell-result";}
     }else{
       if(resEl){resEl.textContent="—";resEl.className="cell-result zero";}
     }
+  }
+
+  // ── RAGGRUPPA PER DATA: somma imponibili stesso giorno ──────
+  const gruppiData={};
+  for(let i=1;i<=31;i++){
+    const r=righeRisultati[i];
+    if(!r)continue;
+    const dl=document.getElementById("dl_"+i)?.value||"";
+    if(!dl)continue;
+    if(!gruppiData[dl])gruppiData[dl]=[];
+    gruppiData[dl].push(i);
+  }
+
+  // Per ogni gruppo: calcola impGG = somma imponibili del giorno
+  const impGGPerData={};
+  for(const dl in gruppiData){
+    const idxs=gruppiData[dl].sort((a,b)=>a-b);
+    let somma=0;
+    idxs.forEach(i=>{ somma+=(righeRisultati[i]?.impon||0); });
+    impGGPerData[dl]={impGG:somma, primaRiga:idxs[0], righe:idxs};
+  }
+
+  // ── PASSATA 2: ricalcola ENPALS con impGG corretto ──────────
+  for(let i=1;i<=31;i++){
+    const r=righeRisultati[i];
+    if(!r)continue;
+    const dl=document.getElementById("dl_"+i)?.value||"";
+    const gruppo=impGGPerData[dl];
+    if(!gruppo)continue;
+
+    const isPrimaRiga=(gruppo.primaRiga===i);
+    // giorni = SEMPRE 1 — è 1 giorno lavorativo anche se ci sono più righe
+    const gg1 = parseInt(document.getElementById("gg_"+i)?.value)||1;
+
+    if(isPrimaRiga){
+      // Ricalcola ENPALS con impGG = somma del giorno, giorni=1
+      const rExt=calcolaEnpalsConImpGG(r, gruppo.impGG, gg1);
+      // Somma totFatt e ra di TUTTE le righe del gruppo per calcolare netto
+      let totFattGruppo=0, raGruppo=0;
+      gruppo.righe.forEach(function(idx){
+        const rr=righeRisultati[idx];
+        if(rr){ totFattGruppo+=rr.totFatt||0; raGruppo+=rr.ra||0; }
+      });
+      // Netto aggregato: usa totFatt e ra del gruppo intero
+      const nettoCorretto = totFattGruppo - raGruppo - rExt.e919 - rExt.e1;
+      // impon/iva/totFatt/ra restano quelli della riga originale (sommati nell'accumulo)
+      righeRisultati[i]=Object.assign({},r,rExt,{netto:nettoCorretto});
+    }else{
+      // Righe secondarie: azzera ENPALS e netto (già calcolati sulla prima riga)
+      // impon/iva/totFatt/ra restano per i totali fattura
+      righeRisultati[i]=Object.assign({},r,{
+        netto:0,
+        e919:0,e1:0,e25:0,e05:0,totLav:0,
+        d2381:0,d10:0,d25:0,d128:0,d128det:0,totDat:0
+      });
+    }
+  }
+
+  // ── ACCUMULA TOTALI ─────────────────────────────────────────
+  for(let i=1;i<=31;i++){
+    const r=righeRisultati[i];
+    if(!r)continue;
+    righeCalcolate++;
+    anni.add(r.anno);
+    for(const k in T)T[k]+=r[k]||0;
   }
 
   if(anni.size===1)setEl("hdr-anno","Anno "+[...anni][0]);
