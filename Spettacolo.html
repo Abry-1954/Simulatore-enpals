@@ -166,8 +166,7 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
 
 /* ══════════ MOBILE RESPONSIVE ══════════ */
 @media (max-width: 768px) {
-
-  /* ── HEADER ── */
+  /* Header mobile: wrap su 2 righe */
   .hdr {
     height: auto;
     flex-wrap: wrap;
@@ -180,74 +179,59 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
   .hdr-logo { font-size: 11px; }
   .hdr-sep { display: none; }
   .hdr-anno { font-size: 10px; }
-  .btn-ricalcola, .btn-reset-all, .btn-stampa, .btn-salva, .btn-carica {
+  .btn-ricalcola, .btn-reset-all, .btn-fetch, .btn-gestione, .btn-stampa, .btn-salva, .btn-carica {
     font-size: 11px;
     padding: 5px 9px;
   }
+  /* Nasconde bottoni non essenziali su mobile per risparmiare spazio */
   .btn-fetch, .btn-gestione { display: none; }
   #server-status { font-size: 10px; }
   #fetch-status { font-size: 10px; }
 
-  /* ── LAYOUT: due pannelli affiancati a tutta altezza ── */
+  /* Layout: da side-by-side a colonna verticale */
   .layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    height: calc(100vh - var(--hdr-h, 60px));
-    overflow: hidden;
-  }
-
-  /* ── PANNELLO SINISTRO: lavoratore/azienda/totali ──
-     Scroll verticale E orizzontale indipendente */
-  .sidebar {
-    width: 260px;
-    min-width: 0;
-    height: 100%;
-    overflow-x: auto;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 8px;
-    border-right: 2px solid var(--border2);
-    background: #b0b0b0;
-    box-sizing: border-box;
+    height: auto;
+    min-height: calc(100vh - 80px);
   }
-  /* ogni sezione non si restringe sotto 220px */
-  .sidebar > div { min-width: 220px; flex-shrink: 0; }
 
-  /* Metriche compatte */
-  .metric-val { font-size: 13px; }
-  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
-  .metric { padding: 7px 8px; }
-  .nom-box { padding: 7px 9px; }
-  .nom-name { font-size: 12px; }
-
-  /* ── PANNELLO DESTRO: griglia righe ──
-     Scroll verticale E orizzontale indipendente */
-  .main {
-    height: 100%;
+  /* Sidebar: diventa pannello collassabile orizzontalmente scrollabile */
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid var(--border);
+    padding: 10px;
     overflow-x: auto;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    padding: 8px;
-    box-sizing: border-box;
+    overflow-y: visible;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    display: flex;
   }
+  .sidebar > div {
+    min-width: 240px;
+    flex-shrink: 0;
+  }
+  /* Metriche più compatte */
+  .metric-val { font-size: 14px; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
 
-  /* La griglia interna ha larghezza minima per contenere tutte le colonne:
-     checkbox + n. + Tipo Fatt + Attività/TipoLav + DataLav + DataFatt
-     + Anzianità + Gg + Turni + Righe + Imponibile + Titolo */
-  .grid-wrap { min-width: 860px; }
+  /* Main: scroll orizzontale per la griglia */
+  .main { padding: 8px; overflow-x: auto; }
+  .grid-wrap { min-width: 900px; }
 
-  /* Inputs touch-friendly */
+  /* Inputs più grandi al tocco */
   .cell-select, .cell-input {
-    font-size: 12px;
-    padding: 4px 4px;
-    min-height: 30px;
+    font-size: 13px;
+    padding: 5px 4px;
+    min-height: 32px;
   }
   input[type=checkbox] { width: 18px; height: 18px; }
+
+  /* Nom box */
+  .nom-box { padding: 8px; }
+  .nom-name { font-size: 12px; }
 
   /* Pannello ad hoc */
   #adhoc-panel > div > div[style*="grid"] {
@@ -256,13 +240,167 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
   }
 }
 
-/* ── Telefoni molto stretti (<420px): sidebar più stretta ── */
-@media (max-width: 420px) {
-  .layout {
-    grid-template-columns: 220px 1fr;
+/* Schermi molto piccoli (<480px): sidebar completamente verticale */
+@media (max-width: 480px) {
+  .sidebar {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
-  .sidebar { width: 220px; padding: 6px; }
+  .sidebar > div { min-width: 100%; }
+  .btn-stampa, .btn-salva, .btn-carica { font-size: 10px; padding: 4px 7px; }
+  .hdr-anno { display: none; }
+}
+
+/* ══════════ PANNELLI TOGGLE (mobile only) ══════════ */
+.panel-toggle-btn, .main-toggle-btn { display: none; }
+
+@media (max-width: 768px) {
+
+  /* ── Layout: due colonne affiancate a tutta altezza ── */
+  .layout {
+    display: grid !important;
+    grid-template-columns: 260px 1fr;
+    height: calc(100vh - var(--hdr-h, 60px));
+    overflow: hidden;
+    position: relative;
+    flex-direction: unset;
+    min-height: unset;
+  }
+
+  /* ── Sidebar: scroll verticale + orizzontale ── */
+  .sidebar {
+    width: 260px !important;
+    height: 100%;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    gap: 10px;
+    padding: 8px !important;
+    border-right: 2px solid var(--border2) !important;
+    border-bottom: none !important;
+    box-sizing: border-box;
+    transition: width .22s ease, padding .22s ease, min-width .22s ease;
+  }
+  .sidebar > div { min-width: 220px; flex-shrink: 0; }
+
+  /* ── Main: scroll verticale + orizzontale ── */
+  .main {
+    height: 100%;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px;
+    box-sizing: border-box;
+    transition: width .22s ease, padding .22s ease;
+  }
+  .grid-wrap { min-width: 860px; }
+
+  /* Metriche compatte */
+  .metric-val { font-size: 13px; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .metric { padding: 7px 8px; }
+  .nom-box { padding: 7px 9px; }
+  .nom-name { font-size: 12px; }
+
+  /* Inputs touch-friendly */
+  .cell-select, .cell-input { font-size: 12px; padding: 4px; min-height: 30px; }
+  input[type=checkbox] { width: 18px; height: 18px; }
+
+  /* ── Bottone nascondi/mostra SIDEBAR ── */
+  .panel-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    left: 260px;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 52px;
+    background: #1e3a8a;
+    color: #fff;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    cursor: pointer;
+    z-index: 250;
+    padding: 0;
+    line-height: 1;
+    transition: left .22s ease, background .15s;
+    box-shadow: 2px 0 6px rgba(0,0,0,.25);
+  }
+  .panel-toggle-btn:active { background: #2563eb; }
+
+  /* ── Bottone nascondi/mostra GRIGLIA ── */
+  .main-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 52px;
+    background: #1e3a8a;
+    color: #fff;
+    border: none;
+    border-radius: 6px 0 0 6px;
+    font-size: 13px;
+    cursor: pointer;
+    z-index: 250;
+    padding: 0;
+    line-height: 1;
+    transition: background .15s;
+    box-shadow: -2px 0 6px rgba(0,0,0,.25);
+  }
+  .main-toggle-btn:active { background: #2563eb; }
+
+  /* ── Sidebar COLLASSATA ── */
+  .layout.sidebar-hidden {
+    grid-template-columns: 0px 1fr !important;
+  }
+  .layout.sidebar-hidden .sidebar {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-right: none !important;
+  }
+  .layout.sidebar-hidden .panel-toggle-btn { left: 0; }
+
+  /* ── Griglia COLLASSATA ── */
+  .layout.main-hidden {
+    grid-template-columns: 260px 0px !important;
+  }
+  .layout.main-hidden .main {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .layout.main-hidden .main-toggle-btn { right: 0; }
+
+  /* Pannello ad hoc */
+  #adhoc-panel > div > div[style*="grid"] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .layout { grid-template-columns: 220px 1fr !important; }
+  .sidebar { width: 220px !important; }
   .sidebar > div { min-width: 200px; }
+  .panel-toggle-btn { left: 220px; }
+  .layout.sidebar-hidden .panel-toggle-btn { left: 0; }
+  .layout.main-hidden { grid-template-columns: 220px 0px !important; }
   .btn-stampa, .btn-salva, .btn-carica { font-size: 10px; padding: 4px 7px; }
   .hdr-anno { display: none; }
   .metric-val { font-size: 12px; }
@@ -350,8 +488,26 @@ self.addEventListener('fetch',e=>{
   }
   window.addEventListener('DOMContentLoaded', updateHdrHeight);
   window.addEventListener('resize', updateHdrHeight);
-  setTimeout(updateHdrHeight, 200);
+  setTimeout(updateHdrHeight, 300);
 })();
+
+// ── Toggle pannello sinistro ──
+function toggleSidebar(){
+  var layout = document.getElementById('main-layout');
+  var btn    = document.getElementById('btn-toggle-sidebar');
+  var hidden = layout.classList.toggle('sidebar-hidden');
+  btn.textContent = hidden ? '▶' : '◀';
+  btn.title = hidden ? 'Mostra pannello sinistro' : 'Nascondi pannello sinistro';
+}
+
+// ── Toggle pannello destro ──
+function toggleMain(){
+  var layout = document.getElementById('main-layout');
+  var btn    = document.getElementById('btn-toggle-main');
+  var hidden = layout.classList.toggle('main-hidden');
+  btn.textContent = hidden ? '◀' : '▶';
+  btn.title = hidden ? 'Mostra griglia' : 'Nascondi griglia';
+}
 </script>
 </head>
 <body>
@@ -382,7 +538,10 @@ self.addEventListener('fetch',e=>{
   <span id="server-status" style="font-size:11px;color:#fca5a5;margin-left:.5rem;">🔴 Server offline — solo calcoli</span>
 </div>
 
-<div class="layout">
+<div class="layout" id="main-layout">
+
+<!-- Bottone nascondi/mostra pannello sinistro -->
+<button class="panel-toggle-btn" id="btn-toggle-sidebar" onclick="toggleSidebar()" title="Nascondi/mostra pannello sinistro">◀</button>
 
 <!-- ══════════ SIDEBAR ══════════ -->
 <div class="sidebar">
@@ -468,6 +627,8 @@ self.addEventListener('fetch',e=>{
 </div><!-- /sidebar -->
 
 <!-- ══════════ MAIN ══════════ -->
+<!-- Bottone nascondi/mostra pannello destro -->
+<button class="main-toggle-btn" id="btn-toggle-main" onclick="toggleMain()" title="Nascondi/mostra griglia">▶</button>
 <div class="main">
   <div class="alert" id="alert-box"></div>
 
