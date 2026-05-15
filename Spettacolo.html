@@ -166,7 +166,8 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
 
 /* ══════════ MOBILE RESPONSIVE ══════════ */
 @media (max-width: 768px) {
-  /* Header mobile: wrap su 2 righe */
+
+  /* ── HEADER ── */
   .hdr {
     height: auto;
     flex-wrap: wrap;
@@ -179,59 +180,74 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
   .hdr-logo { font-size: 11px; }
   .hdr-sep { display: none; }
   .hdr-anno { font-size: 10px; }
-  .btn-ricalcola, .btn-reset-all, .btn-fetch, .btn-gestione, .btn-stampa, .btn-salva, .btn-carica {
+  .btn-ricalcola, .btn-reset-all, .btn-stampa, .btn-salva, .btn-carica {
     font-size: 11px;
     padding: 5px 9px;
   }
-  /* Nasconde bottoni non essenziali su mobile per risparmiare spazio */
   .btn-fetch, .btn-gestione { display: none; }
   #server-status { font-size: 10px; }
   #fetch-status { font-size: 10px; }
 
-  /* Layout: da side-by-side a colonna verticale */
+  /* ── LAYOUT: due pannelli affiancati a tutta altezza ── */
   .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    height: calc(100vh - var(--hdr-h, 60px));
+    overflow: hidden;
+  }
+
+  /* ── PANNELLO SINISTRO: lavoratore/azienda/totali ──
+     Scroll verticale E orizzontale indipendente */
+  .sidebar {
+    width: 260px;
+    min-width: 0;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
-    height: auto;
-    min-height: calc(100vh - 80px);
-  }
-
-  /* Sidebar: diventa pannello collassabile orizzontalmente scrollabile */
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 2px solid var(--border);
-    padding: 10px;
-    overflow-x: auto;
-    overflow-y: visible;
-    flex-direction: row;
-    flex-wrap: nowrap;
     gap: 10px;
-    display: flex;
+    padding: 8px;
+    border-right: 2px solid var(--border2);
+    background: #b0b0b0;
+    box-sizing: border-box;
   }
-  .sidebar > div {
-    min-width: 240px;
-    flex-shrink: 0;
+  /* ogni sezione non si restringe sotto 220px */
+  .sidebar > div { min-width: 220px; flex-shrink: 0; }
+
+  /* Metriche compatte */
+  .metric-val { font-size: 13px; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .metric { padding: 7px 8px; }
+  .nom-box { padding: 7px 9px; }
+  .nom-name { font-size: 12px; }
+
+  /* ── PANNELLO DESTRO: griglia righe ──
+     Scroll verticale E orizzontale indipendente */
+  .main {
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px;
+    box-sizing: border-box;
   }
-  /* Metriche più compatte */
-  .metric-val { font-size: 14px; }
-  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
 
-  /* Main: scroll orizzontale per la griglia */
-  .main { padding: 8px; overflow-x: auto; }
-  .grid-wrap { min-width: 900px; }
+  /* La griglia interna ha larghezza minima per contenere tutte le colonne:
+     checkbox + n. + Tipo Fatt + Attività/TipoLav + DataLav + DataFatt
+     + Anzianità + Gg + Turni + Righe + Imponibile + Titolo */
+  .grid-wrap { min-width: 860px; }
 
-  /* Inputs più grandi al tocco */
+  /* Inputs touch-friendly */
   .cell-select, .cell-input {
-    font-size: 13px;
-    padding: 5px 4px;
-    min-height: 32px;
+    font-size: 12px;
+    padding: 4px 4px;
+    min-height: 30px;
   }
   input[type=checkbox] { width: 18px; height: 18px; }
-
-  /* Nom box */
-  .nom-box { padding: 8px; }
-  .nom-name { font-size: 12px; }
 
   /* Pannello ad hoc */
   #adhoc-panel > div > div[style*="grid"] {
@@ -240,16 +256,16 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
   }
 }
 
-/* Schermi molto piccoli (<480px): sidebar completamente verticale */
-@media (max-width: 480px) {
-  .sidebar {
-    flex-direction: column;
-    overflow-x: hidden;
-    overflow-y: visible;
+/* ── Telefoni molto stretti (<420px): sidebar più stretta ── */
+@media (max-width: 420px) {
+  .layout {
+    grid-template-columns: 220px 1fr;
   }
-  .sidebar > div { min-width: 100%; }
+  .sidebar { width: 220px; padding: 6px; }
+  .sidebar > div { min-width: 200px; }
   .btn-stampa, .btn-salva, .btn-carica { font-size: 10px; padding: 4px 7px; }
   .hdr-anno { display: none; }
+  .metric-val { font-size: 12px; }
 }
 </style>
 <style id="login-style">
@@ -327,6 +343,14 @@ self.addEventListener('fetch',e=>{
     }
   };
   window.addEventListener("DOMContentLoaded", applyLogin);
+  // Aggiorna altezza header per layout mobile
+  function updateHdrHeight(){
+    var h=document.querySelector('.hdr');
+    if(h) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight+'px');
+  }
+  window.addEventListener('DOMContentLoaded', updateHdrHeight);
+  window.addEventListener('resize', updateHdrHeight);
+  setTimeout(updateHdrHeight, 200);
 })();
 </script>
 </head>
