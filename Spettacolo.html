@@ -1359,6 +1359,8 @@ function resetTutto(){
 
 // AVVIO
 initRighe();
+// Spunta automaticamente il checkbox della riga 1
+(function(){ var c=document.getElementById("chk_1"); if(c){c.checked=true;onChkChange(1);} })();
 ricalcolaTutto();
 
 // ══════════════════════════════════════════════════════════════

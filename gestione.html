@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestione Database ENPALS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f0f0;--bg2:#ffffff;--bg3:#f7f7f7;--bg4:#efefef;--border:#888;--text:#1a1a2e;--text2:#4a4a6a;--text3:#7a7a9a;--accent:#2563eb;--accent2:#1d4ed8;--green:#0f9960;--red:#dc2626;--amber:#d97706;--radius:8px;--rs:5px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);font-size:13px;}
+/* HEADER */
+.hdr{background:#1e3a8a;border-bottom:1px solid #1d4ed8;padding:0 1.5rem;display:flex;align-items:center;gap:.75rem;height:50px;position:sticky;top:0;z-index:300;}
+.hdr-logo{font-family:"DM Mono",monospace;font-size:12px;color:#93c5fd;letter-spacing:.08em;}
+.hdr-title{font-size:14px;font-weight:600;color:#fff;}
+.hdr-sep{flex:1;}
+.hdr-status{font-size:11px;color:#93c5fd;min-width:200px;text-align:right;}
+/* TABS */
+.tabs{background:#fff;border-bottom:2px solid var(--border);display:flex;padding:0 1.5rem;gap:0;position:sticky;top:50px;z-index:200;}
+.tab{padding:12px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;color:var(--text2);transition:color .15s,border-color .15s;white-space:nowrap;}
+.tab:hover{color:var(--accent);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+/* PANEL */
+.panel{display:none;padding:1.5rem;}
+.panel.active{display:block;}
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;}
+.toolbar input[type=text]{background:#fff;border:1px solid var(--border);border-radius:var(--rs);padding:6px 10px;font-size:12px;font-family:"DM Sans",sans-serif;color:var(--text);width:220px;}
+.toolbar input[type=text]:focus{outline:none;border-color:var(--accent);}
+.toolbar select{background:#fff;border:1px solid var(--border);border-radius:var(--rs);padding:6px 10px;font-size:12px;font-family:"DM Sans",sans-serif;color:var(--text);}
+.btn{border:none;border-radius:var(--rs);padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:background .15s;}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:var(--accent2);}
+.btn-success{background:var(--green);color:#fff;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);}.btn-outline:hover{background:#eff6ff;}
+.btn-sm{padding:3px 9px;font-size:11px;}
+.btn-sim{background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.35);border-radius:var(--rs);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:background .15s;margin-right:.5rem;}
+.btn-sim:hover{background:rgba(255,255,255,0.28);}
+/* TABLE */
+.tbl-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto;}
+.tbl{width:100%;border-collapse:collapse;min-width:600px;}
+.tbl thead tr{background:#1e3a8a;}
+.tbl thead th{padding:8px 10px;font-family:"DM Mono",monospace;font-size:9px;color:#bfdbfe;text-transform:uppercase;letter-spacing:.05em;text-align:left;white-space:nowrap;}
+.tbl tbody tr{border-bottom:1px solid #ddd;transition:background .1s;}
+.tbl tbody tr:hover{background:#f0f5ff;}
+.tbl tbody tr:last-child{border-bottom:none;}
+.tbl td{padding:6px 10px;font-size:12px;color:var(--text);vertical-align:middle;}
+.tbl td.mono{font-family:"DM Mono",monospace;font-size:11px;}
+.tbl td.actions{white-space:nowrap;display:flex;gap:4px;}
+.count-badge{font-size:11px;background:#e8edf5;color:#1e3a8a;border:1px solid #bcd;padding:2px 8px;border-radius:20px;font-weight:600;}
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:#fff;border-radius:var(--radius);padding:1.5rem;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid #ddd;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.form-grid.cols1{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:3px;}
+.form-group.full{grid-column:span 2;}
+.form-group label{font-size:11px;font-weight:600;color:var(--text2);}
+.form-group input,.form-group select{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:6px 9px;font-size:12px;font-family:"DM Sans",sans-serif;color:var(--text);}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent);}
+.modal-footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem;padding-top:.75rem;border-top:1px solid #ddd;}
+/* ALERT */
+.alert-bar{padding:7px 12px;border-radius:var(--rs);font-size:12px;margin-bottom:.75rem;display:none;}
+.alert-bar.ok{display:block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;}
+.alert-bar.err{display:block;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;}
+/* VARIABILI sub-tabs */
+.sub-tabs{display:flex;gap:4px;margin-bottom:1rem;flex-wrap:wrap;}
+.sub-tab{padding:5px 12px;font-size:12px;cursor:pointer;border-radius:var(--rs);border:1px solid var(--border);background:transparent;color:var(--text2);transition:background .1s;}
+.sub-tab.active{background:#e8edf5;color:var(--accent);border-color:var(--accent);font-weight:600;}
+.sub-panel{display:none;}.sub-panel.active{display:block;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span class="hdr-logo">ENPALS/DB</span>
+  <span class="hdr-title">Gestione Database</span>
+  <div class="hdr-sep"></div>
+  <button class="btn-sim" onclick="window.open('Spettacolo.html','_blank')">📊 Simulatore</button>
+  <span class="hdr-status" id="hdr-status">Connessione al server...</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('persone')">👤 Persone</div>
+  <div class="tab" onclick="showTab('aziende')">🏢 Aziende</div>
+  <div class="tab" onclick="showTab('variabili')">📊 Variabili</div>
+</div>
+
+<!-- ══════════ PERSONE ══════════ -->
+<div class="panel active" id="panel-persone">
+  <div class="alert-bar" id="alert-persone"></div>
+  <div class="toolbar">
+    <input type="text" id="cerca-persone" placeholder="🔍 Cerca nominativo, CF..." oninput="renderPersone()">
+    <select id="filtro-att-persone" onchange="renderPersone()">
+      <option value="">Tutte le attività</option>
+      <option>DOPPIATORE</option><option>ADATTATORE</option><option>ASSISTENTE</option><option>DIRETTORE</option>
+    </select>
+    <span class="count-badge" id="count-persone">0 persone</span>
+    <div style="flex:1"></div>
+    <button class="btn btn-primary" onclick="apriModalePersona()">+ Nuova persona</button>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th>Nominativo</th><th>Cod. Fiscale</th><th>Attività</th><th>Anzianità</th>
+        <th>Tipo Fattura</th><th>Matricola ENPALS</th><th>Comune</th><th>Azioni</th>
+      </tr></thead>
+      <tbody id="tbody-persone"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ AZIENDE ══════════ -->
+<div class="panel" id="panel-aziende">
+  <div class="alert-bar" id="alert-aziende"></div>
+  <div class="toolbar">
+    <input type="text" id="cerca-aziende" placeholder="🔍 Cerca ragione sociale, CF..." oninput="renderAziende()">
+    <span class="count-badge" id="count-aziende">0 aziende</span>
+    <div style="flex:1"></div>
+    <button class="btn btn-primary" onclick="apriModaleAzienda()">+ Nuova azienda</button>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th>Ragione Sociale</th><th>Indirizzo</th><th>Sede</th><th>Cod. Fiscale</th><th>Cod. Dest.</th><th>Azioni</th>
+      </tr></thead>
+      <tbody id="tbody-aziende"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ VARIABILI ══════════ -->
+<div class="panel" id="panel-variabili">
+  <div class="alert-bar" id="alert-variabili"></div>
+  <div class="sub-tabs">
+    <div class="sub-tab active" onclick="showSubTab('tariffe')">Tariffe</div>
+    <div class="sub-tab" onclick="showSubTab('inps')">INPS</div>
+    <div class="sub-tab" onclick="showSubTab('fasce')">Fasce</div>
+    <div class="sub-tab" onclick="showSubTab('massimali')">Massimali</div>
+    <div class="sub-tab" onclick="showSubTab('tasse')">Tasse</div>
+  </div>
+
+  <!-- Tariffe -->
+  <div class="sub-panel active" id="sub-tariffe">
+    <div class="toolbar">
+      <select id="filtro-anno-tariffe" onchange="renderTariffe()"><option value="">Tutti gli anni</option></select>
+      <span class="count-badge" id="count-tariffe">0</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-primary" onclick="apriModaleTariffa()">+ Nuova tariffa</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Anno</th><th>Categoria</th><th>Turno €</th><th>Riga €</th><th>Lim.Righe</th><th>B50</th><th>B100</th><th>B150</th><th>B200</th><th>B_Oltre</th><th>Azioni</th>
+    </tr></thead><tbody id="tbody-tariffe"></tbody></table></div>
+  </div>
+
+  <!-- INPS -->
+  <div class="sub-panel" id="sub-inps">
+    <div class="toolbar">
+      <select id="filtro-anno-inps" onchange="renderINPS()"><option value="">Tutti gli anni</option></select>
+      <span class="count-badge" id="count-inps">0</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-primary" onclick="apriModaleINPS()">+ Nuovo record INPS</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Anno</th><th>Tipo Soggetto</th><th>Codice</th><th>Valore</th><th>Azioni</th>
+    </tr></thead><tbody id="tbody-inps"></tbody></table></div>
+  </div>
+
+  <!-- Fasce -->
+  <div class="sub-panel" id="sub-fasce">
+    <div class="toolbar">
+      <select id="filtro-anno-fasce" onchange="renderFasce()"><option value="">Tutti gli anni</option></select>
+      <span class="count-badge" id="count-fasce">0</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-primary" onclick="apriModaleFascia()">+ Nuova fascia</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Anno</th><th>Fascia</th><th>Da €</th><th>A €</th><th>Contribuzione €</th><th>Azioni</th>
+    </tr></thead><tbody id="tbody-fasce"></tbody></table></div>
+  </div>
+
+  <!-- Massimali -->
+  <div class="sub-panel" id="sub-massimali">
+    <div class="toolbar">
+      <span class="count-badge" id="count-massimali">0</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-primary" onclick="apriModaleMassimale()">+ Nuovo massimale</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Anno</th><th>Mass. Retrib. GG €</th><th>Mass. Malattia GG €</th><th>Azioni</th>
+    </tr></thead><tbody id="tbody-massimali"></tbody></table></div>
+  </div>
+
+  <!-- Tasse -->
+  <div class="sub-panel" id="sub-tasse">
+    <div class="toolbar">
+      <span class="count-badge" id="count-tasse">0</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-primary" onclick="apriModaleTassa()">+ Nuovo anno tasse</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Anno</th><th>IVA %</th><th>Rit.Acc. NoAda %</th><th>Rit.Acc. Ada <36 %</th><th>Rit.Acc. Ada ≥36 %</th><th>Azioni</th>
+    </tr></thead><tbody id="tbody-tasse"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══════════ MODALI ══════════ -->
+<div class="overlay" id="overlay" onclick="chiudiModali()">
+  <div onclick="event.stopPropagation()">
+
+    <!-- Persona -->
+    <div class="modal" id="modal-persona" style="display:none">
+      <div class="modal-title" id="modal-persona-title">Nuova Persona</div>
+      <input type="hidden" id="p-id">
+      <div class="form-grid">
+        <div class="form-group full"><label>Nominativo *</label><input id="p-nominativo" placeholder="Cognome Nome"></div>
+        <div class="form-group"><label>Codice Fiscale</label><input id="p-codfisc" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div>
+        <div class="form-group"><label>Matricola ENPALS</label><input id="p-matricola_enpals"></div>
+        <div class="form-group"><label>Attività</label>
+          <select id="p-attivita_dopp_adat"><option value="">—</option><option>DOPPIATORE</option><option>ADATTATORE</option><option>ASSISTENTE</option><option>DIRETTORE</option></select>
+        </div>
+        <div class="form-group"><label>Anzianità</label>
+          <select id="p-anzianita_sy_sc"><option value="SY">SY — Con anzianità</option><option value="SC">SC — Senza anzianità</option></select>
+        </div>
+        <div class="form-group full"><label>Tipo Fattura</label>
+          <select id="p-tipo_fatt"><option value="">—</option>
+            <option>FATTURA REGIME ORDINARIO</option><option>FATTURA REGIME AGEVOLATO</option>
+            <option>RICEVUTA SEMPLICE</option><option>RICEVUTA ADATTATORI</option>
+            <option>RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Luogo di Nascita</label><input id="p-luogo_di_nascita"></div>
+        <div class="form-group"><label>Data di Nascita</label><input id="p-data_di_nascita" type="date"></div>
+        <div class="form-group full"><label>Residenza Via</label><input id="p-residenza_via"></div>
+        <div class="form-group"><label>Comune</label><input id="p-residenza_comune"></div>
+        <div class="form-group"><label>CAP</label><input id="p-cap"></div>
+        <div class="form-group full"><label>IBAN</label><input id="p-iban" placeholder="IT60X0542811101000000123456"></div>
+        <div class="form-group"><label>P.IVA</label><input id="p-piva"></div>
+        <div class="form-group"><label>Email</label><input id="p-email" type="email"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="chiudiModali()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaPersona()">💾 Salva</button>
+      </div>
+    </div>
+
+    <!-- Azienda -->
+    <div class="modal" id="modal-azienda" style="display:none">
+      <div class="modal-title" id="modal-azienda-title">Nuova Azienda</div>
+      <input type="hidden" id="a-id">
+      <div class="form-grid">
+        <div class="form-group full"><label>Ragione Sociale *</label><input id="a-rag"></div>
+        <div class="form-group full"><label>Indirizzo</label><input id="a-ind"></div>
+        <div class="form-group"><label>Sede</label><input id="a-sede"></div>
+        <div class="form-group"><label>Codice Fiscale / P.IVA</label><input id="a-fisc"></div>
+        <div class="form-group"><label>Codice Destinatario SDI</label><input id="a-coddest"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="chiudiModali()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaAzienda()">💾 Salva</button>
+      </div>
+    </div>
+
+    <!-- Tariffa -->
+    <div class="modal" id="modal-tariffa" style="display:none">
+      <div class="modal-title" id="modal-tariffa-title">Nuova Tariffa</div>
+      <input type="hidden" id="t-id">
+      <div class="form-grid">
+        <div class="form-group"><label>Anno *</label><input id="t-anno" placeholder="2026"></div>
+        <div class="form-group"><label>Categoria *</label><input id="t-categoria" placeholder="FILM"></div>
+        <div class="form-group"><label>Tariffa Turno €</label><input id="t-turno" type="number" step="0.01"></div>
+        <div class="form-group"><label>Tariffa Riga €</label><input id="t-riga" type="number" step="0.01"></div>
+        <div class="form-group"><label>Limite Righe</label><input id="t-limite_righe" type="number"></div>
+        <div class="form-group"><label>Bonus 50 righe €</label><input id="t-bonus_50" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 100 righe €</label><input id="t-bonus_100" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 150 righe €</label><input id="t-bonus_150" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 200 righe €</label><input id="t-bonus_200" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 250 righe €</label><input id="t-bonus_250" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 300 righe €</label><input id="t-bonus_300" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 350 righe €</label><input id="t-bonus_350" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 400 righe €</label><input id="t-bonus_400" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 450 righe €</label><input id="t-bonus_450" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 500 righe €</label><input id="t-bonus_500" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus 550 righe €</label><input id="t-bonus_550" type="number" step="0.01"></div>
+        <div class="form-group"><label>Bonus oltre 550 €</label><input id="t-bonus_oltre_550" type="number" step="0.01"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="chiudiModali()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaTariffa()">💾 Salva</button>
+      </div>
+    </div>
+
+    <!-- INPS -->
+    <div class="modal" id="modal-inps" style="display:none">
+      <div class="modal-title" id="modal-inps-title">Nuovo Record INPS</div>
+      <input type="hidden" id="i-id">
+      <div class="form-grid">
+        <div class="form-group"><label>Anno *</label><input id="i-anno" placeholder="2026"></div>
+        <div class="form-group"><label>Tipo Soggetto *</label>
+          <select id="i-tipo_soggetto"><option value="lavoratore">lavoratore</option><option value="datore">datore</option></select>
+        </div>
+        <div class="form-group"><label>Codice *</label><input id="i-codice" placeholder="IVS_LAV"></div>
+        <div class="form-group"><label>Valore (es. 0.0919)</label><input id="i-valore" type="number" step="0.0001"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="chiudiModali()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaINPS()">💾 Salva</button>
+      </div>
+    </div>
+
+    <!-- Fascia -->
+    <div class="modal" id="modal-fascia" style="display:none">
+      <div class="modal-title" id="modal-fascia-title">Nuova Fascia</div>
+      <input type="hidden" id="f-id">
+      <div class="form-grid">
+        <div class="form-group"><label>Anno *</label><input id="f-anno" placeholder="2026"></div>
+        <div class="form-group"><label>N. Fascia</label><input id="f-fascia" type="number" placeholder="1"></div>
+        <div class="form-group"><label>Da valore €</label><input id="f-da_valore" type="number" step="0.01"></div>
+        <div class="form-group"><label>A valore €</label><input id="f-a_valore" type="number" step="0.01"></div>
+        <div class="form-group full"><label>Contribuzione €</label><input id="f-contribuzione" type="number" step="0.01"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="chiudiModali()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaFascia()">💾 Salva</button>
+      </div>
+    </div>
+
+    <!-- Massimale -->
+    <div class="modal" id="modal-massimale" style="display:none">
+      <div class="modal-title" id="modal-massimale-title">Nuovo Massimale</div>
+      <input type="hidden" id="m-id">
+      <div class="form-grid">
+        <div class="form-group"><label>Anno *</label><input id="m-anno" placeholder="2026"></div>
+        <div class="form-group"><label>Mass. Retrib. GG €</label><input id="m-mass_retr_gg" type="number" step="0.01"></div>
+        <div class="form-group"><label>Mass. Malattia GG €</label><input id="m-mass_malat_gg" type="number" step="0.01"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="chiudiModali()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaMassimale()">💾 Salva</button>
+      </div>
+    </div>
+
+    <!-- Tassa -->
+    <div class="modal" id="modal-tassa" style="display:none">
+      <div class="modal-title" id="modal-tassa-title">Nuovo Anno Tasse</div>
+      <input type="hidden" id="x-id">
+      <div class="form-grid">
+        <div class="form-group"><label>Anno *</label><input id="x-anno" placeholder="2026"></div>
+        <div class="form-group"><label>IVA (es. 0.22)</label><input id="x-iva" type="number" step="0.01"></div>
+        <div class="form-group"><label>Rit.Acc. NoAda (es. 0.20)</label><input id="x-rit_acc_noada" type="number" step="0.0001"></div>
+        <div class="form-group"><label>Rit.Acc. Ada <36 (es. 0.60)</label><input id="x-rit_acc_ada_min36" type="number" step="0.0001"></div>
+        <div class="form-group"><label>Rit.Acc. Ada ≥36 (es. 0.75)</label><input id="x-rit_acc_ada_mag36" type="number" step="0.0001"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="chiudiModali()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaTassa()">💾 Salva</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8765';
+let DATA = {persone:[], aziende:[], tariffe:[], inps:[], fasce:[], massimali:[], tasse:[]};
+
+// ── UTILS ──────────────────────────────────────────
+function fmtDataNascita(val){
+  if(!val||val==="—")return "";
+  const n=parseFloat(val);
+  if(!isNaN(n)&&n>10000&&n<100000){
+    const d=new Date((n-25569)*86400*1000);
+    if(!isNaN(d.getTime())){
+      // Restituisce YYYY-MM-DD per il campo input[type=date]
+      return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+    }
+  }
+  if(/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  // GG/MM/AAAA -> YYYY-MM-DD
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(val)){
+    const p=val.split('/'); return p[2]+'-'+p[1]+'-'+p[0];
+  }
+  return val;
+}
+
+function setStatus(msg, ok=true){
+  const el=document.getElementById('hdr-status');
+  el.textContent=msg; el.style.color=ok?'#86efac':'#fca5a5';
+  if(ok) setTimeout(()=>el.style.color='#93c5fd',3000);
+}
+function showAlert(section, msg, ok=true){
+  const el=document.getElementById('alert-'+section);
+  el.textContent=(ok ? '✅ ' : '❌ ')+msg;
+  el.className='alert-bar '+(ok?'ok':'err');
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  setTimeout(()=>el.className='alert-bar',6000);
+}
+function fmtN(n){return n!=null?Number(n).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:4}):'—';}
+function pct(n){return n!=null?(n*100).toFixed(2)+'%':'—';}
+async function api(url, method='GET', body=null){
+  const opts={method, headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(API+url, opts);
+  return r.json();
+}
+function confermaElimina(msg, fn){ if(confirm('⚠ '+msg+'\n\nSei sicuro?')) fn(); }
+
+// ── TABS ──────────────────────────────────────────
+function showTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['persone','aziende','variabili'][i]===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+}
+function showSubTab(name){
+  document.querySelectorAll('.sub-tab').forEach((t,i)=>t.classList.toggle('active',['tariffe','inps','fasce','massimali','tasse'][i]===name));
+  document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sub-'+name).classList.add('active');
+}
+
+// ── MODALI ──────────────────────────────────────────
+function apriOverlay(modalId){
+  document.getElementById('overlay').classList.add('open');
+  document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+  document.getElementById(modalId).style.display='block';
+}
+function chiudiModali(){
+  document.getElementById('overlay').classList.remove('open');
+  document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+}
+
+// ══════════════════════════════════════════════════
+// PERSONE
+// ══════════════════════════════════════════════════
+async function caricaPersone(){
+  const d=await api('/persone'); DATA.persone=d; renderPersone();
+}
+function renderPersone(){
+  const q=(document.getElementById('cerca-persone').value||'').toLowerCase();
+  const fa=(document.getElementById('filtro-att-persone').value||'').toUpperCase();
+  const filtered=DATA.persone.filter(p=>{
+    const match=!q||(p.nominativo||'').toLowerCase().includes(q)||(p.codfisc||'').toLowerCase().includes(q);
+    const attMatch=!fa||(p.attivita_dopp_adat||'').toUpperCase()===fa;
+    return match&&attMatch;
+  });
+  document.getElementById('count-persone').textContent=filtered.length+' / '+DATA.persone.length+' persone';
+  const tbody=document.getElementById('tbody-persone');
+  tbody.innerHTML=filtered.map(p=>`
+    <tr>
+      <td><strong>${p.nominativo||''}</strong></td>
+      <td class="mono">${p.codfisc||''}</td>
+      <td>${p.attivita_dopp_adat||''}</td>
+      <td>${p.anzianita_sy_sc||''}</td>
+      <td style="font-size:10px">${p.tipo_fatt||''}</td>
+      <td class="mono">${p.matricola_enpals||''}</td>
+      <td>${p.residenza_comune||''}</td>
+      <td><div style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-sm" onclick="modificaPersonaById(${p.id})">✏</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminaPersona(${p.id},'${(p.nominativo||'').replace(/'/g,"\\'")}')">🗑</button>
+      </div></td>
+    </tr>`).join('');
+}
+function apriModalePersona(p=null){
+  document.getElementById('modal-persona-title').textContent=p?'Modifica Persona':'Nuova Persona';
+  ['id','nominativo','codfisc','anzianita_sy_sc','tipo_fatt','iban','attivita_dopp_adat',
+   'residenza_via','residenza_comune','cap','piva','email','luogo_di_nascita','matricola_enpals']
+  .forEach(k=>{const el=document.getElementById('p-'+k); if(el) el.value=p?p[k]||'':'';});
+  // data_di_nascita: converti da Excel o GG/MM/AAAA a YYYY-MM-DD per input[type=date]
+  const dnEl=document.getElementById('p-data_di_nascita');
+  if(dnEl) dnEl.value=p?fmtDataNascita(p.data_di_nascita||''):'';
+  apriOverlay('modal-persona');
+}
+function modificaPersona(p){ apriModalePersona(p); }
+async function salvaPersona(){
+  const d={};
+  ['id','nominativo','codfisc','anzianita_sy_sc','tipo_fatt','iban','attivita_dopp_adat',
+   'residenza_via','residenza_comune','cap','piva','email','luogo_di_nascita','data_di_nascita','matricola_enpals']
+  .forEach(k=>{const el=document.getElementById('p-'+k); if(el) d[k]=el.value||null;});
+  if(!d.nominativo){alert('Il nominativo è obbligatorio');return;}
+  d.id=d.id?parseInt(d.id):null;
+  const r=await api('/persone','POST',d);
+  if(r.ok){chiudiModali();await caricaPersone();showAlert('persone',r.msg);}
+  else showAlert('persone','Errore: '+r.error,false);
+}
+async function eliminaPersona(id, nome){
+  confermaElimina('Elimina "'+nome+'"?', async()=>{
+    const r=await api('/persone?id='+id,'DELETE');
+    if(r.ok){await caricaPersone();showAlert('persone',nome+' eliminata');}
+    else showAlert('persone','Errore: '+r.error,false);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// AZIENDE
+// ══════════════════════════════════════════════════
+async function caricaAziende(){
+  const d=await api('/aziende'); DATA.aziende=d; renderAziende();
+}
+function renderAziende(){
+  const q=(document.getElementById('cerca-aziende').value||'').toLowerCase();
+  const filtered=DATA.aziende.filter(a=>!q||(a.rag||'').toLowerCase().includes(q)||(a.fisc||'').toLowerCase().includes(q));
+  document.getElementById('count-aziende').textContent=filtered.length+' / '+DATA.aziende.length+' aziende';
+  document.getElementById('tbody-aziende').innerHTML=filtered.map(a=>`
+    <tr>
+      <td><strong>${a.rag||''}</strong></td>
+      <td>${a.ind||''}</td>
+      <td>${a.sede||''}</td>
+      <td class="mono">${a.fisc||''}</td>
+      <td class="mono">${a.coddest||''}</td>
+      <td><div style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-sm" onclick="modificaAziendaById(${a.id})">✏</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminaAzienda(${a.id},'${(a.rag||'').replace(/'/g,"\\'")}')">🗑</button>
+      </div></td>
+    </tr>`).join('');
+}
+function apriModaleAzienda(a=null){
+  document.getElementById('modal-azienda-title').textContent=a?'Modifica Azienda':'Nuova Azienda';
+  ['id','rag','ind','sede','fisc','coddest'].forEach(k=>{const el=document.getElementById('a-'+k);if(el)el.value=a?a[k]||'':''});
+  apriOverlay('modal-azienda');
+}
+function modificaAzienda(a){apriModaleAzienda(a);}
+async function salvaAzienda(){
+  const d={};
+  ['id','rag','ind','sede','fisc','coddest'].forEach(k=>{const el=document.getElementById('a-'+k);if(el)d[k]=el.value||null;});
+  if(!d.rag){alert('La ragione sociale è obbligatoria');return;}
+  d.id=d.id?parseInt(d.id):null;
+  const r=await api('/aziende','POST',d);
+  if(r.ok){chiudiModali();await caricaAziende();showAlert('aziende',r.msg);}
+  else showAlert('aziende','Errore: '+r.error,false);
+}
+async function eliminaAzienda(id,nome){
+  confermaElimina('Elimina "'+nome+'"?',async()=>{
+    const r=await api('/aziende?id='+id,'DELETE');
+    if(r.ok){await caricaAziende();showAlert('aziende',nome+' eliminata');}
+    else showAlert('aziende','Errore: '+r.error,false);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// VARIABILI
+// ══════════════════════════════════════════════════
+async function caricaVariabili(){
+  const d=await api('/variabili');
+  DATA.tariffe=d.tariffe; DATA.inps=d.inps; DATA.fasce=d.fasce;
+  DATA.massimali=d.massimali; DATA.tasse=d.tasse;
+  // Popola filtri anno
+  const anni=[...new Set(d.tariffe.map(r=>r.anno))].sort();
+  ['filtro-anno-tariffe','filtro-anno-inps','filtro-anno-fasce'].forEach(id=>{
+    const sel=document.getElementById(id); const cur=sel.value;
+    sel.innerHTML='<option value="">Tutti gli anni</option>'+anni.map(a=>`<option ${a===cur?'selected':''}>${a}</option>`).join('');
+  });
+  renderTariffe(); renderINPS(); renderFasce(); renderMassimali(); renderTasse();
+}
+function filtroAnno(sel,arr){ const a=document.getElementById(sel).value; return a?arr.filter(r=>r.anno==a):arr; }
+
+function renderTariffe(){
+  const rows=filtroAnno('filtro-anno-tariffe',DATA.tariffe);
+  document.getElementById('count-tariffe').textContent=rows.length+' tariffe';
+  document.getElementById('tbody-tariffe').innerHTML=rows.map(r=>`<tr>
+    <td class="mono">${r.anno}</td><td>${r.categoria}</td>
+    <td class="mono">${fmtN(r.turno)}</td><td class="mono">${fmtN(r.riga)}</td>
+    <td class="mono">${r.limite_righe??'—'}</td><td class="mono">${fmtN(r.bonus_50)}</td>
+    <td class="mono">${fmtN(r.bonus_100)}</td><td class="mono">${fmtN(r.bonus_150)}</td>
+    <td class="mono">${fmtN(r.bonus_200)}</td><td class="mono">${fmtN(r.bonus_oltre_550)}</td>
+    <td><div style="display:flex;gap:4px;">
+      <button class="btn btn-outline btn-sm" onclick="modificaTariffaById(${r.id})">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminaVar('tariffe',${r.id},'${r.anno} ${r.categoria}')">🗑</button>
+    </div></td></tr>`).join('');
+}
+function renderINPS(){
+  const rows=filtroAnno('filtro-anno-inps',DATA.inps);
+  document.getElementById('count-inps').textContent=rows.length+' record';
+  document.getElementById('tbody-inps').innerHTML=rows.map(r=>`<tr>
+    <td class="mono">${r.anno}</td><td>${r.tipo_soggetto}</td><td class="mono">${r.codice}</td>
+    <td class="mono">${pct(r.valore)}</td>
+    <td><div style="display:flex;gap:4px;">
+      <button class="btn btn-outline btn-sm" onclick="modificaINPSById(${r.id})">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminaVar('inps',${r.id},'${r.anno} ${r.codice}')">🗑</button>
+    </div></td></tr>`).join('');
+}
+function renderFasce(){
+  const rows=filtroAnno('filtro-anno-fasce',DATA.fasce);
+  document.getElementById('count-fasce').textContent=rows.length+' fasce';
+  document.getElementById('tbody-fasce').innerHTML=rows.map(r=>`<tr>
+    <td class="mono">${r.anno}</td><td class="mono">${r.fascia}</td>
+    <td class="mono">${fmtN(r.da_valore)}</td><td class="mono">${r.a_valore!=null?fmtN(r.a_valore):'∞'}</td>
+    <td class="mono">${fmtN(r.contribuzione)}</td>
+    <td><div style="display:flex;gap:4px;">
+      <button class="btn btn-outline btn-sm" onclick="modificaFasciaById(${r.id})">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminaVar('fasce',${r.id},'Fascia ${r.anno}/${r.fascia}')">🗑</button>
+    </div></td></tr>`).join('');
+}
+function renderMassimali(){
+  document.getElementById('count-massimali').textContent=DATA.massimali.length+' record';
+  document.getElementById('tbody-massimali').innerHTML=DATA.massimali.map(r=>`<tr>
+    <td class="mono"><strong>${r.anno}</strong></td>
+    <td class="mono">${fmtN(r.mass_retr_gg)}</td><td class="mono">${fmtN(r.mass_malat_gg)}</td>
+    <td><div style="display:flex;gap:4px;">
+      <button class="btn btn-outline btn-sm" onclick="modificaMassimaleById(${r.id})">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminaVar('massimali',${r.id},'Massimale ${r.anno}')">🗑</button>
+    </div></td></tr>`).join('');
+}
+function renderTasse(){
+  document.getElementById('count-tasse').textContent=DATA.tasse.length+' anni';
+  document.getElementById('tbody-tasse').innerHTML=DATA.tasse.map(r=>`<tr>
+    <td class="mono"><strong>${r.anno}</strong></td>
+    <td class="mono">${pct(r.iva)}</td><td class="mono">${pct(r.rit_acc_noada)}</td>
+    <td class="mono">${pct(r.rit_acc_ada_min36)}</td><td class="mono">${pct(r.rit_acc_ada_mag36)}</td>
+    <td><div style="display:flex;gap:4px;">
+      <button class="btn btn-outline btn-sm" onclick="modificaTassaById(${r.id})">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminaVar('tasse',${r.id},'Tasse ${r.anno}')">🗑</button>
+    </div></td></tr>`).join('');
+}
+
+// Modali variabili
+function apriModaleTariffa(r=null){
+  document.getElementById('modal-tariffa-title').textContent=r?'Modifica Tariffa':'Nuova Tariffa';
+  ['id','anno','categoria','turno','riga','limite_righe','bonus_50','bonus_100','bonus_150','bonus_200','bonus_250','bonus_300','bonus_350','bonus_400','bonus_450','bonus_500','bonus_550','bonus_oltre_550']
+  .forEach(k=>{const el=document.getElementById('t-'+k);if(el)el.value=r?r[k]??'':''});
+  apriOverlay('modal-tariffa');
+}
+function modificaTariffa(r){apriModaleTariffa(r);}
+async function salvaTariffa(){
+  const d={};
+  ['id','anno','categoria','turno','riga','limite_righe','bonus_50','bonus_100','bonus_150','bonus_200','bonus_250','bonus_300','bonus_350','bonus_400','bonus_450','bonus_500','bonus_550','bonus_oltre_550']
+  .forEach(k=>{const el=document.getElementById('t-'+k);if(el)d[k]=el.value===''?null:el.value;});
+  d.id=d.id?parseInt(d.id):null;
+  const r=await api('/variabili/tariffe','POST',d);
+  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  else showAlert('variabili','Errore: '+r.error,false);
+}
+
+function apriModaleINPS(r=null){
+  document.getElementById('modal-inps-title').textContent=r?'Modifica INPS':'Nuovo Record INPS';
+  ['id','anno','tipo_soggetto','codice','valore'].forEach(k=>{const el=document.getElementById('i-'+k);if(el)el.value=r?r[k]??'':''});
+  apriOverlay('modal-inps');
+}
+function modificaINPS(r){apriModaleINPS(r);}
+async function salvaINPS(){
+  const d={};
+  ['id','anno','tipo_soggetto','codice','valore'].forEach(k=>{const el=document.getElementById('i-'+k);if(el)d[k]=el.value===''?null:el.value;});
+  d.id=d.id?parseInt(d.id):null;
+  const r=await api('/variabili/inps','POST',d);
+  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  else showAlert('variabili','Errore: '+r.error,false);
+}
+
+function apriModaleFascia(r=null){
+  document.getElementById('modal-fascia-title').textContent=r?'Modifica Fascia':'Nuova Fascia';
+  ['id','anno','fascia','da_valore','a_valore','contribuzione'].forEach(k=>{const el=document.getElementById('f-'+k);if(el)el.value=r?r[k]??'':''});
+  apriOverlay('modal-fascia');
+}
+function modificaFascia(r){apriModaleFascia(r);}
+async function salvaFascia(){
+  const d={};
+  ['id','anno','fascia','da_valore','a_valore','contribuzione'].forEach(k=>{const el=document.getElementById('f-'+k);if(el)d[k]=el.value===''?null:el.value;});
+  d.id=d.id?parseInt(d.id):null;
+  const r=await api('/variabili/fasce','POST',d);
+  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  else showAlert('variabili','Errore: '+r.error,false);
+}
+
+function apriModaleMassimale(r=null){
+  document.getElementById('modal-massimale-title').textContent=r?'Modifica Massimale':'Nuovo Massimale';
+  ['id','anno','mass_retr_gg','mass_malat_gg'].forEach(k=>{const el=document.getElementById('m-'+k);if(el)el.value=r?r[k]??'':''});
+  apriOverlay('modal-massimale');
+}
+function modificaMassimale(r){apriModaleMassimale(r);}
+async function salvaMassimale(){
+  const d={};
+  ['id','anno','mass_retr_gg','mass_malat_gg'].forEach(k=>{const el=document.getElementById('m-'+k);if(el)d[k]=el.value===''?null:el.value;});
+  d.id=d.id?parseInt(d.id):null;
+  const r=await api('/variabili/massimali','POST',d);
+  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  else showAlert('variabili','Errore: '+r.error,false);
+}
+
+function apriModaleTassa(r=null){
+  document.getElementById('modal-tassa-title').textContent=r?'Modifica Tasse':'Nuovo Anno Tasse';
+  ['id','anno','iva','rit_acc_noada','rit_acc_ada_min36','rit_acc_ada_mag36'].forEach(k=>{const el=document.getElementById('x-'+k);if(el)el.value=r?r[k]??'':''});
+  apriOverlay('modal-tassa');
+}
+function modificaTassa(r){apriModaleTassa(r);}
+async function salvaTassa(){
+  const d={};
+  ['id','anno','iva','rit_acc_noada','rit_acc_ada_min36','rit_acc_ada_mag36'].forEach(k=>{const el=document.getElementById('x-'+k);if(el)d[k]=el.value===''?null:el.value;});
+  d.id=d.id?parseInt(d.id):null;
+  const r=await api('/variabili/tasse','POST',d);
+  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  else showAlert('variabili','Errore: '+r.error,false);
+}
+
+async function eliminaVar(tab, id, desc){
+  confermaElimina('Elimina "'+desc+'" da '+tab+'?', async()=>{
+    const r=await api('/variabili/'+tab+'?id='+id,'DELETE');
+    if(r.ok){await caricaVariabili();showAlert('variabili',desc+' eliminato');}
+    else showAlert('variabili','Errore: '+r.error,false);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// AVVIO
+// ══════════════════════════════════════════════════
+// ── FUNZIONI ById (evitano problemi con apostrofi nei dati) ──
+function modificaPersonaById(id){ const p=DATA.persone.find(x=>x.id==id); if(p) apriModalePersona(p); }
+function modificaAziendaById(id){ const a=DATA.aziende.find(x=>x.id==id); if(a) apriModaleAzienda(a); }
+function modificaTariffaById(id){ const r=DATA.tariffe.find(x=>x.id==id); if(r) apriModaleTariffa(r); }
+function modificaINPSById(id){ const r=DATA.inps.find(x=>x.id==id); if(r) apriModaleINPS(r); }
+function modificaFasciaById(id){ const r=DATA.fasce.find(x=>x.id==id); if(r) apriModaleFascia(r); }
+function modificaMassimaleById(id){ const r=DATA.massimali.find(x=>x.id==id); if(r) apriModaleMassimale(r); }
+function modificaTassaById(id){ const r=DATA.tasse.find(x=>x.id==id); if(r) apriModaleTassa(r); }
+
+async function init(){
+  try{
+    setStatus('Connessione in corso...');
+    await Promise.all([caricaPersone(), caricaAziende(), caricaVariabili()]);
+    setStatus('✓ Connesso — dati caricati');
+  }catch(e){
+    setStatus('✗ Server non raggiungibile — avvia server.py',false);
+  }
+}
+init();
+</script>
+</body>
+</html>
