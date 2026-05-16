@@ -462,24 +462,81 @@ self.addEventListener('fetch',e=>{
 </script>
 <script>
 (function(){
-  var U="alberita",P="12111957",K="enpals_auth";
+  // ═══════════════════════════════════════════════════════
+  // CONFIGURAZIONE SERVER
+  // Cambia questo URL con quello del tuo server Render
+  // ═══════════════════════════════════════════════════════
+  var SERVER_URL = "https://enpals-server.onrender.com";
+
+  // Credenziali locali di fallback (usate solo se server offline)
+  var U="alberita", P="12111957", K="enpals_auth";
+
+  // Token di sessione (viene dal server quando online)
+  window._authToken = null;
+
+  // ── Controlla se già loggato in questa sessione ──
   function applyLogin(){
     var overlay=document.getElementById("login-overlay");
     if(!overlay) return;
-    if(sessionStorage.getItem(K)==="1"){ overlay.style.display="none"; return; }
+    var saved = sessionStorage.getItem(K);
+    if(saved==="1" || saved && saved.startsWith("tok:")){
+      if(saved.startsWith("tok:")) window._authToken = saved.slice(4);
+      overlay.style.display="none";
+    }
   }
-  window.doLogin=function(){
+
+  // ── Login: prova server, fallback locale ──
+  window.doLogin=async function(){
     var u=document.getElementById("login-user").value.trim();
     var p=document.getElementById("login-pass").value.trim();
-    if(u===U&&p===P){
-      sessionStorage.setItem(K,"1");
-      document.getElementById("login-overlay").style.display="none";
-    } else {
-      document.getElementById("login-err").style.display="block";
-      document.getElementById("login-pass").value="";
-      document.getElementById("login-pass").focus();
+    var errEl=document.getElementById("login-err");
+    var btn=document.querySelector(".login-btn");
+    errEl.style.display="none";
+    btn.textContent="Accesso..."; btn.disabled=true;
+
+    // 1. Prova login sul server Render
+    var serverOk = false;
+    try {
+      var res = await fetch(SERVER_URL+"/login", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username:u, password:p}),
+        signal: AbortSignal.timeout(5000)
+      });
+      var data = await res.json();
+      if(data.ok && data.token){
+        window._authToken = data.token;
+        sessionStorage.setItem(K, "tok:"+data.token);
+        document.getElementById("login-overlay").style.display="none";
+        serverOk = true;
+        console.log("✓ Login server OK — token valido "+data.expires_hours+"h");
+      } else {
+        // Server risponde ma credenziali sbagliate
+        errEl.textContent="Credenziali non valide.";
+        errEl.style.display="block";
+        btn.textContent="Entra"; btn.disabled=false;
+        return;
+      }
+    } catch(e) {
+      // Server non raggiungibile — usa login locale
+      console.log("Server non raggiungibile, uso login locale:", e.message);
     }
+
+    // 2. Fallback: login locale
+    if(!serverOk){
+      if(u===U && p===P){
+        window._authToken = null;
+        sessionStorage.setItem(K,"1");
+        document.getElementById("login-overlay").style.display="none";
+        console.log("✓ Login locale OK (server offline)");
+      } else {
+        errEl.textContent="Credenziali non valide.";
+        errEl.style.display="block";
+      }
+    }
+    btn.textContent="Entra"; btn.disabled=false;
   };
+
   window.addEventListener("DOMContentLoaded", applyLogin);
   // Aggiorna altezza header per layout mobile
   function updateHdrHeight(){
@@ -1357,6 +1414,26 @@ function resetTutto(){
   ricalcolaTutto();
 }
 
+// ═══════════════════════════════════════════════════════
+// HELPER: fetch autenticata (locale o server Render)
+// ═══════════════════════════════════════════════════════
+var _SERVER = (function(){
+  // Legge SERVER_URL definito nel blocco login
+  try { return window.SERVER_URL || "http://localhost:8765"; }
+  catch(e){ return "http://localhost:8765"; }
+})();
+
+function authFetch(path, options){
+  options = options || {};
+  options.headers = options.headers || {};
+  if(window._authToken){
+    options.headers["Authorization"] = "Bearer " + window._authToken;
+  }
+  // Se il path è già un URL completo usalo, altrimenti prependi il server
+  var url = path.startsWith("http") ? path : "http://localhost:8765" + path;
+  return fetch(url, options);
+}
+
 // AVVIO
 initRighe();
 // Spunta automaticamente il checkbox della riga 1
@@ -1370,7 +1447,7 @@ var _serverOnline = false;
 
 async function checkServer(){
   try{
-    const r = await fetch("http://localhost:8765/db", {method:"GET", signal: AbortSignal.timeout(2000)});
+    const r = await authFetch("/db", {method:"GET", signal: AbortSignal.timeout(2000)});
     if(r.ok){
       _serverOnline = true;
       document.getElementById("server-status").textContent = "🟢 Server attivo";
@@ -1568,7 +1645,7 @@ function stampaFattura(titoloPDF){
   "  if(!recStr){alert('Nessun dato da salvare.');return;}"+
   "  var rec=JSON.parse(recStr);"+
   "  try{"+
-  "    var r=await fetch('http://localhost:8765/fatture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(rec)});"+
+  "    var r=await authFetch('/fatture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(rec)});"+
   "    var d=await r.json();"+
   "    if(d.ok){"+
   "      sessionStorage.removeItem('enpals_rec_pending');"+
@@ -1785,7 +1862,7 @@ async function fetchDB(){
   btn.disabled=true;
   status.textContent="⟳ Caricamento in corso...";
   try{
-    const res=await fetch("http://localhost:8765/db");
+    const res=await authFetch("/db");
     if(!res.ok)throw new Error("Server risposta: "+res.status);
     const newDB=await res.json();
 
@@ -1849,7 +1926,7 @@ async function salvaFatturaSuDB(){
   // Recupera prossimo rif_nbr dal server
   let rif_nbr="";
   try{
-    const r=await fetch("http://localhost:8765/fatture_next/"+anno);
+    const r=await authFetch("/fatture_next/"+anno);
     const d=await r.json();
     rif_nbr=d.rif_nbr||"";
   }catch(e){
@@ -1935,7 +2012,7 @@ async function salvaFatturaSuDB(){
 
   // Salva SOLO sul database
   try{
-    const r=await fetch("http://localhost:8765/fatture",{
+    const r=await authFetch("/fatture",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(rec)
@@ -1957,7 +2034,7 @@ async function salvaSuDB(){
   if(!recStr){alert("Nessun dato da salvare.");return;}
   const rec = JSON.parse(recStr);
   try{
-    const r=await fetch("http://localhost:8765/fatture",{
+    const r=await authFetch("/fatture",{
       method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)
     });
     const d=await r.json();
@@ -1990,7 +2067,7 @@ async function apriModaleFatture(){
   const body=document.getElementById("lista-fatture-body");
   body.innerHTML="⟳ Caricamento...";
   try{
-    const r=await fetch("http://localhost:8765/fatture");
+    const r=await authFetch("/fatture");
     const fatture=await r.json();
     _fattureCache=fatture;
     // Mostra filtri
@@ -2070,7 +2147,7 @@ function chiudiModaleFatture(){
 
 async function caricaFattura(rec_nbr){
   try{
-    const r=await fetch("http://localhost:8765/fatture/"+rec_nbr);
+    const r=await authFetch("/fatture/"+rec_nbr);
     const f=await r.json();
     if(!f){alert("Fattura non trovata.");return;}
 
@@ -2150,7 +2227,7 @@ async function caricaFattura(rec_nbr){
 async function eliminaFattura(rec_nbr, rif){
   if(!confirm("Eliminare la fattura "+rif+"?"))return;
   try{
-    const r=await fetch("http://localhost:8765/fatture?id="+rec_nbr,{method:"DELETE"});
+    const r=await authFetch("/fatture?id="+rec_nbr,{method:"DELETE"});
     const d=await r.json();
     if(d.ok){apriModaleFatture();}
   }catch(e){alert("Errore eliminazione");}
