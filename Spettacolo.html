@@ -588,7 +588,7 @@ function toggleMain(){
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button class="btn-fetch" onclick="if(richiedeServer('Aggiorna i 3 DB'))fetchDB();" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
   <button class="btn-gestione" onclick="if(richiedeServer('Gestisci i 3 DB'))apriGestione();" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
-  <button class="btn-stampa" onclick="if(richiedeServer('Stampa Fattura'))stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
+  <button class="btn-stampa" onclick="stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
   <button class="btn-salva" onclick="if(richiedeServer('Salva su DB Fatture'))salvaFatturaSuDB();" title="Salva fattura su database">💾 Salva su DB Fatture</button>
   <button class="btn-carica" onclick="if(richiedeServer('Carica Fattura'))apriModaleFatture();" title="Carica fattura da database">📂 Carica Fattura</button>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
@@ -1658,8 +1658,17 @@ function stampaFattura(titoloPDF){
   "<\/script>"+
   "</div></body></html>";
 
-  // Invia HTML al server e apri via URL locale (funziona con Firefox su file://)
-  // Form POST — unico metodo affidabile su tutti i browser incluso Firefox su file://
+  // ── Apri la fattura: prima prova Blob (funziona sempre online),
+  //    fallback al server locale se disponibile ──
+  var blob = new Blob([html], {type: 'text/html; charset=utf-8'});
+  var blobUrl = URL.createObjectURL(blob);
+  var win = window.open(blobUrl, '_blank');
+  if(win){
+    // Blob OK — libera memoria dopo 60 secondi
+    setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 60000);
+    return;
+  }
+  // Popup bloccato o Blob non supportato — fallback server locale
   var form=document.createElement("form");
   form.method="POST";
   form.action="http://localhost:8765/stampa_direct";
