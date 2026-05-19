@@ -513,6 +513,9 @@ self.addEventListener('fetch',e=>{
         sessionStorage.setItem('enpals_ruolo', data.ruolo || 'utente');
         sessionStorage.setItem('enpals_user', u);
         sessionStorage.setItem('enpals_lrt', data.log_read_token || '');
+        // Salva credenziali per re-login automatico se Render riavvia
+        sessionStorage.setItem('enpals_cu', u);
+        sessionStorage.setItem('enpals_cp', p);
         document.getElementById("login-overlay").style.display="none";
         serverOk = true;
         applicaRuolo(data.ruolo || 'utente', u);
@@ -2360,21 +2363,43 @@ function logAzione(azione, dettaglio){
     body:payload
   }).catch(function(){});
 
-  // 2. Manda a Render usando authFetch (che porta automaticamente il token corretto)
-  authFetch('https://enpals-server.onrender.com/log-azione',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: payload
-  }).then(function(r){
-    if(!r.ok){
-      console.warn('Log '+azione+' HTTP '+r.status);
-      r.text().then(function(t){ console.warn('Risposta server:', t); });
-    } else {
-      console.log('Log '+azione+' OK');
-    }
-  }).catch(function(e){
-    console.warn('Log '+azione+' errore rete:', e.message);
-  });
+  // 2. Manda a Render — con re-login automatico se sessione scaduta (Render resetta RAM)
+  var SERVER_RENDER = 'https://enpals-server.onrender.com';
+
+  function _inviaLog(tok, tentativo){
+    var hdrs = {'Content-Type':'application/json'};
+    if(tok) hdrs['Authorization'] = 'Bearer ' + tok;
+    fetch(SERVER_RENDER+'/log-azione',{
+      method:'POST', headers:hdrs, body:payload
+    }).then(function(r){
+      if(r.status===401 && tentativo===1){
+        // Sessione Render scaduta (RAM resettata) — ri-login automatico
+        var uVal = sessionStorage.getItem('enpals_cu') || '';
+        var pVal = sessionStorage.getItem('enpals_cp') || '';
+        if(!uVal || !pVal){ console.warn('Log: sessione scaduta, credenziali non disponibili'); return; }
+        fetch(SERVER_RENDER+'/login',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({username:uVal, password:pVal})
+        }).then(function(lr){ return lr.json(); }).then(function(ld){
+          if(ld.ok && ld.token){
+            window._authToken = ld.token;
+            sessionStorage.setItem('enpals_auth','tok:'+ld.token);
+            console.log('Re-login Render OK — riprovo log');
+            _inviaLog(ld.token, 2);
+          }
+        }).catch(function(){});
+      } else if(!r.ok){
+        console.warn('Log '+azione+' HTTP '+r.status);
+      } else {
+        console.log('Log '+azione+' OK');
+      }
+    }).catch(function(e){
+      console.warn('Log '+azione+' errore rete:', e.message);
+    });
+  }
+
+  _inviaLog(window._authToken, 1);
 }
 
 // ── Helper: raccoglie dettagli fattura per il log ──
