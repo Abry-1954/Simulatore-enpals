@@ -2503,21 +2503,65 @@ function _rigaLog(label, val){
 function apriDettaglioLog(idx){
   var r = (window._logRighe || [])[idx];
   if(!r) return;
+  // Rimuovi popup precedente se esiste
+  var old = document.getElementById('log-popup-overlay');
+  if(old) old.remove();
+
   var parti = (r.dettaglio||'').split(' | ');
-  var html = '<div id="log-popup-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="this.remove()">'+
-    '<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);" onclick="event.stopPropagation()">'+
-    '<div style="font-family:DM Mono,monospace;font-size:11px;color:#60a5fa;margin-bottom:16px;letter-spacing:.1em;">DETTAGLIO LOG</div>'+
-    _rigaLog('📅 Data/Ora', r.ts)+
-    _rigaLog('👤 Utente', r.utente + ' (' + r.ruolo + ')')+
-    _rigaLog('⚡ Azione', r.azione)+
-    (parti[0] ? _rigaLog('🎭 Lavoratore', parti[0]) : '')+
-    (parti[1] ? _rigaLog('🏢 Azienda', parti[1]) : '')+
-    (parti[2] ? _rigaLog('💶 Importo', parti[2]) : '')+
-    (r.dettaglio && parti.length===1 ? _rigaLog('📝 Dettaglio', r.dettaglio) : '')+
-    _rigaLog('🌐 IP', (r.ip||'').split(',')[0])+
-    '<button onclick="document.getElementById(\"log-popup-overlay\").remove()" style="margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;">Chiudi</button>'+
-    '</div></div>';
-  document.body.insertAdjacentHTML('beforeend', html);
+  var isStampa = r.azione === 'STAMPA';
+  var isSimul  = r.azione === 'SIMULAZIONE';
+
+  // Crea popup con DOM (evita problemi di virgolette)
+  var overlay = document.createElement('div');
+  overlay.id = 'log-popup-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);';
+
+  var righe = [
+    ['📅 Data/Ora', r.ts],
+    ['👤 Utente', r.utente + ' (' + r.ruolo + ')'],
+    ['⚡ Azione', r.azione],
+  ];
+  if(isStampa || isSimul){
+    if(parti[0]) righe.push(['🎭 Lavoratore', parti[0]]);
+    if(parti[1]) righe.push(['🏢 Azienda', parti[1]]);
+    if(parti[2]) righe.push(['💶 Importo', parti[2]]);
+  } else {
+    righe.push(['📝 Dettaglio', r.dettaglio || '']);
+  }
+  righe.push(['🌐 IP', (r.ip||'').split(',')[0]]);
+
+  var titolo = document.createElement('div');
+  titolo.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:#60a5fa;margin-bottom:16px;letter-spacing:.1em;';
+  titolo.textContent = 'DETTAGLIO LOG';
+  box.appendChild(titolo);
+
+  righe.forEach(function(coppia){
+    if(!coppia[1]) return;
+    var wrap = document.createElement('div');
+    wrap.style.marginBottom = '10px';
+    var label = document.createElement('div');
+    label.style.cssText = 'font-size:10px;color:#64748b;margin-bottom:2px;';
+    label.textContent = coppia[0];
+    var val = document.createElement('div');
+    val.style.cssText = 'color:#e2e8f0;font-size:13px;font-weight:500;';
+    val.textContent = coppia[1];
+    wrap.appendChild(label);
+    wrap.appendChild(val);
+    box.appendChild(wrap);
+  });
+
+  var btn = document.createElement('button');
+  btn.style.cssText = 'margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;';
+  btn.textContent = 'Chiudi';
+  btn.onclick = function(){ overlay.remove(); };
+  box.appendChild(btn);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
 }
 
 function chiudiPannelloLog(){
