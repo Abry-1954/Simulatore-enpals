@@ -508,9 +508,11 @@ self.addEventListener('fetch',e=>{
         window._authToken = data.token;
         window._userRuolo = data.ruolo || 'utente';
         window._userName  = u;
+        window._logReadToken = data.log_read_token || '';
         sessionStorage.setItem(K, "tok:"+data.token);
         sessionStorage.setItem('enpals_ruolo', data.ruolo || 'utente');
         sessionStorage.setItem('enpals_user', u);
+        sessionStorage.setItem('enpals_lrt', data.log_read_token || '');
         document.getElementById("login-overlay").style.display="none";
         serverOk = true;
         applicaRuolo(data.ruolo || 'utente', u);
@@ -570,6 +572,8 @@ self.addEventListener('fetch',e=>{
   function ripristinaRuolo(){
     var ruolo = sessionStorage.getItem('enpals_ruolo');
     var user  = sessionStorage.getItem('enpals_user');
+    var lrt   = sessionStorage.getItem('enpals_lrt');
+    if(lrt) window._logReadToken = lrt;
     if(ruolo && user){ window._userRuolo=ruolo; window._userName=user; applicaRuolo(ruolo, user); }
   }
 
@@ -2357,9 +2361,9 @@ if(typeof stampaFattura === 'function'){
   var _origStampaFn = stampaFattura;
   window.stampaFattura = function(){
     // Raccoglie dettagli fattura per il log
-    var _lav = document.getElementById('inp-nom')?.value?.trim() || '';
-    var _az  = document.getElementById('az-name')?.textContent?.trim() || '';
-    var _imp = document.getElementById('t-netto')?.textContent?.trim() || '';
+    var _lav = (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
+    var _az  = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
+    var _imp = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
     var _rif = document.getElementById('inp-rif') ? document.getElementById('inp-rif').value : '';
     var _det = [_lav, _az, _imp].filter(Boolean).join(' | ');
     logAzione('STAMPA', _det);
@@ -2376,9 +2380,9 @@ if(typeof ricalcolaTutto === 'function'){
     window._ricalcolaCount = (window._ricalcolaCount||0)+1;
     // Loga ogni 5 ricalcoli per non spammare
     if(window._ricalcolaCount % 5 === 0){
-      var _lavS = document.getElementById('inp-nom')?.value?.trim() || '';
-      var _azS  = document.getElementById('az-name')?.textContent?.trim() || '';
-      var _impS = document.getElementById('t-netto')?.textContent?.trim() || '';
+      var _lavS = (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
+      var _azS  = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
+      var _impS = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
       var _detS = window._ricalcolaCount + ' ricalcoli' + (_lavS ? ' | '+_lavS : '') + (_impS && _impS!=='—' ? ' | '+_impS : '');
       logAzione('SIMULAZIONE', _detS);
     }
@@ -2400,11 +2404,14 @@ async function caricaLogGithub(){
       var saved = sessionStorage.getItem('enpals_auth');
       if(saved && saved.startsWith('tok:')) window._authToken = saved.slice(4);
     }
-    // Prima prova tramite server Render (ha il token GitHub)
+    // Recupera log_read_token dal sessionStorage
+    var lrt = window._logReadToken || sessionStorage.getItem('enpals_lrt') || '';
+    // Chiama Render con X-Log-Token (fisso, non dipende dalla sessione)
     var SERVER_RENDER = 'https://enpals-server.onrender.com';
-    var r = await fetch(SERVER_RENDER + '/log-github', {
-      headers: window._authToken ? {'Authorization': 'Bearer ' + window._authToken} : {}
-    });
+    var hdrs = {'Content-Type': 'application/json'};
+    if(lrt) hdrs['X-Log-Token'] = lrt;
+    if(window._authToken) hdrs['Authorization'] = 'Bearer ' + window._authToken;
+    var r = await fetch(SERVER_RENDER + '/log-github', { headers: hdrs });
     if(!r.ok) throw new Error('HTTP ' + r.status);
     var dati = await r.json();
     if(dati && dati.length){
@@ -2447,12 +2454,12 @@ function filtraLog(filtro){
 }
 
 function applicaFiltriAvanzati(){
-  var utente = (document.getElementById('log-filter-utente')?.value||'').toLowerCase();
-  var lav    = (document.getElementById('log-filter-lav')?.value||'').toLowerCase();
-  var az     = (document.getElementById('log-filter-az')?.value||'').toLowerCase();
-  var imp    = parseFloat(document.getElementById('log-filter-imp')?.value||'0') || 0;
-  var da     = document.getElementById('log-filter-da')?.value || '';
-  var a      = document.getElementById('log-filter-a')?.value || '';
+  var utente = ((document.getElementById('log-filter-utente')||{}).value||'').toLowerCase();
+  var lav    = ((document.getElementById('log-filter-lav')||{}).value||'').toLowerCase();
+  var az     = ((document.getElementById('log-filter-az')||{}).value||'').toLowerCase();
+  var imp    = parseFloat((document.getElementById('log-filter-imp')||{}).value||'0') || 0;
+  var da     = ((document.getElementById('log-filter-da')||{}).value||'');
+  var a      = ((document.getElementById('log-filter-a')||{}).value||'');
 
   var dati = _logData.filter(function(r){
     // Filtro azione
@@ -2493,9 +2500,11 @@ function _rigaLog(label, val){
   return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:#64748b;margin-bottom:2px;">'+label+'</div><div style="color:#e2e8f0;font-size:13px;font-weight:500;">'+val+'</div></div>';
 }
 
-function apriDettaglioLog(r){
+function apriDettaglioLog(idx){
+  var r = (window._logRighe || [])[idx];
+  if(!r) return;
   var parti = (r.dettaglio||'').split(' | ');
-  var html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="this.remove()">'+
+  var html = '<div data-log-popup style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="this.remove()">'+
     '<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);" onclick="event.stopPropagation()">'+
     '<div style="font-family:DM Mono,monospace;font-size:11px;color:#60a5fa;margin-bottom:16px;letter-spacing:.1em;">DETTAGLIO LOG</div>'+
     _rigaLog('📅 Data/Ora', r.ts)+
@@ -2506,7 +2515,7 @@ function apriDettaglioLog(r){
     (parti[2] ? _rigaLog('💶 Importo', parti[2]) : '')+
     (r.dettaglio && parti.length===1 ? _rigaLog('📝 Dettaglio', r.dettaglio) : '')+
     _rigaLog('🌐 IP', (r.ip||'').split(',')[0])+
-    '<button onclick="this.closest('div[style*=fixed]').remove()" style="margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;">Chiudi</button>'+
+    '<button onclick="document.querySelectorAll(\"[data-log-popup]\")[0].remove()" style="margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;">Chiudi</button>'+
     '</div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
 }
@@ -2551,14 +2560,14 @@ function mostraLog(dati){
     'DB_AZIENDA':'#fb923c','SALVA_FATTURA':'#34d399'
   };
 
+  // Salva dati per click su riga
+  window._logRighe = dati;
   tbody.innerHTML = dati.map(function(r,i){
     var bg = i%2===0?'#111827':'#1f2937';
     var col = colori[r.azione]||'#e2e8f0';
     var det = r.dettaglio || '';
-    // Estrae parti dal dettaglio (formato: "lavoratore | azienda | importo")
-    var parti = det.split(' | ');
     var detBreve = det.length > 50 ? det.substring(0,50)+'...' : det;
-    return '<tr style="background:'+bg+';cursor:pointer;" onclick="apriDettaglioLog('+JSON.stringify(r)+')" title="Clicca per dettagli">'+
+    return '<tr style="background:'+bg+';cursor:pointer;" onclick="apriDettaglioLog('+i+')" title="Clicca per dettagli">'+
       '<td style="padding:7px 8px;color:#9ca3af;white-space:nowrap;font-size:11px;">'+r.ts+'</td>'+
       '<td style="padding:7px 8px;font-weight:600;">'+r.utente+'</td>'+
       '<td style="padding:7px 8px;color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';">'+r.ruolo+'</td>'+
