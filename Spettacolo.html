@@ -501,34 +501,50 @@ self.addEventListener('fetch',e=>{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({username:u, password:p}),
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(30000)
       });
       var data = await res.json();
       if(data.ok && data.token){
         window._authToken = data.token;
+        window._userRuolo = data.ruolo || 'utente';
+        window._userName  = u;
         sessionStorage.setItem(K, "tok:"+data.token);
+        sessionStorage.setItem('enpals_ruolo', data.ruolo || 'utente');
+        sessionStorage.setItem('enpals_user', u);
         document.getElementById("login-overlay").style.display="none";
         serverOk = true;
-        console.log("✓ Login server OK — token valido "+data.expires_hours+"h");
+        applicaRuolo(data.ruolo || 'utente', u);
+        console.log("✓ Login server OK — ruolo:"+data.ruolo+" token:"+data.expires_hours+"h");
       } else {
-        // Server risponde ma credenziali sbagliate
         errEl.textContent="Credenziali non valide.";
         errEl.style.display="block";
         btn.textContent="Entra"; btn.disabled=false;
         return;
       }
     } catch(e) {
-      // Server non raggiungibile — usa login locale
       console.log("Server non raggiungibile, uso login locale:", e.message);
     }
 
-    // 2. Fallback: login locale
+    // 2. Fallback: login locale (solo admin)
     if(!serverOk){
-      if(u===U && p===P){
+      var ADMINS = {'alberita':'12111957','abramelek':'22041954'};
+      if(ADMINS[u] && ADMINS[u]===p){
         window._authToken = null;
+        window._userRuolo = 'admin';
+        window._userName  = u;
         sessionStorage.setItem(K,"1");
+        sessionStorage.setItem('enpals_ruolo','admin');
+        sessionStorage.setItem('enpals_user', u);
         document.getElementById("login-overlay").style.display="none";
+        applicaRuolo('admin', u);
         console.log("✓ Login locale OK (server offline)");
+        setTimeout(function(){
+          var av=document.createElement("div");
+          av.textContent="⚠ Server non raggiungibile — accesso locale attivo";
+          av.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#92400e;color:#fef3c7;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3);";
+          document.body.appendChild(av);
+          setTimeout(function(){av.remove();},4000);
+        },300);
       } else {
         errEl.textContent="Credenziali non valide.";
         errEl.style.display="block";
@@ -537,7 +553,30 @@ self.addEventListener('fetch',e=>{
     btn.textContent="Entra"; btn.disabled=false;
   };
 
-  window.addEventListener("DOMContentLoaded", applyLogin);
+  // ── Applica restrizioni ruolo ──
+  function applicaRuolo(ruolo, user){
+    var logo = document.querySelector('.hdr-logo');
+    if(logo) logo.textContent += '  |  ' + user + (ruolo==='admin' ? ' 👑' : '');
+    if(ruolo !== 'admin'){
+      ['btn-fetch','btn-gestione','btn-salva','btn-carica'].forEach(function(cls){
+        var el = document.querySelector('.'+cls);
+        if(el) el.style.display='none';
+      });
+    } else {
+      var btnLog = document.getElementById('btn-log-admin');
+      if(btnLog) btnLog.style.display='inline-block';
+    }
+  }
+  function ripristinaRuolo(){
+    var ruolo = sessionStorage.getItem('enpals_ruolo');
+    var user  = sessionStorage.getItem('enpals_user');
+    if(ruolo && user){ window._userRuolo=ruolo; window._userName=user; applicaRuolo(ruolo, user); }
+  }
+
+  window.addEventListener("DOMContentLoaded", function(){
+    applyLogin();
+    ripristinaRuolo();
+  });
   // Aggiorna altezza header per layout mobile
   function updateHdrHeight(){
     var h=document.querySelector('.hdr');
@@ -586,6 +625,7 @@ function toggleMain(){
   <span class="hdr-anno" id="hdr-anno">Anno —</span>
   <button class="btn-ricalcola" onclick="ricalcolaTutto()">⟳ Ricalcola tutto</button>
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
+  <button id="btn-log-admin" onclick="apriPannelloLog()" style="display:none;background:rgba(255,200,0,0.2);color:#fcd34d;border:1px solid rgba(255,200,0,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza log accessi">📋 Log</button>
   <button class="btn-fetch" onclick="if(richiedeServer('Aggiorna i 3 DB'))fetchDB();" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
   <button class="btn-gestione" onclick="if(richiedeServer('Gestisci i 3 DB'))apriGestione();" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
   <button class="btn-stampa" onclick="stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
@@ -2242,5 +2282,146 @@ async function eliminaFattura(rec_nbr, rif){
   }catch(e){alert("Errore eliminazione");}
 }
 </script>
+<!-- ══ PANNELLO LOG ADMIN ══ -->
+<div id="pannello-log" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:8000;overflow:auto;padding:20px;">
+  <div style="background:#1a1a2e;border-radius:12px;max-width:900px;margin:0 auto;padding:20px;color:#e2e8f0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-family:'DM Mono',monospace;font-size:14px;color:#93c5fd;font-weight:600;">📋 Log Accessi e Utilizzo</div>
+      <button onclick="chiudiPannelloLog()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px;">✕ Chiudi</button>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button onclick="filtraLog('tutti')" class="log-filter-btn" style="background:#2563eb;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Tutti</button>
+      <button onclick="filtraLog('LOGIN')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Login</button>
+      <button onclick="filtraLog('SIMULAZIONE')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Simulazioni</button>
+      <button onclick="filtraLog('STAMPA')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Stampe</button>
+      <button onclick="filtraLog('LOGIN_FAIL')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Falliti</button>
+    </div>
+    <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+    <div style="overflow-x:auto;">
+      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#1e3a8a;color:#93c5fd;">
+            <th style="padding:8px;text-align:left;">Data/Ora</th>
+            <th style="padding:8px;text-align:left;">Utente</th>
+            <th style="padding:8px;text-align:left;">Ruolo</th>
+            <th style="padding:8px;text-align:left;">Azione</th>
+            <th style="padding:8px;text-align:left;">Dettaglio</th>
+            <th style="padding:8px;text-align:left;">IP</th>
+          </tr>
+        </thead>
+        <tbody id="log-body"></tbody>
+      </table>
+    </div>
+    <div id="log-empty" style="text-align:center;color:#6b7280;padding:30px;display:none;">Nessun log disponibile — server offline o nessuna attività registrata</div>
+  </div>
+</div>
+
+<script>
+// ══ TRACCIAMENTO AZIONI ══
+function logAzione(azione, dettaglio){
+  if(!window._authToken) return; // solo se connesso al server
+  authFetch('/log-azione',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({azione:azione, dettaglio:dettaglio})
+  }).catch(function(){});
+}
+
+// Sovrascrivi stampaFattura per tracciare
+var _origStampa = window.stampaFattura;
+if(typeof stampaFattura === 'function'){
+  var _origStampaFn = stampaFattura;
+  window.stampaFattura = function(){
+    logAzione('STAMPA', 'fattura stampata/salvata');
+    _origStampaFn.apply(this, arguments);
+  };
+}
+
+// Traccia ricalcolo (simulazione)
+var _origRicalcola = window.ricalcolaTutto;
+if(typeof ricalcolaTutto === 'function'){
+  window._ricalcolaCount = 0;
+  var _origRicalcolaFn = ricalcolaTutto;
+  window.ricalcolaTutto = function(){
+    window._ricalcolaCount = (window._ricalcolaCount||0)+1;
+    // Loga ogni 5 ricalcoli per non spammare
+    if(window._ricalcolaCount % 5 === 0){
+      logAzione('SIMULAZIONE', window._ricalcolaCount + ' ricalcoli eseguiti');
+    }
+    _origRicalcolaFn.apply(this, arguments);
+  };
+}
+
+// ══ PANNELLO LOG ══
+var _logData = [];
+
+async function apriPannelloLog(){
+  document.getElementById('pannello-log').style.display='block';
+  document.getElementById('log-body').innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#6b7280;">Caricamento...</td></tr>';
+  try {
+    var r = await authFetch('/log');
+    _logData = await r.json();
+    mostraLog(_logData);
+  } catch(e) {
+    document.getElementById('log-empty').style.display='block';
+    document.getElementById('log-body').innerHTML='';
+  }
+}
+
+function chiudiPannelloLog(){
+  document.getElementById('pannello-log').style.display='none';
+}
+
+function filtraLog(filtro){
+  var dati = filtro==='tutti' ? _logData : _logData.filter(function(r){ return r.azione && r.azione.indexOf(filtro)>=0; });
+  mostraLog(dati);
+}
+
+function mostraLog(dati){
+  var tbody = document.getElementById('log-body');
+  var empty = document.getElementById('log-empty');
+  var summary = document.getElementById('log-summary');
+
+  // Riepilogo
+  var login=0,simul=0,stampe=0,fail=0;
+  dati.forEach(function(r){
+    if(r.azione==='LOGIN') login++;
+    if(r.azione==='SIMULAZIONE') simul++;
+    if(r.azione==='STAMPA') stampe++;
+    if(r.azione==='LOGIN_FAIL') fail++;
+  });
+  summary.innerHTML = [
+    ['🔑 Login riusciti', login, '#86efac'],
+    ['📊 Simulazioni', simul, '#93c5fd'],
+    ['🖨 Stampe', stampe, '#fcd34d'],
+    ['⚠ Login falliti', fail, '#fca5a5']
+  ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:8px;text-align:center;"><div style="font-size:10px;color:#9ca3af;">'+x[0]+'</div><div style="font-size:22px;font-weight:700;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
+
+  if(!dati.length){
+    tbody.innerHTML=''; empty.style.display='block'; return;
+  }
+  empty.style.display='none';
+
+  var colori = {
+    'LOGIN':'#86efac','LOGIN_FAIL':'#fca5a5','STAMPA':'#fcd34d',
+    'SIMULAZIONE':'#93c5fd','AGGIORNA_DB':'#c4b5fd','DB_PERSONA':'#fb923c',
+    'DB_AZIENDA':'#fb923c','SALVA_FATTURA':'#34d399'
+  };
+
+  tbody.innerHTML = dati.map(function(r,i){
+    var bg = i%2===0?'#111827':'#1f2937';
+    var col = colori[r.azione]||'#e2e8f0';
+    return '<tr style="background:'+bg+';">'+
+      '<td style="padding:7px 8px;color:#9ca3af;white-space:nowrap;">'+r.ts+'</td>'+
+      '<td style="padding:7px 8px;font-weight:600;">'+r.utente+'</td>'+
+      '<td style="padding:7px 8px;color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';">'+r.ruolo+'</td>'+
+      '<td style="padding:7px 8px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;">'+r.azione+'</span></td>'+
+      '<td style="padding:7px 8px;color:#9ca3af;">'+r.dettaglio+'</td>'+
+      '<td style="padding:7px 8px;color:#6b7280;font-size:11px;">'+r.ip+'</td>'+
+      '</tr>';
+  }).join('');
+}
+</script>
+
 </body>
 </html>
