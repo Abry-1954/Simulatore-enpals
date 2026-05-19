@@ -2454,9 +2454,10 @@ function filtraLog(filtro){
 }
 
 function applicaFiltriAvanzati(){
-  var utente = ((document.getElementById('log-filter-utente')||{}).value||'').toLowerCase();
-  var lav    = ((document.getElementById('log-filter-lav')||{}).value||'').toLowerCase();
-  var az     = ((document.getElementById('log-filter-az')||{}).value||'').toLowerCase();
+  if(!_logData || !_logData.length) return;
+  var utente = ((document.getElementById('log-filter-utente')||{}).value||'').toLowerCase().trim();
+  var lav    = ((document.getElementById('log-filter-lav')||{}).value||'').toLowerCase().trim();
+  var az     = ((document.getElementById('log-filter-az')||{}).value||'').toLowerCase().trim();
   var imp    = parseFloat((document.getElementById('log-filter-imp')||{}).value||'0') || 0;
   var da     = ((document.getElementById('log-filter-da')||{}).value||'');
   var a      = ((document.getElementById('log-filter-a')||{}).value||'');
@@ -2516,6 +2517,7 @@ function apriDettaglioLog(idx){
   overlay.id = 'log-popup-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
   overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+  box.onclick = function(e){ e.stopPropagation(); };
 
   var box = document.createElement('div');
   box.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);';
@@ -2557,7 +2559,7 @@ function apriDettaglioLog(idx){
   var btn = document.createElement('button');
   btn.style.cssText = 'margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;';
   btn.textContent = 'Chiudi';
-  btn.onclick = function(){ overlay.remove(); };
+  btn.onclick = function(e){ e.stopPropagation(); overlay.remove(); };
   box.appendChild(btn);
 
   overlay.appendChild(box);
