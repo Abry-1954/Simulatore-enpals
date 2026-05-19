@@ -2289,13 +2289,22 @@ async function eliminaFattura(rec_nbr, rif){
       <div style="font-family:'DM Mono',monospace;font-size:14px;color:#93c5fd;font-weight:600;">📋 Log Accessi e Utilizzo</div>
       <button onclick="chiudiPannelloLog()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px;">✕ Chiudi</button>
     </div>
-    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+    <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
       <button onclick="filtraLog('tutti')" class="log-filter-btn" style="background:#2563eb;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Tutti</button>
       <button onclick="filtraLog('LOGIN')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Login</button>
-      <button onclick="caricaLogGithub()" class="log-filter-btn" style="background:#065f46;color:#34d399;border:1px solid #34d39944;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">☁ Log GitHub</button>
       <button onclick="filtraLog('SIMULAZIONE')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Simulazioni</button>
       <button onclick="filtraLog('STAMPA')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Stampe</button>
       <button onclick="filtraLog('LOGIN_FAIL')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Falliti</button>
+      <button onclick="caricaLogGithub()" class="log-filter-btn" style="background:#065f46;color:#34d399;border:1px solid #34d39944;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">☁ GitHub</button>
+    </div>
+    <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <input id="log-filter-utente" placeholder="👤 Utente..." oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;width:110px;">
+      <input id="log-filter-lav" placeholder="🎭 Lavoratore..." oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;width:130px;">
+      <input id="log-filter-az" placeholder="🏢 Azienda..." oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;width:120px;">
+      <input id="log-filter-imp" placeholder="€ Importo min..." oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;width:110px;" type="number">
+      <input id="log-filter-da" type="date" oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;">
+      <input id="log-filter-a" type="date" oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;">
+      <button onclick="resetFiltriAvanzati()" style="background:#374151;color:#9ca3af;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:11px;">✕ Reset</button>
     </div>
     <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
     <div style="overflow-x:auto;">
@@ -2347,7 +2356,13 @@ var _origStampa = window.stampaFattura;
 if(typeof stampaFattura === 'function'){
   var _origStampaFn = stampaFattura;
   window.stampaFattura = function(){
-    logAzione('STAMPA', 'fattura stampata/salvata');
+    // Raccoglie dettagli fattura per il log
+    var _lav = document.getElementById('inp-nom')?.value?.trim() || '';
+    var _az  = document.getElementById('az-name')?.textContent?.trim() || '';
+    var _imp = document.getElementById('t-netto')?.textContent?.trim() || '';
+    var _rif = document.getElementById('inp-rif') ? document.getElementById('inp-rif').value : '';
+    var _det = [_lav, _az, _imp].filter(Boolean).join(' | ');
+    logAzione('STAMPA', _det);
     _origStampaFn.apply(this, arguments);
   };
 }
@@ -2361,7 +2376,11 @@ if(typeof ricalcolaTutto === 'function'){
     window._ricalcolaCount = (window._ricalcolaCount||0)+1;
     // Loga ogni 5 ricalcoli per non spammare
     if(window._ricalcolaCount % 5 === 0){
-      logAzione('SIMULAZIONE', window._ricalcolaCount + ' ricalcoli eseguiti');
+      var _lavS = document.getElementById('inp-nom')?.value?.trim() || '';
+      var _azS  = document.getElementById('az-name')?.textContent?.trim() || '';
+      var _impS = document.getElementById('t-netto')?.textContent?.trim() || '';
+      var _detS = window._ricalcolaCount + ' ricalcoli' + (_lavS ? ' | '+_lavS : '') + (_impS && _impS!=='—' ? ' | '+_impS : '');
+      logAzione('SIMULAZIONE', _detS);
     }
     _origRicalcolaFn.apply(this, arguments);
   };
@@ -2419,6 +2438,79 @@ async function apriPannelloLog(){
   }
 }
 
+// ── Filtri avanzati ──
+var _filtroAzione = 'tutti';
+
+function filtraLog(filtro){
+  _filtroAzione = filtro;
+  applicaFiltriAvanzati();
+}
+
+function applicaFiltriAvanzati(){
+  var utente = (document.getElementById('log-filter-utente')?.value||'').toLowerCase();
+  var lav    = (document.getElementById('log-filter-lav')?.value||'').toLowerCase();
+  var az     = (document.getElementById('log-filter-az')?.value||'').toLowerCase();
+  var imp    = parseFloat(document.getElementById('log-filter-imp')?.value||'0') || 0;
+  var da     = document.getElementById('log-filter-da')?.value || '';
+  var a      = document.getElementById('log-filter-a')?.value || '';
+
+  var dati = _logData.filter(function(r){
+    // Filtro azione
+    if(_filtroAzione !== 'tutti' && (!r.azione || r.azione.indexOf(_filtroAzione) < 0)) return false;
+    // Filtro utente
+    if(utente && (!r.utente || r.utente.toLowerCase().indexOf(utente) < 0)) return false;
+    // Filtro lavoratore/azienda/importo (dal campo dettaglio)
+    var det = (r.dettaglio||'').toLowerCase();
+    if(lav && det.indexOf(lav) < 0) return false;
+    if(az  && det.indexOf(az)  < 0) return false;
+    // Filtro importo
+    if(imp > 0){
+      var match = det.match(/([0-9]+[.,][0-9]+)/);
+      if(!match) return false;
+      var val = parseFloat(match[1].replace(',','.'));
+      if(val < imp) return false;
+    }
+    // Filtro date
+    if(da && r.ts && r.ts.substring(0,10) < da) return false;
+    if(a  && r.ts && r.ts.substring(0,10) > a)  return false;
+    return true;
+  });
+  mostraLog(dati);
+}
+
+function resetFiltriAvanzati(){
+  _filtroAzione = 'tutti';
+  ['log-filter-utente','log-filter-lav','log-filter-az','log-filter-imp','log-filter-da','log-filter-a'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  mostraLog(_logData);
+}
+
+// ── Popup dettaglio riga ──
+function _rigaLog(label, val){
+  if(!val) return '';
+  return '<div style="margin-bottom:10px;"><div style="font-size:10px;color:#64748b;margin-bottom:2px;">'+label+'</div><div style="color:#e2e8f0;font-size:13px;font-weight:500;">'+val+'</div></div>';
+}
+
+function apriDettaglioLog(r){
+  var parti = (r.dettaglio||'').split(' | ');
+  var html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="this.remove()">'+
+    '<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);" onclick="event.stopPropagation()">'+
+    '<div style="font-family:DM Mono,monospace;font-size:11px;color:#60a5fa;margin-bottom:16px;letter-spacing:.1em;">DETTAGLIO LOG</div>'+
+    _rigaLog('📅 Data/Ora', r.ts)+
+    _rigaLog('👤 Utente', r.utente + ' (' + r.ruolo + ')')+
+    _rigaLog('⚡ Azione', r.azione)+
+    (parti[0] ? _rigaLog('🎭 Lavoratore', parti[0]) : '')+
+    (parti[1] ? _rigaLog('🏢 Azienda', parti[1]) : '')+
+    (parti[2] ? _rigaLog('💶 Importo', parti[2]) : '')+
+    (r.dettaglio && parti.length===1 ? _rigaLog('📝 Dettaglio', r.dettaglio) : '')+
+    _rigaLog('🌐 IP', (r.ip||'').split(',')[0])+
+    '<button onclick="this.closest('div[style*=fixed]').remove()" style="margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;">Chiudi</button>'+
+    '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
 function chiudiPannelloLog(){
   document.getElementById('pannello-log').style.display='none';
 }
@@ -2462,13 +2554,17 @@ function mostraLog(dati){
   tbody.innerHTML = dati.map(function(r,i){
     var bg = i%2===0?'#111827':'#1f2937';
     var col = colori[r.azione]||'#e2e8f0';
-    return '<tr style="background:'+bg+';">'+
-      '<td style="padding:7px 8px;color:#9ca3af;white-space:nowrap;">'+r.ts+'</td>'+
+    var det = r.dettaglio || '';
+    // Estrae parti dal dettaglio (formato: "lavoratore | azienda | importo")
+    var parti = det.split(' | ');
+    var detBreve = det.length > 50 ? det.substring(0,50)+'...' : det;
+    return '<tr style="background:'+bg+';cursor:pointer;" onclick="apriDettaglioLog('+JSON.stringify(r)+')" title="Clicca per dettagli">'+
+      '<td style="padding:7px 8px;color:#9ca3af;white-space:nowrap;font-size:11px;">'+r.ts+'</td>'+
       '<td style="padding:7px 8px;font-weight:600;">'+r.utente+'</td>'+
       '<td style="padding:7px 8px;color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';">'+r.ruolo+'</td>'+
       '<td style="padding:7px 8px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;">'+r.azione+'</span></td>'+
-      '<td style="padding:7px 8px;color:#9ca3af;">'+r.dettaglio+'</td>'+
-      '<td style="padding:7px 8px;color:#6b7280;font-size:11px;">'+r.ip+'</td>'+
+      '<td style="padding:7px 8px;color:#9ca3af;font-size:12px;">'+detBreve+'</td>'+
+      '<td style="padding:7px 8px;color:#6b7280;font-size:10px;">'+( r.ip ? r.ip.split(',')[0] : '')+'</td>'+
       '</tr>';
   }).join('');
 }
