@@ -1539,6 +1539,9 @@ function stampaFattura(titoloPDF){
   var nomEl=document.getElementById("inp-nom");
   var nominativo=nomEl?nomEl.value.trim():"";
   if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
+
+  // ── Traccia la stampa nel log ──
+  logAzione('STAMPA', _dettaglioFattura());
   var persona=DB.persone.find(function(p){return p.nominativo===nominativo;})||{};
   var via=document.getElementById("nom-via")?.textContent||"";
   var comune=document.getElementById("nom-comune")?.textContent||"";
@@ -2383,14 +2386,7 @@ function _dettaglioFattura(){
   return [lav, data, tl, tit, az, imp].join('|');
 }
 
-// Sovrascrivi stampaFattura per tracciare
-if(typeof stampaFattura === 'function'){
-  var _origStampaFn = stampaFattura;
-  window.stampaFattura = function(){
-    logAzione('STAMPA', _dettaglioFattura());
-    _origStampaFn.apply(this, arguments);
-  };
-}
+// Il tracciamento STAMPA è integrato direttamente in stampaFattura() — vedi sotto
 
 // Traccia ricalcolo (simulazione) — loga solo sul pulsante "Ricalcola tutto" manuale
 // NON loga automaticamente ogni N ricalcoli per evitare inquinamento del campo Lavoratore nel log
