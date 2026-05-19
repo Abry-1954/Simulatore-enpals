@@ -2347,26 +2347,45 @@ async function eliminaFattura(rec_nbr, rif){
 <script>
 // ══ TRACCIAMENTO AZIONI ══
 function logAzione(azione, dettaglio){
-  var payload = JSON.stringify({azione:azione, dettaglio:dettaglio});
-  var headers = {'Content-Type':'application/json'};
+  // Sanifica il dettaglio: rimuove caratteri che potrebbero rompere JSON sul server
+  // Sostituisce apostrofi tipografici e normalizza
+  var detSafe = (dettaglio||'')
+    .replace(/’/g, "'")   // apostrofo curvo → dritto
+    .replace(/‘/g, "'")
+    .replace(/“/g, '"')
+    .replace(/”/g, '"');
+
+  var payload = JSON.stringify({azione: azione, dettaglio: detSafe});
 
   // 1. Manda al server locale se disponibile
   authFetch('/log-azione',{
-    method:'POST', headers:headers, body:payload
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:payload
   }).catch(function(){});
 
-  // 2. Manda sempre a Render (persistente su GitHub)
+  // 2. Manda a Render (persistente su GitHub)
   var tok = window._authToken || (function(){
     var s = sessionStorage.getItem('enpals_auth');
     return (s && s.startsWith('tok:')) ? s.slice(4) : null;
   })();
-  if(tok){
-    fetch('https://enpals-server.onrender.com/log-azione',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
-      body:payload
-    }).catch(function(){});
-  }
+  var hdrs = {'Content-Type':'application/json'};
+  if(tok) hdrs['Authorization'] = 'Bearer ' + tok;
+
+  fetch('https://enpals-server.onrender.com/log-azione',{
+    method:'POST',
+    headers: hdrs,
+    body: payload
+  }).then(function(r){
+    if(!r.ok){
+      console.warn('Log '+azione+' HTTP '+r.status);
+      r.text().then(function(t){ console.warn('Risposta server:', t); });
+    } else {
+      console.log('Log '+azione+' OK');
+    }
+  }).catch(function(e){
+    console.warn('Log '+azione+' errore rete:', e.message);
+  });
 }
 
 // ── Helper: raccoglie dettagli fattura per il log ──
@@ -2397,7 +2416,7 @@ var _logData = [];
 
 async function caricaLogGithub(){
   document.getElementById('pannello-log').style.display='block';
-  document.getElementById('log-body').innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
+  document.getElementById('log-body').innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
   try {
     // Legge direttamente da GitHub API — non serve token per repository privato con raw URL
     // Usa GitHub API raw content
@@ -2436,14 +2455,28 @@ async function caricaLogGithub(){
 
 async function apriPannelloLog(){
   document.getElementById('pannello-log').style.display='block';
-  document.getElementById('log-body').innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#6b7280;">Caricamento...</td></tr>';
+  document.getElementById('log-body').innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log...</td></tr>';
+  document.getElementById('log-empty').style.display='none';
+
+  // 1. Prova server locale
+  var localOk = false;
   try {
     var r = await authFetch('/log');
-    _logData = await r.json();
-    mostraLog(_logData);
-  } catch(e) {
-    document.getElementById('log-empty').style.display='block';
-    document.getElementById('log-body').innerHTML='';
+    if(r && r.ok){
+      var dati = await r.json();
+      if(dati && dati.length){
+        _logData = dati;
+        mostraLog(_logData);
+        document.querySelector('#pannello-log div div:first-child div:first-child').textContent = '📋 Log locale — ' + dati.length + ' righe';
+        localOk = true;
+      }
+    }
+  } catch(e) { /* server locale non disponibile */ }
+
+  // 2. Fallback automatico a GitHub se locale non ha dati
+  if(!localOk){
+    document.getElementById('log-body').innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:#6b7280;">⏳ Server locale offline — carico da GitHub...</td></tr>';
+    await caricaLogGithub();
   }
 }
 
