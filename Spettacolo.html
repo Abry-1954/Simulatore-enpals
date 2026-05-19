@@ -2360,22 +2360,30 @@ async function caricaLogGithub(){
   document.getElementById('pannello-log').style.display='block';
   document.getElementById('log-body').innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
   try {
-    var r = await authFetch('/log-github');
+    // Legge direttamente da GitHub API — non serve token per repository privato con raw URL
+    // Usa GitHub API raw content
+    // Prima prova tramite server Render (ha il token GitHub)
+    var SERVER_RENDER = 'https://enpals-server.onrender.com';
+    var r = await fetch(SERVER_RENDER + '/log-github', {
+      headers: window._authToken ? {'Authorization': 'Bearer ' + window._authToken} : {}
+    });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
     var dati = await r.json();
     if(dati && dati.length){
-      _logData = dati.reverse(); // più recenti prima
+      // Ordina per data decrescente (più recenti prima)
+      dati.sort(function(a,b){ return b.ts.localeCompare(a.ts); });
+      _logData = dati;
       mostraLog(_logData);
-      // Aggiorna titolo
       document.querySelector('#pannello-log div div:first-child div:first-child').textContent = '☁ Log GitHub — ' + dati.length + ' righe';
     } else {
       document.getElementById('log-empty').style.display='block';
       document.getElementById('log-body').innerHTML='';
-      document.getElementById('log-empty').textContent='Nessun log su GitHub — configura GITHUB_TOKEN su Render';
+      document.getElementById('log-empty').textContent='Nessun log ancora su GitHub — fai alcune azioni e riprova tra 30 secondi';
     }
   } catch(e) {
     document.getElementById('log-empty').style.display='block';
     document.getElementById('log-body').innerHTML='';
-    document.getElementById('log-empty').textContent='Errore caricamento log GitHub: ' + e.message;
+    document.getElementById('log-empty').textContent='Errore: ' + e.message + ' — il repository potrebbe essere privato';
   }
 }
 
