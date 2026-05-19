@@ -2292,6 +2292,7 @@ async function eliminaFattura(rec_nbr, rif){
     <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
       <button onclick="filtraLog('tutti')" class="log-filter-btn" style="background:#2563eb;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Tutti</button>
       <button onclick="filtraLog('LOGIN')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Login</button>
+      <button onclick="caricaLogGithub()" class="log-filter-btn" style="background:#065f46;color:#34d399;border:1px solid #34d39944;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">☁ Log GitHub</button>
       <button onclick="filtraLog('SIMULAZIONE')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Simulazioni</button>
       <button onclick="filtraLog('STAMPA')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Stampe</button>
       <button onclick="filtraLog('LOGIN_FAIL')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Falliti</button>
@@ -2354,6 +2355,29 @@ if(typeof ricalcolaTutto === 'function'){
 
 // ══ PANNELLO LOG ══
 var _logData = [];
+
+async function caricaLogGithub(){
+  document.getElementById('pannello-log').style.display='block';
+  document.getElementById('log-body').innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
+  try {
+    var r = await authFetch('/log-github');
+    var dati = await r.json();
+    if(dati && dati.length){
+      _logData = dati.reverse(); // più recenti prima
+      mostraLog(_logData);
+      // Aggiorna titolo
+      document.querySelector('#pannello-log div div:first-child div:first-child').textContent = '☁ Log GitHub — ' + dati.length + ' righe';
+    } else {
+      document.getElementById('log-empty').style.display='block';
+      document.getElementById('log-body').innerHTML='';
+      document.getElementById('log-empty').textContent='Nessun log su GitHub — configura GITHUB_TOKEN su Render';
+    }
+  } catch(e) {
+    document.getElementById('log-empty').style.display='block';
+    document.getElementById('log-body').innerHTML='';
+    document.getElementById('log-empty').textContent='Errore caricamento log GitHub: ' + e.message;
+  }
+}
 
 async function apriPannelloLog(){
   document.getElementById('pannello-log').style.display='block';
