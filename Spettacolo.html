@@ -516,8 +516,10 @@ self.addEventListener('fetch',e=>{
         document.getElementById("login-overlay").style.display="none";
         serverOk = true;
         applicaRuolo(data.ruolo || 'utente', u);
+        logAzione('LOGIN OK', u + ' — login riuscito (server)');
         console.log("✓ Login server OK — ruolo:"+data.ruolo+" token:"+data.expires_hours+"h");
       } else {
+        logAzione('LOGIN KO CREDENZIALI ERRATE', u + ' — credenziali errate');
         errEl.textContent="Credenziali non valide.";
         errEl.style.display="block";
         btn.textContent="Entra"; btn.disabled=false;
@@ -539,6 +541,7 @@ self.addEventListener('fetch',e=>{
         sessionStorage.setItem('enpals_user', u);
         document.getElementById("login-overlay").style.display="none";
         applicaRuolo('admin', u);
+        logAzione('LOGIN OK', u + ' — login riuscito (locale)');
         console.log("✓ Login locale OK (server offline)");
         setTimeout(function(){
           var av=document.createElement("div");
@@ -548,6 +551,7 @@ self.addEventListener('fetch',e=>{
           setTimeout(function(){av.remove();},4000);
         },300);
       } else {
+        logAzione('LOGIN KO CREDENZIALI ERRATE', u + ' — credenziali errate (locale)');
         errEl.textContent="Credenziali non valide.";
         errEl.style.display="block";
       }
@@ -2288,17 +2292,17 @@ async function eliminaFattura(rec_nbr, rif){
 </script>
 <!-- ══ PANNELLO LOG ADMIN ══ -->
 <div id="pannello-log" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:8000;overflow:auto;padding:20px;">
-  <div style="background:#1a1a2e;border-radius:12px;max-width:900px;margin:0 auto;padding:20px;color:#e2e8f0;">
+  <div style="background:#1a1a2e;border-radius:12px;max-width:1300px;margin:0 auto;padding:20px;color:#e2e8f0;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="font-family:'DM Mono',monospace;font-size:14px;color:#93c5fd;font-weight:600;">📋 Log Accessi e Utilizzo</div>
       <button onclick="chiudiPannelloLog()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px;">✕ Chiudi</button>
     </div>
     <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
       <button onclick="filtraLog('tutti')" class="log-filter-btn" style="background:#2563eb;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Tutti</button>
-      <button onclick="filtraLog('LOGIN')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Login</button>
-      <button onclick="filtraLog('SIMULAZIONE')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Simulazioni</button>
-      <button onclick="filtraLog('STAMPA')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Stampe</button>
-      <button onclick="filtraLog('LOGIN_FAIL')" class="log-filter-btn" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">Falliti</button>
+      <button onclick="filtraLog('LOGIN OK')" class="log-filter-btn" style="background:#374151;color:#86efac;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✅ Login OK</button>
+      <button onclick="filtraLog('LOGIN KO')" class="log-filter-btn" style="background:#374151;color:#fca5a5;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">❌ Login KO</button>
+      <button onclick="filtraLog('SIMULAZIONE')" class="log-filter-btn" style="background:#374151;color:#93c5fd;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">📊 Simulazioni</button>
+      <button onclick="filtraLog('STAMPA')" class="log-filter-btn" style="background:#374151;color:#fcd34d;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🖨 Stampe</button>
       <button onclick="caricaLogGithub()" class="log-filter-btn" style="background:#065f46;color:#34d399;border:1px solid #34d39944;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">☁ GitHub</button>
     </div>
     <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
@@ -2312,7 +2316,7 @@ async function eliminaFattura(rec_nbr, rif){
     </div>
     <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
     <div style="overflow-x:auto;">
-      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px;">
+      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px;">
         <thead>
           <tr style="background:#1e3a8a;color:#93c5fd;">
             <th style="padding:8px;text-align:left;white-space:nowrap;">Data/Ora</th>
@@ -2363,15 +2367,19 @@ if(typeof stampaFattura === 'function'){
   var _origStampaFn = stampaFattura;
   window.stampaFattura = function(){
     // Raccoglie dettagli fattura per il log
-    var _lav = (document.getElementById('nom-name') ? document.getElementById('nom-name').textContent.trim() : '') || (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
-    var _az  = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
-    var _imp = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
-    var _rif = document.getElementById('inp-rif') ? document.getElementById('inp-rif').value : '';
-    // Esclude valori vuoti o segnaposto
+    var _lav  = (document.getElementById('nom-name') ? document.getElementById('nom-name').textContent.trim() : '') || (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
+    var _data = (document.getElementById('dl_1') ? document.getElementById('dl_1').value : '');
+    var _tl   = (document.getElementById('tl_1') ? document.getElementById('tl_1').value.trim() : '');
+    var _tit  = (document.getElementById('tit_1') ? document.getElementById('tit_1').value.trim() : '');
+    var _az   = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
+    var _imp  = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
+    // Pulizia valori vuoti o segnaposto
     if(_lav === '—') _lav = '';
     if(_az  === '—') _az  = '';
     if(_imp === '—') _imp = '';
-    var _det = [_lav, _az, _imp].filter(Boolean).join(' | ');
+    if(_imp && !_imp.startsWith('€')) _imp = '€ ' + _imp;
+    var _parts = [_lav, _data, _tl, _tit, _az, _imp].map(function(s){ return (s||'').trim(); }).filter(Boolean);
+    var _det = _parts.join('_');
     if(!_det) _det = 'fattura stampata/salvata';
     logAzione('STAMPA', _det);
     _origStampaFn.apply(this, arguments);
@@ -2515,7 +2523,7 @@ function apriDettaglioLog(idx){
   var old = document.getElementById('log-popup-overlay');
   if(old) old.remove();
 
-  var parti = (r.dettaglio||'').split(' | ');
+  var parti = (r.dettaglio||'').split('_');
   var isStampa = r.azione === 'STAMPA';
   var isSimul  = r.azione === 'SIMULAZIONE';
 
@@ -2536,8 +2544,11 @@ function apriDettaglioLog(idx){
   ];
   if(isStampa || isSimul){
     if(parti[0]) righe.push(['🎭 Lavoratore', parti[0]]);
-    if(parti[1]) righe.push(['🏢 Azienda', parti[1]]);
-    if(parti[2]) righe.push(['💶 Importo', parti[2]]);
+    if(parti[1]) righe.push(['📅 Data lavoro', parti[1]]);
+    if(parti[2]) righe.push(['🎬 Tipo lavoro', parti[2]]);
+    if(parti[3]) righe.push(['📝 Titolo', parti[3]]);
+    if(parti[4]) righe.push(['🏢 Azienda', parti[4]]);
+    if(parti[5]) righe.push(['💶 Importo netto', parti[5]]);
   } else {
     righe.push(['📝 Dettaglio', r.dettaglio || '']);
   }
@@ -2590,10 +2601,10 @@ function mostraLog(dati){
   // Riepilogo
   var login=0,simul=0,stampe=0,fail=0;
   dati.forEach(function(r){
-    if(r.azione==='LOGIN') login++;
+    if(r.azione==='LOGIN OK') login++;
     if(r.azione==='SIMULAZIONE') simul++;
     if(r.azione==='STAMPA') stampe++;
-    if(r.azione==='LOGIN_FAIL') fail++;
+    if(r.azione==='LOGIN KO CREDENZIALI ERRATE') fail++;
   });
   summary.innerHTML = [
     ['🔑 Login riusciti', login, '#86efac'],
@@ -2608,7 +2619,7 @@ function mostraLog(dati){
   empty.style.display='none';
 
   var colori = {
-    'LOGIN':'#86efac','LOGIN_FAIL':'#fca5a5','STAMPA':'#fcd34d',
+    'LOGIN OK':'#86efac','LOGIN KO CREDENZIALI ERRATE':'#fca5a5','STAMPA':'#fcd34d',
     'SIMULAZIONE':'#93c5fd','AGGIORNA_DB':'#c4b5fd','DB_PERSONA':'#fb923c',
     'DB_AZIENDA':'#fb923c','SALVA_FATTURA':'#34d399'
   };
@@ -2617,13 +2628,14 @@ function mostraLog(dati){
     var bg = i%2===0?'#111827':'#1f2937';
     var col = colori[r.azione]||'#e2e8f0';
     var det = r.dettaglio || '';
-    // Separa dettaglio in parti: lavoratore | azienda | importo
-    var parti = det.split(' | ');
+    // Separa dettaglio in parti: lavoratore_data_tipolavoro_titolo_azienda_importo
+    var parti = det.split('_');
     var isStampa = r.azione==='STAMPA' || r.azione==='SIMULAZIONE';
+    // Per STAMPA: parti[0]=lavoratore, parti[4]=azienda, parti[5]=importo
     var lavoratore = isStampa && parti[0] ? parti[0] : (isStampa ? '' : det);
-    var azienda    = isStampa && parti[1] ? parti[1] : '';
-    var importo    = isStampa && parti[2] ? parti[2] : '';
-    var detSemplice = !isStampa ? (det.length>30 ? det.substring(0,30)+'...' : det) : '';
+    var azienda    = isStampa && parti[4] ? parti[4] : '';
+    var importo    = isStampa && parti[5] ? parti[5] : '';
+    var detSemplice = !isStampa ? (det.length>40 ? det.substring(0,40)+'...' : det) : '';
     var ip = r.ip ? r.ip.split(',')[0].trim() : '';
     return '<tr style="background:'+bg+';">'+
       '<td style="padding:6px 8px;color:#9ca3af;white-space:nowrap;font-size:11px;">'+r.ts+'</td>'+
