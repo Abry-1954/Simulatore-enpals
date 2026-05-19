@@ -2504,7 +2504,7 @@ function apriDettaglioLog(idx){
   var r = (window._logRighe || [])[idx];
   if(!r) return;
   var parti = (r.dettaglio||'').split(' | ');
-  var html = '<div data-log-popup style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="this.remove()">'+
+  var html = '<div id="log-popup-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="this.remove()">'+
     '<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);" onclick="event.stopPropagation()">'+
     '<div style="font-family:DM Mono,monospace;font-size:11px;color:#60a5fa;margin-bottom:16px;letter-spacing:.1em;">DETTAGLIO LOG</div>'+
     _rigaLog('📅 Data/Ora', r.ts)+
@@ -2515,7 +2515,7 @@ function apriDettaglioLog(idx){
     (parti[2] ? _rigaLog('💶 Importo', parti[2]) : '')+
     (r.dettaglio && parti.length===1 ? _rigaLog('📝 Dettaglio', r.dettaglio) : '')+
     _rigaLog('🌐 IP', (r.ip||'').split(',')[0])+
-    '<button onclick="document.querySelectorAll(\"[data-log-popup]\")[0].remove()" style="margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;">Chiudi</button>'+
+    '<button onclick="document.getElementById(\"log-popup-overlay\").remove()" style="margin-top:16px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px;cursor:pointer;font-size:13px;">Chiudi</button>'+
     '</div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
 }
