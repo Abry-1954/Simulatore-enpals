@@ -2349,11 +2349,7 @@ async function eliminaFattura(rec_nbr, rif){
 function logAzione(azione, dettaglio){
   // Sanifica il dettaglio: rimuove caratteri che potrebbero rompere JSON sul server
   // Sostituisce apostrofi tipografici e normalizza
-  var detSafe = (dettaglio||'')
-    .replace(/’/g, "'")   // apostrofo curvo → dritto
-    .replace(/‘/g, "'")
-    .replace(/“/g, '"')
-    .replace(/”/g, '"');
+    var detSafe = (dettaglio||'');
 
   var payload = JSON.stringify({azione: azione, dettaglio: detSafe});
 
