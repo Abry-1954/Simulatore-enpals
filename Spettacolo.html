@@ -2312,14 +2312,16 @@ async function eliminaFattura(rec_nbr, rif){
     </div>
     <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
     <div style="overflow-x:auto;">
-      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px;">
         <thead>
           <tr style="background:#1e3a8a;color:#93c5fd;">
-            <th style="padding:8px;text-align:left;">Data/Ora</th>
+            <th style="padding:8px;text-align:left;white-space:nowrap;">Data/Ora</th>
             <th style="padding:8px;text-align:left;">Utente</th>
             <th style="padding:8px;text-align:left;">Ruolo</th>
             <th style="padding:8px;text-align:left;">Azione</th>
-            <th style="padding:8px;text-align:left;">Dettaglio</th>
+            <th style="padding:8px;text-align:left;">Lavoratore</th>
+            <th style="padding:8px;text-align:left;">Azienda</th>
+            <th style="padding:8px;text-align:left;">Importo</th>
             <th style="padding:8px;text-align:left;">IP</th>
           </tr>
         </thead>
@@ -2606,20 +2608,27 @@ function mostraLog(dati){
     'DB_AZIENDA':'#fb923c','SALVA_FATTURA':'#34d399'
   };
 
-  // Salva dati per click su riga
-  window._logRighe = dati;
   tbody.innerHTML = dati.map(function(r,i){
     var bg = i%2===0?'#111827':'#1f2937';
     var col = colori[r.azione]||'#e2e8f0';
     var det = r.dettaglio || '';
-    var detBreve = det.length > 50 ? det.substring(0,50)+'...' : det;
-    return '<tr style="background:'+bg+';cursor:pointer;" onclick="apriDettaglioLog('+i+')" title="Clicca per dettagli">'+
-      '<td style="padding:7px 8px;color:#9ca3af;white-space:nowrap;font-size:11px;">'+r.ts+'</td>'+
-      '<td style="padding:7px 8px;font-weight:600;">'+r.utente+'</td>'+
-      '<td style="padding:7px 8px;color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';">'+r.ruolo+'</td>'+
-      '<td style="padding:7px 8px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;">'+r.azione+'</span></td>'+
-      '<td style="padding:7px 8px;color:#9ca3af;font-size:12px;">'+detBreve+'</td>'+
-      '<td style="padding:7px 8px;color:#6b7280;font-size:10px;">'+( r.ip ? r.ip.split(',')[0] : '')+'</td>'+
+    // Separa dettaglio in parti: lavoratore | azienda | importo
+    var parti = det.split(' | ');
+    var isStampa = r.azione==='STAMPA' || r.azione==='SIMULAZIONE';
+    var lavoratore = isStampa && parti[0] ? parti[0] : (isStampa ? '' : det);
+    var azienda    = isStampa && parti[1] ? parti[1] : '';
+    var importo    = isStampa && parti[2] ? parti[2] : '';
+    var detSemplice = !isStampa ? (det.length>30 ? det.substring(0,30)+'...' : det) : '';
+    var ip = r.ip ? r.ip.split(',')[0].trim() : '';
+    return '<tr style="background:'+bg+';">'+
+      '<td style="padding:6px 8px;color:#9ca3af;white-space:nowrap;font-size:11px;">'+r.ts+'</td>'+
+      '<td style="padding:6px 8px;font-weight:600;font-size:12px;">'+r.utente+'</td>'+
+      '<td style="padding:6px 8px;color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';font-size:12px;">'+r.ruolo+'</td>'+
+      '<td style="padding:6px 8px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;">'+r.azione+'</span></td>'+
+      '<td style="padding:6px 8px;color:#e2e8f0;font-size:12px;">'+lavoratore+detSemplice+'</td>'+
+      '<td style="padding:6px 8px;color:#cbd5e1;font-size:12px;">'+azienda+'</td>'+
+      '<td style="padding:6px 8px;color:#fcd34d;font-size:12px;white-space:nowrap;">'+importo+'</td>'+
+      '<td style="padding:6px 8px;color:#6b7280;font-size:10px;white-space:nowrap;">'+ip+'</td>'+
       '</tr>';
   }).join('');
 }
