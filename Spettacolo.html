@@ -1531,6 +1531,10 @@ function fmtDataNascita(val){
   return fmtDataNascitaSidebar(val);
 }
 
+function escHtml(s){
+  return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
 function stampaFattura(titoloPDF){
   var nomEl=document.getElementById("inp-nom");
   var nominativo=nomEl?nomEl.value.trim():"";
@@ -1607,7 +1611,7 @@ function stampaFattura(titoloPDF){
   var pageTitle=titoloPDF||_parts.join("_");
 
   var html="<!DOCTYPE html><html lang=\"it\"><head><meta charset=\"UTF-8\">"+
-  "<title>"+pageTitle+"</title>"+
+  "<title>"+escHtml(pageTitle)+"</title>"+
   "<style>*{box-sizing:border-box;margin:0;padding:0;}"+
   "@page{size:A4 portrait;margin:12mm 10mm;}"+
   "body{font-family:\"Segoe UI\",Arial,sans-serif;font-size:10px;color:#222;background:#fff;}"+
@@ -1645,24 +1649,24 @@ function stampaFattura(titoloPDF){
   "<button onclick=\"window.print()\" style=\"background:#1e3a8a;color:#fff;border:none;border-radius:5px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;\">&#128424; 1. Stampa / Salva PDF</button>"+
   
   "<button onclick=\"window.close()\" style=\"background:#888;color:#fff;border:none;border-radius:5px;padding:7px 12px;font-size:12px;cursor:pointer;\">&#10005; Chiudi</button></div>"+
-  "<div class=\"doc-title\"><h1>ENPALS &mdash; FATTURAZIONE</h1><h2>"+tf1+"</h2></div>"+
+  "<div class=\"doc-title\"><h1>ENPALS &mdash; FATTURAZIONE</h1><h2>"+escHtml(tf1)+"</h2></div>"+
   "<div class=\"header\">"+
   "<div class=\"col\"><div class=\"col-title\">Lavoratore</div>"+
-  "<div class=\"row\"><span class=\"lbl\">Nominativo</span><span class=\"val\"><strong>"+nominativo+"</strong></span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Indirizzo</span><span class=\"val\">"+via+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">CAP / Citt&agrave;</span><span class=\"val\">"+cap+" "+comune+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Luogo nascita</span><span class=\"val\">"+luogoN+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Data nascita</span><span class=\"val\">"+dataN+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Cod. Fiscale</span><span class=\"val\">"+cf+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">P.IVA</span><span class=\"val\">"+(piva||"&mdash;")+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Matr. ENPALS</span><span class=\"val\">"+(matr||"&mdash;")+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">IBAN</span><span class=\"val\">"+(iban||"&mdash;")+"</span></div></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Nominativo</span><span class=\"val\"><strong>"+escHtml(nominativo)+"</strong></span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Indirizzo</span><span class=\"val\">"+escHtml(via)+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">CAP / Citt&agrave;</span><span class=\"val\">"+escHtml(cap)+" "+escHtml(comune)+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Luogo nascita</span><span class=\"val\">"+escHtml(luogoN)+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Data nascita</span><span class=\"val\">"+escHtml(dataN)+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Cod. Fiscale</span><span class=\"val\">"+escHtml(cf)+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">P.IVA</span><span class=\"val\">"+(piva?escHtml(piva):"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Matr. ENPALS</span><span class=\"val\">"+(matr?escHtml(matr):"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">IBAN</span><span class=\"val\">"+(iban?escHtml(iban):"&mdash;")+"</span></div></div>"+
   "<div class=\"col\"><div class=\"col-title\">Spett.le Societ&agrave;</div>"+
-  "<div class=\"row\"><span class=\"lbl\">Ragione Sociale</span><span class=\"val\"><strong>"+(azNome||"&mdash;")+"</strong></span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Indirizzo</span><span class=\"val\">"+(azInd||"&mdash;")+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Sede</span><span class=\"val\">"+(azSede||"&mdash;")+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">P.IVA / C.F.</span><span class=\"val\">"+(azFisc||"&mdash;")+"</span></div>"+
-  "<div class=\"row\"><span class=\"lbl\">Cod. Destinatario</span><span class=\"val\">"+(azDest||"&mdash;")+"</span></div></div></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Ragione Sociale</span><span class=\"val\"><strong>"+(azNome?escHtml(azNome):"&mdash;")+"</strong></span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Indirizzo</span><span class=\"val\">"+(azInd?escHtml(azInd):"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Sede</span><span class=\"val\">"+(azSede?escHtml(azSede):"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">P.IVA / C.F.</span><span class=\"val\">"+(azFisc?escHtml(azFisc):"&mdash;")+"</span></div>"+
+  "<div class=\"row\"><span class=\"lbl\">Cod. Destinatario</span><span class=\"val\">"+(azDest?escHtml(azDest):"&mdash;")+"</span></div></div></div>"+
   "<div class=\"sec\">Documento</div>"+
   "<table><tr><th>Tipo documento</th><th>N&deg; Documento</th><th>Data documento</th><th>Giornate contributive</th></tr>"+
   "<tr><td>"+tf1+"</td><td>"+numF+"</td><td>"+fD(df1)+"</td><td>"+righiAttive.length+"</td></tr></table>"+
@@ -1685,7 +1689,7 @@ function stampaFattura(titoloPDF){
   "<div class=\"tr blue\"><span>Netto da Pagare</span><span>&euro; "+fE(totNetto)+"</span></div></div></div>"+
   (notaTesto?"<div class=\"nota\"><strong>Note:</strong><br>"+notaTesto+"</div>":"")+
   "<div class=\"footer\"><div style=\"font-size:9px;color:#555;\">Roma, "+fD(df1)+"</div>"+
-  "<div><div class=\"firma-line\">"+nominativo+"</div></div></div>"+
+  "<div><div class=\"firma-line\">"+escHtml(nominativo)+"</div></div></div>"+
   "<script>"+
   "async function salvaSuDB(){"+
   "  var recStr=sessionStorage.getItem('enpals_rec_pending');"+
@@ -2317,17 +2321,17 @@ async function eliminaFattura(rec_nbr, rif){
     </div>
     <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
     <div style="overflow-x:auto;">
-      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px;">
+      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px;">
         <thead>
           <tr style="background:#1e3a8a;color:#93c5fd;">
-            <th style="padding:8px;text-align:left;white-space:nowrap;">Data/Ora</th>
-            <th style="padding:8px;text-align:left;">Utente</th>
-            <th style="padding:8px;text-align:left;">Ruolo</th>
-            <th style="padding:8px;text-align:left;">Azione</th>
-            <th style="padding:8px;text-align:left;">Lavoratore</th>
-            <th style="padding:8px;text-align:left;">Azienda</th>
-            <th style="padding:8px;text-align:left;">Importo</th>
-            <th style="padding:8px;text-align:left;">IP</th>
+            <th style="padding:8px;text-align:left;white-space:nowrap;min-width:130px;">Data/Ora</th>
+            <th style="padding:8px;text-align:left;min-width:80px;">Utente</th>
+            <th style="padding:8px;text-align:left;min-width:60px;">Ruolo</th>
+            <th style="padding:8px;text-align:left;min-width:90px;">Azione</th>
+            <th style="padding:8px;text-align:left;min-width:150px;">Lavoratore</th>
+            <th style="padding:8px;text-align:left;min-width:120px;">Azienda</th>
+            <th style="padding:8px;text-align:right;min-width:90px;">Importo</th>
+            <th style="padding:8px;text-align:left;min-width:90px;">IP</th>
           </tr>
         </thead>
         <tbody id="log-body"></tbody>
@@ -2375,7 +2379,8 @@ function _dettaglioFattura(){
   if(imp === '—') imp = '';
   if(imp && !imp.startsWith('€')) imp = '€ ' + imp;
   // Posizioni fisse: [0]=lav [1]=data [2]=tl [3]=tit [4]=az [5]=imp
-  return [lav, data, tl, tit, az, imp].join('_');
+  // Separatore | invece di _ per evitare conflitti con nomi/titoli che contengono underscore
+  return [lav, data, tl, tit, az, imp].join('|');
 }
 
 // Sovrascrivi stampaFattura per tracciare
@@ -2387,18 +2392,8 @@ if(typeof stampaFattura === 'function'){
   };
 }
 
-// Traccia ricalcolo (simulazione) — loga ogni 5 ricalcoli
-if(typeof ricalcolaTutto === 'function'){
-  window._ricalcolaCount = 0;
-  var _origRicalcolaFn = ricalcolaTutto;
-  window.ricalcolaTutto = function(){
-    window._ricalcolaCount = (window._ricalcolaCount||0)+1;
-    if(window._ricalcolaCount % 5 === 0){
-      logAzione('SIMULAZIONE', _dettaglioFattura());
-    }
-    _origRicalcolaFn.apply(this, arguments);
-  };
-}
+// Traccia ricalcolo (simulazione) — loga solo sul pulsante "Ricalcola tutto" manuale
+// NON loga automaticamente ogni N ricalcoli per evitare inquinamento del campo Lavoratore nel log
 
 // ══ PANNELLO LOG ══
 var _logData = [];
@@ -2518,7 +2513,7 @@ function apriDettaglioLog(idx){
   var old = document.getElementById('log-popup-overlay');
   if(old) old.remove();
 
-  var parti = (r.dettaglio||'').split('_');
+  var parti = (r.dettaglio||'').split('|');
   var isStampa = r.azione === 'STAMPA';
   var isSimul  = r.azione === 'SIMULAZIONE';
 
@@ -2623,24 +2618,28 @@ function mostraLog(dati){
     var bg = i%2===0?'#111827':'#1f2937';
     var col = colori[r.azione]||'#e2e8f0';
     var det = r.dettaglio || '';
-    // Separa dettaglio in parti: lavoratore_data_tipolavoro_titolo_azienda_importo
-    var parti = det.split('_');
-    var isStampa = r.azione==='STAMPA' || r.azione==='SIMULAZIONE' || r.azione==='SALVA';
-    // Per STAMPA: parti[0]=lavoratore, parti[4]=azienda, parti[5]=importo
-    var lavoratore = isStampa && parti[0] ? parti[0] : (isStampa ? '' : det);
-    var azienda    = isStampa && parti[4] ? parti[4] : '';
-    var importo    = isStampa && parti[5] ? parti[5] : '';
-    var detSemplice = !isStampa ? (det.length>40 ? det.substring(0,40)+'...' : det) : '';
+    // Separa dettaglio in parti: lavoratore|data|tipolavoro|titolo|azienda|importo
+    var parti = det.split('|');
+    var isStampaSimul = r.azione==='STAMPA' || r.azione==='SIMULAZIONE' || r.azione==='SALVA';
+    // Estrai campi solo per azioni fattura; per altri (LOGIN ecc.) mostra dettaglio grezzo
+    var lavoratore = isStampaSimul ? (parti[0]||'') : det;
+    var azienda    = isStampaSimul ? (parti[4]||'') : '';
+    var importo    = isStampaSimul ? (parti[5]||'') : '';
+    // Tronca stringhe lunghe per non far esplodere la colonna
+    if(lavoratore.length>35) lavoratore=lavoratore.substring(0,35)+'…';
+    if(azienda.length>30)    azienda=azienda.substring(0,30)+'…';
+    if(!isStampaSimul && lavoratore.length>45) lavoratore=lavoratore.substring(0,45)+'…';
     var ip = r.ip ? r.ip.split(',')[0].trim() : '';
+    var tdStyle = 'padding:5px 8px;vertical-align:middle;';
     return '<tr style="background:'+bg+';">'+
-      '<td style="padding:6px 8px;color:#9ca3af;white-space:nowrap;font-size:11px;">'+r.ts+'</td>'+
-      '<td style="padding:6px 8px;font-weight:600;font-size:12px;">'+r.utente+'</td>'+
-      '<td style="padding:6px 8px;color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';font-size:12px;">'+r.ruolo+'</td>'+
-      '<td style="padding:6px 8px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;">'+r.azione+'</span></td>'+
-      '<td style="padding:6px 8px;color:#e2e8f0;font-size:12px;">'+lavoratore+detSemplice+'</td>'+
-      '<td style="padding:6px 8px;color:#cbd5e1;font-size:12px;">'+azienda+'</td>'+
-      '<td style="padding:6px 8px;color:#fcd34d;font-size:12px;white-space:nowrap;">'+importo+'</td>'+
-      '<td style="padding:6px 8px;color:#6b7280;font-size:10px;white-space:nowrap;">'+ip+'</td>'+
+      '<td style="'+tdStyle+'color:#9ca3af;white-space:nowrap;font-size:11px;min-width:130px;">'+r.ts+'</td>'+
+      '<td style="'+tdStyle+'font-weight:600;font-size:12px;min-width:80px;">'+r.utente+'</td>'+
+      '<td style="'+tdStyle+'color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';font-size:12px;min-width:60px;">'+r.ruolo+'</td>'+
+      '<td style="'+tdStyle+'min-width:90px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;white-space:nowrap;">'+r.azione+'</span></td>'+
+      '<td style="'+tdStyle+'color:#e2e8f0;font-size:12px;min-width:150px;">'+lavoratore+'</td>'+
+      '<td style="'+tdStyle+'color:#cbd5e1;font-size:12px;min-width:120px;">'+azienda+'</td>'+
+      '<td style="'+tdStyle+'color:#fcd34d;font-size:12px;white-space:nowrap;min-width:90px;text-align:right;">'+importo+'</td>'+
+      '<td style="'+tdStyle+'color:#6b7280;font-size:10px;white-space:nowrap;min-width:90px;">'+ip+'</td>'+
       '</tr>';
   }).join('');
 }
