@@ -2363,11 +2363,16 @@ if(typeof stampaFattura === 'function'){
   var _origStampaFn = stampaFattura;
   window.stampaFattura = function(){
     // Raccoglie dettagli fattura per il log
-    var _lav = (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
+    var _lav = (document.getElementById('nom-name') ? document.getElementById('nom-name').textContent.trim() : '') || (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
     var _az  = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
     var _imp = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
     var _rif = document.getElementById('inp-rif') ? document.getElementById('inp-rif').value : '';
+    // Esclude valori vuoti o segnaposto
+    if(_lav === '—') _lav = '';
+    if(_az  === '—') _az  = '';
+    if(_imp === '—') _imp = '';
     var _det = [_lav, _az, _imp].filter(Boolean).join(' | ');
+    if(!_det) _det = 'fattura stampata/salvata';
     logAzione('STAMPA', _det);
     _origStampaFn.apply(this, arguments);
   };
