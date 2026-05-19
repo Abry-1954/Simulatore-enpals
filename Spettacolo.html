@@ -516,10 +516,10 @@ self.addEventListener('fetch',e=>{
         document.getElementById("login-overlay").style.display="none";
         serverOk = true;
         applicaRuolo(data.ruolo || 'utente', u);
-        logAzione('LOGIN OK', u + ' — login riuscito (server)');
+        logAzione('LOGIN OK', '');
         console.log("✓ Login server OK — ruolo:"+data.ruolo+" token:"+data.expires_hours+"h");
       } else {
-        logAzione('LOGIN KO CREDENZIALI ERRATE', u + ' — credenziali errate');
+        logAzione('LOGIN KO CREDENZIALI ERRATE', '');
         errEl.textContent="Credenziali non valide.";
         errEl.style.display="block";
         btn.textContent="Entra"; btn.disabled=false;
@@ -541,7 +541,7 @@ self.addEventListener('fetch',e=>{
         sessionStorage.setItem('enpals_user', u);
         document.getElementById("login-overlay").style.display="none";
         applicaRuolo('admin', u);
-        logAzione('LOGIN OK', u + ' — login riuscito (locale)');
+        logAzione('LOGIN OK', '');
         console.log("✓ Login locale OK (server offline)");
         setTimeout(function(){
           var av=document.createElement("div");
@@ -551,7 +551,7 @@ self.addEventListener('fetch',e=>{
           setTimeout(function(){av.remove();},4000);
         },300);
       } else {
-        logAzione('LOGIN KO CREDENZIALI ERRATE', u + ' — credenziali errate (locale)');
+        logAzione('LOGIN KO CREDENZIALI ERRATE', '');
         errEl.textContent="Credenziali non valide.";
         errEl.style.display="block";
       }
