@@ -2320,12 +2320,26 @@ async function eliminaFattura(rec_nbr, rif){
 <script>
 // ══ TRACCIAMENTO AZIONI ══
 function logAzione(azione, dettaglio){
-  if(!window._authToken) return; // solo se connesso al server
+  var payload = JSON.stringify({azione:azione, dettaglio:dettaglio});
+  var headers = {'Content-Type':'application/json'};
+
+  // 1. Manda al server locale se disponibile
   authFetch('/log-azione',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({azione:azione, dettaglio:dettaglio})
+    method:'POST', headers:headers, body:payload
   }).catch(function(){});
+
+  // 2. Manda sempre a Render (persistente su GitHub)
+  var tok = window._authToken || (function(){
+    var s = sessionStorage.getItem('enpals_auth');
+    return (s && s.startsWith('tok:')) ? s.slice(4) : null;
+  })();
+  if(tok){
+    fetch('https://enpals-server.onrender.com/log-azione',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:payload
+    }).catch(function(){});
+  }
 }
 
 // Sovrascrivi stampaFattura per tracciare
@@ -2362,6 +2376,11 @@ async function caricaLogGithub(){
   try {
     // Legge direttamente da GitHub API — non serve token per repository privato con raw URL
     // Usa GitHub API raw content
+    // Recupera token da sessionStorage se non in memoria
+    if(!window._authToken){
+      var saved = sessionStorage.getItem('enpals_auth');
+      if(saved && saved.startsWith('tok:')) window._authToken = saved.slice(4);
+    }
     // Prima prova tramite server Render (ha il token GitHub)
     var SERVER_RENDER = 'https://enpals-server.onrender.com';
     var r = await fetch(SERVER_RENDER + '/log-github', {
