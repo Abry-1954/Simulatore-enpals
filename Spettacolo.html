@@ -2324,7 +2324,7 @@ async function eliminaFattura(rec_nbr, rif){
     </div>
     <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
     <div style="overflow-x:auto;">
-      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px;">
+      <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px;">
         <thead>
           <tr style="background:#1e3a8a;color:#93c5fd;">
             <th style="padding:8px;text-align:left;white-space:nowrap;min-width:130px;">Data/Ora</th>
@@ -2332,8 +2332,8 @@ async function eliminaFattura(rec_nbr, rif){
             <th style="padding:8px;text-align:left;min-width:60px;">Ruolo</th>
             <th style="padding:8px;text-align:left;min-width:90px;">Azione</th>
             <th style="padding:8px;text-align:left;min-width:150px;">Lavoratore</th>
-            <th style="padding:8px;text-align:left;min-width:120px;">Azienda</th>
-            <th style="padding:8px;text-align:right;min-width:90px;">Importo</th>
+            <th style="padding:8px;text-align:left;min-width:130px;">Azienda</th>
+            <th style="padding:8px;text-align:right;min-width:100px;">Netto €</th>
             <th style="padding:8px;text-align:left;min-width:90px;">IP</th>
           </tr>
         </thead>
@@ -2371,19 +2371,20 @@ function logAzione(azione, dettaglio){
 
 // ── Helper: raccoglie dettagli fattura per il log ──
 function _dettaglioFattura(){
-  var lav  = (document.getElementById('nom-name') ? document.getElementById('nom-name').textContent.trim() : '') || (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
-  var data = (document.getElementById('dl_1') ? document.getElementById('dl_1').value : '');
-  var tl   = (document.getElementById('tl_1') ? document.getElementById('tl_1').value.trim() : '');
-  var tit  = (document.getElementById('tit_1') ? document.getElementById('tit_1').value.trim() : '');
-  var az   = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
-  var imp  = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
-  if(lav === '—') lav = '';
-  if(az  === '—') az  = '';
-  if(imp === '—') imp = '';
-  if(imp && !imp.startsWith('€')) imp = '€ ' + imp;
-  // Posizioni fisse: [0]=lav [1]=data [2]=tl [3]=tit [4]=az [5]=imp
-  // Separatore | invece di _ per evitare conflitti con nomi/titoli che contengono underscore
-  return [lav, data, tl, tit, az, imp].join('|');
+  function txt(id){ var e=document.getElementById(id); return e ? e.textContent.trim() : ''; }
+  function val(id){ var e=document.getElementById(id); return e ? e.value.trim() : ''; }
+  function pulisci(s){ return (s==='—'||s===''||s==='-') ? '' : (s||''); }
+  var lav  = pulisci(txt('nom-name')) || val('inp-nom');
+  var az   = pulisci(txt('az-name'));
+  var azBox = document.getElementById('az-box');
+  if(azBox && azBox.style.display==='none') az = '';
+  var data  = val('dl_1');
+  var tl    = val('tl_1');
+  var tit   = val('tit_1');
+  var netto = pulisci(txt('t-netto'));
+  // Formato compatibile col server: lav_data_tl_tit_az_netto
+  // Parsing avviene da destra quindi tit puo' contenere _ senza problemi
+  return [lav, data, tl, tit, az, netto].join('_');
 }
 
 // Il tracciamento STAMPA è integrato direttamente in stampaFattura() — vedi sotto
@@ -2509,32 +2510,36 @@ function apriDettaglioLog(idx){
   var old = document.getElementById('log-popup-overlay');
   if(old) old.remove();
 
-  var parti = (r.dettaglio||'').split('|');
-  var isStampa = r.azione === 'STAMPA';
-  var isSimul  = r.azione === 'SIMULAZIONE';
+  // Parse dettaglio universale (JSON / _ / |)
+  var isStampaSimul = r.azione==='STAMPA' || r.azione==='SIMULAZIONE' || r.azione==='SALVA';
+  var d = isStampaSimul ? _parseDettaglio(r.dettaglio||'') : {};
 
-  // Crea popup con DOM (evita problemi di virgolette)
+  // Crea popup con DOM
   var overlay = document.createElement('div');
   overlay.id = 'log-popup-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
   overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
-  box.onclick = function(e){ e.stopPropagation(); };
 
   var box = document.createElement('div');
-  box.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);';
+  box.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:12px;padding:28px;max-width:460px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);';
+  box.onclick = function(e){ e.stopPropagation(); };
 
   var righe = [
     ['📅 Data/Ora', r.ts],
     ['👤 Utente', r.utente + ' (' + r.ruolo + ')'],
     ['⚡ Azione', r.azione],
   ];
-  if(isStampa || isSimul){
-    if(parti[0]) righe.push(['🎭 Lavoratore', parti[0]]);
-    if(parti[1]) righe.push(['📅 Data lavoro', parti[1]]);
-    if(parti[2]) righe.push(['🎬 Tipo lavoro', parti[2]]);
-    if(parti[3]) righe.push(['📝 Titolo', parti[3]]);
-    if(parti[4]) righe.push(['🏢 Azienda', parti[4]]);
-    if(parti[5]) righe.push(['💶 Importo netto', parti[5]]);
+  if(isStampaSimul){
+    if(d.lav)     righe.push(['🎭 Lavoratore', d.lav]);
+    if(d.az)      righe.push(['🏢 Azienda', d.az]);
+    if(d.data)    righe.push(['📅 Data lavoro', d.data]);
+    if(d.tl)      righe.push(['🎬 Tipo lavoro', d.tl]);
+    if(d.tit)     righe.push(['📝 Titolo', d.tit]);
+    if(d.impon)   righe.push(['💶 Imponibile', d.impon]);
+    if(d.iva)     righe.push(['💶 IVA', d.iva]);
+    if(d.totFatt) righe.push(['💶 Totale Fattura', d.totFatt]);
+    if(d.ra)      righe.push(['💶 Ritenuta Acconto', d.ra]);
+    if(d.netto)   righe.push(['💵 Netto da Pagare', d.netto]);
   } else {
     righe.push(['📝 Dettaglio', r.dettaglio || '']);
   }
@@ -2579,6 +2584,31 @@ function filtraLog(filtro){
   mostraLog(dati);
 }
 
+
+// ── Parser universale dettaglio log ──
+// Gestisce: formato server _ (storico), formato | (intermedio), JSON (nuovo)
+// Parsing da destra per resistere a titoli con underscore
+function _parseDettaglio(det){
+  if(!det) return {};
+  // JSON?
+  if(det.charAt(0)==='{'){
+    try{ return JSON.parse(det); } catch(e){}
+  }
+  // Separatore: _ o |
+  var sep = det.indexOf('|')>=0 ? '|' : '_';
+  var p = det.split(sep);
+  // Struttura attesa: [0]=lav [1]=data [2]=tl [3..n-3]=tit [n-2]=az [n-1]=netto
+  // Con almeno 4 parti (lav+data+tl+netto minimo)
+  if(p.length < 4) return {lav: det};
+  var lav    = p[0] || '';
+  var data   = p[1] || '';
+  var tl     = p[2] || '';
+  var netto  = p[p.length-1] || '';
+  var az     = p[p.length-2] || '';
+  // Il titolo e' tutto cio' che sta in mezzo (puo' essere vuoto o contenere _)
+  var tit    = p.length > 5 ? p.slice(3, p.length-2).join(sep) : (p[3]||'');
+  return {lav:lav, data:data, tl:tl, tit:tit, az:az, netto:netto};
+}
 function mostraLog(dati){
   var tbody = document.getElementById('log-body');
   var empty = document.getElementById('log-empty');
@@ -2614,17 +2644,15 @@ function mostraLog(dati){
     var bg = i%2===0?'#111827':'#1f2937';
     var col = colori[r.azione]||'#e2e8f0';
     var det = r.dettaglio || '';
-    // Separa dettaglio in parti: lavoratore|data|tipolavoro|titolo|azienda|importo
-    var parti = det.split('|');
     var isStampaSimul = r.azione==='STAMPA' || r.azione==='SIMULAZIONE' || r.azione==='SALVA';
-    // Estrai campi solo per azioni fattura; per altri (LOGIN ecc.) mostra dettaglio grezzo
-    var lavoratore = isStampaSimul ? (parti[0]||'') : det;
-    var azienda    = isStampaSimul ? (parti[4]||'') : '';
-    var importo    = isStampaSimul ? (parti[5]||'') : '';
-    // Tronca stringhe lunghe per non far esplodere la colonna
-    if(lavoratore.length>35) lavoratore=lavoratore.substring(0,35)+'…';
-    if(azienda.length>30)    azienda=azienda.substring(0,30)+'…';
-    if(!isStampaSimul && lavoratore.length>45) lavoratore=lavoratore.substring(0,45)+'…';
+    var d = isStampaSimul ? _parseDettaglio(det) : {};
+    var lavoratore = isStampaSimul ? (d.lav||'') : det;
+    var azienda    = isStampaSimul ? (d.az||'') : '';
+    var netto      = isStampaSimul ? (d.netto||'') : '';
+    // Tronca stringhe lunghe
+    if(lavoratore.length>40) lavoratore=lavoratore.substring(0,40)+'…';
+    if(azienda.length>35)    azienda=azienda.substring(0,35)+'…';
+    if(!isStampaSimul && lavoratore.length>60) lavoratore=lavoratore.substring(0,60)+'…';
     var ip = r.ip ? r.ip.split(',')[0].trim() : '';
     var tdStyle = 'padding:5px 8px;vertical-align:middle;';
     return '<tr style="background:'+bg+';">'+
@@ -2633,8 +2661,8 @@ function mostraLog(dati){
       '<td style="'+tdStyle+'color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';font-size:12px;min-width:60px;">'+r.ruolo+'</td>'+
       '<td style="'+tdStyle+'min-width:90px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;white-space:nowrap;">'+r.azione+'</span></td>'+
       '<td style="'+tdStyle+'color:#e2e8f0;font-size:12px;min-width:150px;">'+lavoratore+'</td>'+
-      '<td style="'+tdStyle+'color:#cbd5e1;font-size:12px;min-width:120px;">'+azienda+'</td>'+
-      '<td style="'+tdStyle+'color:#fcd34d;font-size:12px;white-space:nowrap;min-width:90px;text-align:right;">'+importo+'</td>'+
+      '<td style="'+tdStyle+'color:#cbd5e1;font-size:12px;min-width:130px;">'+azienda+'</td>'+
+      '<td style="'+tdStyle+'color:#fcd34d;font-size:12px;white-space:nowrap;min-width:100px;text-align:right;font-weight:700;">'+netto+'</td>'+
       '<td style="'+tdStyle+'color:#6b7280;font-size:10px;white-space:nowrap;min-width:90px;">'+ip+'</td>'+
       '</tr>';
   }).join('');
