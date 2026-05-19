@@ -2076,6 +2076,7 @@ async function salvaFatturaSuDB(){
     });
     const d=await r.json();
     if(d.ok){
+      logAzione('SALVA', _dettaglioFattura());
       setFetchStatus("✅ "+d.msg, true);
     }else{
       setFetchStatus("❌ Errore: "+d.error, false);
@@ -2361,45 +2362,39 @@ function logAzione(azione, dettaglio){
   }
 }
 
+// ── Helper: raccoglie dettagli fattura per il log ──
+function _dettaglioFattura(){
+  var lav  = (document.getElementById('nom-name') ? document.getElementById('nom-name').textContent.trim() : '') || (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
+  var data = (document.getElementById('dl_1') ? document.getElementById('dl_1').value : '');
+  var tl   = (document.getElementById('tl_1') ? document.getElementById('tl_1').value.trim() : '');
+  var tit  = (document.getElementById('tit_1') ? document.getElementById('tit_1').value.trim() : '');
+  var az   = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
+  var imp  = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
+  if(lav === '—') lav = '';
+  if(az  === '—') az  = '';
+  if(imp === '—') imp = '';
+  if(imp && !imp.startsWith('€')) imp = '€ ' + imp;
+  // Posizioni fisse: [0]=lav [1]=data [2]=tl [3]=tit [4]=az [5]=imp
+  return [lav, data, tl, tit, az, imp].join('_');
+}
+
 // Sovrascrivi stampaFattura per tracciare
-var _origStampa = window.stampaFattura;
 if(typeof stampaFattura === 'function'){
   var _origStampaFn = stampaFattura;
   window.stampaFattura = function(){
-    // Raccoglie dettagli fattura per il log
-    var _lav  = (document.getElementById('nom-name') ? document.getElementById('nom-name').textContent.trim() : '') || (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
-    var _data = (document.getElementById('dl_1') ? document.getElementById('dl_1').value : '');
-    var _tl   = (document.getElementById('tl_1') ? document.getElementById('tl_1').value.trim() : '');
-    var _tit  = (document.getElementById('tit_1') ? document.getElementById('tit_1').value.trim() : '');
-    var _az   = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
-    var _imp  = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
-    // Pulizia valori vuoti o segnaposto
-    if(_lav === '—') _lav = '';
-    if(_az  === '—') _az  = '';
-    if(_imp === '—') _imp = '';
-    if(_imp && !_imp.startsWith('€')) _imp = '€ ' + _imp;
-    var _parts = [_lav, _data, _tl, _tit, _az, _imp].map(function(s){ return (s||'').trim(); }).filter(Boolean);
-    var _det = _parts.join('_');
-    if(!_det) _det = 'fattura stampata/salvata';
-    logAzione('STAMPA', _det);
+    logAzione('STAMPA', _dettaglioFattura());
     _origStampaFn.apply(this, arguments);
   };
 }
 
-// Traccia ricalcolo (simulazione)
-var _origRicalcola = window.ricalcolaTutto;
+// Traccia ricalcolo (simulazione) — loga ogni 5 ricalcoli
 if(typeof ricalcolaTutto === 'function'){
   window._ricalcolaCount = 0;
   var _origRicalcolaFn = ricalcolaTutto;
   window.ricalcolaTutto = function(){
     window._ricalcolaCount = (window._ricalcolaCount||0)+1;
-    // Loga ogni 5 ricalcoli per non spammare
     if(window._ricalcolaCount % 5 === 0){
-      var _lavS = (document.getElementById('inp-nom') ? document.getElementById('inp-nom').value.trim() : '');
-      var _azS  = (document.getElementById('az-name') ? document.getElementById('az-name').textContent.trim() : '');
-      var _impS = (document.getElementById('t-netto') ? document.getElementById('t-netto').textContent.trim() : '');
-      var _detS = window._ricalcolaCount + ' ricalcoli' + (_lavS ? ' | '+_lavS : '') + (_impS && _impS!=='—' ? ' | '+_impS : '');
-      logAzione('SIMULAZIONE', _detS);
+      logAzione('SIMULAZIONE', _dettaglioFattura());
     }
     _origRicalcolaFn.apply(this, arguments);
   };
@@ -2620,7 +2615,7 @@ function mostraLog(dati){
 
   var colori = {
     'LOGIN OK':'#86efac','LOGIN KO CREDENZIALI ERRATE':'#fca5a5','STAMPA':'#fcd34d',
-    'SIMULAZIONE':'#93c5fd','AGGIORNA_DB':'#c4b5fd','DB_PERSONA':'#fb923c',
+    'SIMULAZIONE':'#93c5fd','SALVA':'#34d399','AGGIORNA_DB':'#c4b5fd','DB_PERSONA':'#fb923c',
     'DB_AZIENDA':'#fb923c','SALVA_FATTURA':'#34d399'
   };
 
@@ -2630,7 +2625,7 @@ function mostraLog(dati){
     var det = r.dettaglio || '';
     // Separa dettaglio in parti: lavoratore_data_tipolavoro_titolo_azienda_importo
     var parti = det.split('_');
-    var isStampa = r.azione==='STAMPA' || r.azione==='SIMULAZIONE';
+    var isStampa = r.azione==='STAMPA' || r.azione==='SIMULAZIONE' || r.azione==='SALVA';
     // Per STAMPA: parti[0]=lavoratore, parti[4]=azienda, parti[5]=importo
     var lavoratore = isStampa && parti[0] ? parti[0] : (isStampa ? '' : det);
     var azienda    = isStampa && parti[4] ? parti[4] : '';
