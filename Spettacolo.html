@@ -494,15 +494,35 @@ self.addEventListener('fetch',e=>{
     errEl.style.display="none";
     btn.textContent="Accesso..."; btn.disabled=true;
 
-    // 1. Prova login sul server Render
+    // 1. Prova login sul server Render — con retry automatico se addormentato
     var serverOk = false;
+    var MAX_TENTATIVI = 10;  // max 10 tentativi = ~90 secondi
+    var tentativo = 0;
+    var res = null;
+    while(!serverOk && tentativo < MAX_TENTATIVI){
+      tentativo++;
+      try {
+        if(tentativo > 1){
+          btn.textContent = '⏳ Server in avvio... (' + tentativo + '/' + MAX_TENTATIVI + ')';
+          await new Promise(function(r){ setTimeout(r, 8000); }); // aspetta 8 sec tra tentativi
+        }
+        res = await fetch(SERVER_URL+"/login", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({username:u, password:p}),
+          signal: AbortSignal.timeout(15000)
+        });
+        break; // se arriva qui senza errore, esce dal while
+      } catch(e){
+        console.log('Tentativo '+tentativo+' fallito:', e.message);
+        if(tentativo >= MAX_TENTATIVI){
+          res = null; // forza fallback locale
+        }
+        continue;
+      }
+    }
     try {
-      var res = await fetch(SERVER_URL+"/login", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({username:u, password:p}),
-        signal: AbortSignal.timeout(30000)
-      });
+      if(!res) throw new Error('Server non raggiungibile');
       var data = await res.json();
       if(data.ok && data.token){
         window._authToken = data.token;
