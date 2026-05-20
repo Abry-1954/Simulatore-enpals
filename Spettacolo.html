@@ -486,7 +486,9 @@ self.addEventListener('fetch',e=>{
   }
 
   // ── Login: prova server, fallback locale ──
+  window._loginLoggato = false;
   window.doLogin=async function(){
+    window._loginLoggato = false;
     var u=document.getElementById("login-user").value.trim();
     var p=document.getElementById("login-pass").value.trim();
     var errEl=document.getElementById("login-err");
@@ -541,7 +543,7 @@ self.addEventListener('fetch',e=>{
         document.getElementById("login-overlay").style.display="none";
         serverOk = true;
         applicaRuolo(data.ruolo || 'utente', u);
-        logAzione('LOGIN OK', '');
+        if(!window._loginLoggato){ window._loginLoggato=true; logAzione('LOGIN OK', ''); }
         console.log("✓ Login server OK — ruolo:"+data.ruolo+" token:"+data.expires_hours+"h");
       } else {
         logAzione('LOGIN KO CREDENZIALI ERRATE', '');
@@ -566,7 +568,7 @@ self.addEventListener('fetch',e=>{
         sessionStorage.setItem('enpals_user', u);
         document.getElementById("login-overlay").style.display="none";
         applicaRuolo('admin', u);
-        logAzione('LOGIN OK', '');
+        if(!window._loginLoggato){ window._loginLoggato=true; logAzione('LOGIN OK', ''); }
         console.log("✓ Login locale OK (server offline)");
         setTimeout(function(){
           var av=document.createElement("div");
