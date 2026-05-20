@@ -1141,6 +1141,14 @@ function calcolaEnpalsConImpGG(r, impGG, giorni){
 }
 
 function ricalcolaTutto(){
+  // Incrementa contatore ricalcoli per ogni riga attiva
+  if(typeof _simCount!=='undefined'){
+    for(var _ri=1;_ri<=31;_ri++){
+      var _chk=document.getElementById('chk_'+_ri);
+      if(_chk && _chk.checked) _simCount[_ri]=(_simCount[_ri]||0)+1;
+    }
+  }
+
   let anni=new Set();
   let T={impon:0,iva:0,ra:0,totFatt:0,netto:0,e919:0,e1:0,e25:0,e05:0,totLav:0,d2381:0,d10:0,d25:0,d128:0,d128det:0,totDat:0};
   let righeCalcolate=0;
@@ -1324,8 +1332,21 @@ function onChkChange(i){
     if(el)el.disabled=!checked;
   });
   if(!checked){
+    // Riga disattivata: logga simulazione se aveva ricalcoli
+    if(typeof _logSimulazioneRiga==='function') _logSimulazioneRiga(i);
     const res=document.getElementById("res_"+i);
     if(res){res.textContent="—";res.className="cell-result zero";}
+  } else {
+    // Riga attivata: logga simulazione delle righe precedentemente attive
+    if(typeof _logSimulazioneRiga==='function'){
+      for(var _j=1;_j<=31;_j++){
+        if(_j!==i){
+          var _c=document.getElementById('chk_'+_j);
+          if(!_c||!_c.checked) _logSimulazioneRiga(_j);
+        }
+      }
+    }
+    if(typeof _simCount!=='undefined') _simCount[i] = 0;
   }
   ricalcolaTutto();
 }
@@ -2340,6 +2361,7 @@ async function eliminaFattura(rec_nbr, rif){
             <th style="padding:8px;text-align:left;min-width:130px;">Azienda</th>
             <th style="padding:8px;text-align:left;min-width:140px;">Titolo</th>
             <th style="padding:8px;text-align:right;min-width:100px;">Netto €</th>
+            <th style="padding:8px;text-align:center;min-width:80px;">Utilizzo</th>
             <th style="padding:8px;text-align:left;min-width:90px;">IP</th>
           </tr>
         </thead>
@@ -2434,6 +2456,34 @@ function _dettaglioFattura(){
 
 // Il tracciamento STAMPA è integrato direttamente in stampaFattura() — vedi sotto
 
+// ── Contatori ricalcoli per riga ──
+var _simCount = {};   // _simCount[i] = numero ricalcoli sulla riga i
+var _simAttiva = {};  // _simAttiva[i] = true se la riga i è attiva
+
+// Logga SIMULAZIONE per una riga specifica
+function _logSimulazioneRiga(i){
+  var count = _simCount[i] || 0;
+  if(count === 0) return; // nessun ricalcolo, niente da loggare
+
+  function val(id){ var e=document.getElementById(id); return e ? e.value.trim() : ''; }
+  function txt(id){ var e=document.getElementById(id); return e ? e.textContent.trim() : ''; }
+  function pulisci(s){ return (s==='—'||s===''||s==='-') ? '' : (s||''); }
+
+  var lav   = pulisci(txt('nom-name')) || val('inp-nom');
+  var az    = pulisci(txt('az-name'));
+  var azBox = document.getElementById('az-box');
+  if(azBox && azBox.style.display==='none') az = '';
+  var data  = val('dl_' + i);
+  var tl    = val('tl_' + i);
+  var tit   = val('tit_' + i);
+  var res   = pulisci(txt('res_' + i));   // imponibile riga
+  var netto = pulisci(txt('t-netto'));    // netto totale corrente
+
+  var det = [lav, data, tl, tit, az, netto].join('_');
+  logAzione('SIMULAZIONE', det + '|R' + i + '|N' + count);
+  _simCount[i] = 0; // azzera dopo il log
+}
+
 // Traccia ricalcolo (simulazione) — loga solo sul pulsante "Ricalcola tutto" manuale
 // NON loga automaticamente ogni N ricalcoli per evitare inquinamento del campo Lavoratore nel log
 
@@ -2442,7 +2492,7 @@ var _logData = [];
 
 async function caricaLogGithub(){
   // NON tocca il display del pannello — lo gestisce solo apriPannelloLog (evita flickering)
-  document.getElementById('log-body').innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
+  document.getElementById('log-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
   try {
     // Legge direttamente da GitHub API — non serve token per repository privato con raw URL
     // Usa GitHub API raw content
@@ -2618,6 +2668,7 @@ function apriDettaglioLog(idx){
     if(d.totFatt) righe.push(['💶 Totale Fattura', d.totFatt]);
     if(d.ra)      righe.push(['💶 Ritenuta Acconto', d.ra]);
     if(d.netto)   righe.push(['💵 Netto da Pagare', d.netto]);
+    if(d.nRicalcoli) righe.push(['📊 Utilizzo', 'Riga '+d.riga+' — '+d.nRicalcoli+' ricalcoli']);
   } else {
     righe.push(['📝 Dettaglio', r.dettaglio || '']);
   }
@@ -2672,20 +2723,25 @@ function _parseDettaglio(det){
   if(det.charAt(0)==='{'){
     try{ return JSON.parse(det); } catch(e){}
   }
+  // Estrai suffisso SIMULAZIONE: |Ri|Ncount alla fine
+  var riga = ''; var nRicalcoli = '';
+  var sufMatch = det.match(/\|R(\d+)\|N(\d+)$/);
+  if(sufMatch){
+    riga = sufMatch[1];
+    nRicalcoli = sufMatch[2];
+    det = det.substring(0, det.length - sufMatch[0].length);
+  }
   // Separatore: _ o |
   var sep = det.indexOf('|')>=0 ? '|' : '_';
   var p = det.split(sep);
-  // Struttura attesa: [0]=lav [1]=data [2]=tl [3..n-3]=tit [n-2]=az [n-1]=netto
-  // Con almeno 4 parti (lav+data+tl+netto minimo)
-  if(p.length < 4) return {lav: det};
+  if(p.length < 4) return {lav: det, riga:riga, nRicalcoli:nRicalcoli};
   var lav    = p[0] || '';
   var data   = p[1] || '';
   var tl     = p[2] || '';
   var netto  = p[p.length-1] || '';
   var az     = p[p.length-2] || '';
-  // Il titolo e' tutto cio' che sta in mezzo (puo' essere vuoto o contenere _)
   var tit    = p.length > 5 ? p.slice(3, p.length-2).join(sep) : (p[3]||'');
-  return {lav:lav, data:data, tl:tl, tit:tit, az:az, netto:netto};
+  return {lav:lav, data:data, tl:tl, tit:tit, az:az, netto:netto, riga:riga, nRicalcoli:nRicalcoli};
 }
 function mostraLog(dati){
   var tbody = document.getElementById('log-body');
@@ -2744,6 +2800,7 @@ function mostraLog(dati){
       '<td style="'+tdStyle+'color:#cbd5e1;font-size:12px;min-width:130px;">'+azienda+'</td>'+
       '<td style="'+tdStyle+'color:#a5b4fc;font-size:11px;min-width:140px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+titolo+'">'+titolo+'</td>'+
       '<td style="'+tdStyle+'color:#fcd34d;font-size:12px;white-space:nowrap;min-width:100px;text-align:right;font-weight:700;">'+netto+'</td>'+
+      '<td style="'+tdStyle+'color:#34d399;font-size:11px;text-align:center;min-width:80px;">'+(d.nRicalcoli ? 'R'+d.riga+' · '+d.nRicalcoli+'x' : '')+'</td>'+
       '<td style="'+tdStyle+'color:#6b7280;font-size:10px;white-space:nowrap;min-width:90px;">'+ip+'</td>'+
       '</tr>';
   }).join('');
