@@ -1432,6 +1432,13 @@ function selPersona(p){
   nomInp.value=p.nominativo;
   acList.style.display="none";
   // Mostra box
+  // Logga simulazioni righe attive prima di cambiare lavoratore
+  if(typeof _logSimulazioneRiga==='function'){
+    for(var _ni=1;_ni<=31;_ni++){
+      var _nc=document.getElementById('chk_'+_ni);
+      if(_nc && _nc.checked && window._simCount[_ni]>0) _logSimulazioneRiga(_ni);
+    }
+  }
   document.getElementById("nom-name").textContent=p.nominativo;
   document.getElementById("nom-badges").innerHTML=
     `<span class="badge ${p.anzianita==="SY"?"badge-sy":"badge-sc"}">${p.anzianita||""}</span>`+
@@ -1567,6 +1574,17 @@ function stampaFattura(titoloPDF){
   var nominativo=nomEl?nomEl.value.trim():"";
   if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
 
+  // ── Prima della stampa logga simulazioni di tutte le righe attive ──
+  if(typeof _logSimulazioneRiga==='function'){
+    for(var _si=1;_si<=31;_si++){
+      var _sc=document.getElementById('chk_'+_si);
+      if(_sc && _sc.checked){
+        if(!window._simCount[_si] || window._simCount[_si]===0)
+          window._simCount[_si]=1; // forza almeno 1 se riga attiva
+        _logSimulazioneRiga(_si);
+      }
+    }
+  }
   // ── Traccia la stampa nel log ──
   logAzione('STAMPA', _dettaglioFattura());
   var persona=DB.persone.find(function(p){return p.nominativo===nominativo;})||{};
