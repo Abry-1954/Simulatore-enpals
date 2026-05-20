@@ -569,7 +569,6 @@ self.addEventListener('fetch',e=>{
     var logo = document.querySelector('.hdr-logo');
     if(logo){
       logo.textContent += '  |  ' + user + (ruolo==='admin' ? ' 👑' : '');
-      // Aggiunge pulsante Logout dopo il nome utente
       var btnOut = document.createElement('button');
       btnOut.textContent = '⏻ Esci';
       btnOut.title = 'Logout';
@@ -582,7 +581,7 @@ self.addEventListener('fetch',e=>{
           sessionStorage.clear();
           window._authToken = null;
           window.location.reload();
-        }, 500); // aspetta 500ms per dare tempo al log di partire
+        }, 500);
       };
       logo.appendChild(btnOut);
     }
@@ -1351,20 +1350,10 @@ function onChkChange(i){
     if(el)el.disabled=!checked;
   });
   if(!checked){
-    // Riga disattivata: logga simulazione se aveva ricalcoli
-    if(typeof _logSimulazioneRiga==='function') _logSimulazioneRiga(i);
     const res=document.getElementById("res_"+i);
     if(res){res.textContent="—";res.className="cell-result zero";}
+    window._simCount[i] = 0; // azzera contatore riga disattivata
   } else {
-    // Riga attivata: logga simulazione delle righe precedentemente attive
-    if(typeof _logSimulazioneRiga==='function'){
-      for(var _j=1;_j<=31;_j++){
-        if(_j!==i){
-          var _c=document.getElementById('chk_'+_j);
-          if(!_c||!_c.checked) _logSimulazioneRiga(_j);
-        }
-      }
-    }
     window._simCount[i] = 0; // azzera contatore riga appena attivata
   }
   ricalcolaTutto();
@@ -1585,6 +1574,17 @@ function stampaFattura(titoloPDF){
   var nominativo=nomEl?nomEl.value.trim():"";
   if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
 
+  // ── Prima della stampa logga simulazioni di tutte le righe attive ──
+  if(typeof _logSimulazioneRiga==='function'){
+    for(var _si=1;_si<=31;_si++){
+      var _sc=document.getElementById('chk_'+_si);
+      if(_sc && _sc.checked){
+        if(!window._simCount[_si] || window._simCount[_si]===0)
+          window._simCount[_si]=1; // forza almeno 1 se riga attiva
+        _logSimulazioneRiga(_si);
+      }
+    }
+  }
   // ── Traccia la stampa nel log ──
   logAzione('STAMPA', _dettaglioFattura());
   var persona=DB.persone.find(function(p){return p.nominativo===nominativo;})||{};
