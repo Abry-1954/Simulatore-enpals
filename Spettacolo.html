@@ -513,6 +513,8 @@ self.addEventListener('fetch',e=>{
         sessionStorage.setItem('enpals_ruolo', data.ruolo || 'utente');
         sessionStorage.setItem('enpals_user', u);
         sessionStorage.setItem('enpals_lrt', data.log_read_token || '');
+        sessionStorage.setItem('enpals_cu', u);
+        sessionStorage.setItem('enpals_cp', p);
         // Salva credenziali per re-login automatico se Render riavvia
         sessionStorage.setItem('enpals_cu', u);
         sessionStorage.setItem('enpals_cp', p);
@@ -2336,6 +2338,7 @@ async function eliminaFattura(rec_nbr, rif){
             <th style="padding:8px;text-align:left;min-width:90px;">Azione</th>
             <th style="padding:8px;text-align:left;min-width:150px;">Lavoratore</th>
             <th style="padding:8px;text-align:left;min-width:130px;">Azienda</th>
+            <th style="padding:8px;text-align:left;min-width:140px;">Titolo</th>
             <th style="padding:8px;text-align:right;min-width:100px;">Netto €</th>
             <th style="padding:8px;text-align:left;min-width:90px;">IP</th>
           </tr>
@@ -2429,8 +2432,8 @@ function _dettaglioFattura(){
 var _logData = [];
 
 async function caricaLogGithub(){
-  document.getElementById('pannello-log').style.display='block';
-  document.getElementById('log-body').innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
+  // NON tocca display del pannello — lo gestisce solo apriPannelloLog
+  document.getElementById('log-body').innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
   try {
     // Legge direttamente da GitHub API — non serve token per repository privato con raw URL
     // Usa GitHub API raw content
@@ -2695,10 +2698,12 @@ function mostraLog(dati){
     var d = isStampaSimul ? _parseDettaglio(det) : {};
     var lavoratore = isStampaSimul ? (d.lav||'') : det;
     var azienda    = isStampaSimul ? (d.az||'') : '';
+    var titolo     = isStampaSimul ? (d.tit||'') : '';
     var netto      = isStampaSimul ? (d.netto||'') : '';
     // Tronca stringhe lunghe
     if(lavoratore.length>40) lavoratore=lavoratore.substring(0,40)+'…';
     if(azienda.length>35)    azienda=azienda.substring(0,35)+'…';
+    if(titolo.length>35)     titolo=titolo.substring(0,35)+'…';
     if(!isStampaSimul && lavoratore.length>60) lavoratore=lavoratore.substring(0,60)+'…';
     var ip = r.ip ? r.ip.split(',')[0].trim() : '';
     var tdStyle = 'padding:5px 8px;vertical-align:middle;';
@@ -2709,6 +2714,7 @@ function mostraLog(dati){
       '<td style="'+tdStyle+'min-width:90px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;white-space:nowrap;">'+r.azione+'</span></td>'+
       '<td style="'+tdStyle+'color:#e2e8f0;font-size:12px;min-width:150px;">'+lavoratore+'</td>'+
       '<td style="'+tdStyle+'color:#cbd5e1;font-size:12px;min-width:130px;">'+azienda+'</td>'+
+      '<td style="'+tdStyle+'color:#a5b4fc;font-size:11px;min-width:140px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+titolo+'">'+titolo+'</td>'+
       '<td style="'+tdStyle+'color:#fcd34d;font-size:12px;white-space:nowrap;min-width:100px;text-align:right;font-weight:700;">'+netto+'</td>'+
       '<td style="'+tdStyle+'color:#6b7280;font-size:10px;white-space:nowrap;min-width:90px;">'+ip+'</td>'+
       '</tr>';
