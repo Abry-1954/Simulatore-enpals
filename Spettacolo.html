@@ -2357,7 +2357,16 @@ function logAzione(azione, dettaglio){
   // Sostituisce apostrofi tipografici e normalizza
     var detSafe = (dettaglio||'');
 
-  var payload = JSON.stringify({azione: azione, dettaglio: detSafe});
+  var lrt = window._logReadToken || sessionStorage.getItem('enpals_lrt') || '';
+  var cu  = sessionStorage.getItem('enpals_cu') || '';
+  var cr  = sessionStorage.getItem('enpals_ruolo') || 'utente';
+  var payload = JSON.stringify({
+    azione: azione,
+    dettaglio: detSafe,
+    log_read_token: lrt,   // fallback auth se sessione JWT scaduta
+    utente: cu,
+    ruolo: cr
+  });
 
   // 1. Manda al server locale se disponibile
   authFetch('/log-azione',{
@@ -2432,7 +2441,7 @@ function _dettaglioFattura(){
 var _logData = [];
 
 async function caricaLogGithub(){
-  // NON tocca display del pannello — lo gestisce solo apriPannelloLog
+  // NON tocca il display del pannello — lo gestisce solo apriPannelloLog (evita flickering)
   document.getElementById('log-body').innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:#6b7280;">⏳ Caricamento log da GitHub...</td></tr>';
   try {
     // Legge direttamente da GitHub API — non serve token per repository privato con raw URL
