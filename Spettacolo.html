@@ -2477,10 +2477,9 @@ function _logSimulazioneRiga(i){
   var data  = val('dl_' + i);
   var tl    = val('tl_' + i);
   var tit   = val('tit_' + i);
-  var res   = pulisci(txt('res_' + i));   // imponibile riga
-  var netto = pulisci(txt('t-netto'));    // netto totale corrente
+  var impon = pulisci(txt('res_' + i));   // imponibile riga specifica
 
-  var det = [lav, data, tl, tit, az, netto].join('_');
+  var det = [lav, data, tl, tit, az, impon].join('_');
   logAzione('SIMULAZIONE', det + '|R' + i + '|N' + count);
   window._simCount[i] = 0; // azzera dopo il log
 }
