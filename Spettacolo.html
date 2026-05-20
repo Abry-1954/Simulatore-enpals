@@ -567,7 +567,25 @@ self.addEventListener('fetch',e=>{
   // ── Applica restrizioni ruolo ──
   function applicaRuolo(ruolo, user){
     var logo = document.querySelector('.hdr-logo');
-    if(logo) logo.textContent += '  |  ' + user + (ruolo==='admin' ? ' 👑' : '');
+    if(logo){
+      logo.textContent += '  |  ' + user + (ruolo==='admin' ? ' 👑' : '');
+      // Aggiunge pulsante Logout dopo il nome utente
+      var btnOut = document.createElement('button');
+      btnOut.textContent = '⏻ Esci';
+      btnOut.title = 'Logout';
+      btnOut.style.cssText = 'margin-left:12px;padding:2px 10px;font-size:11px;background:#1e3a5f;color:#93c5fd;border:1px solid #2563eb;border-radius:6px;cursor:pointer;vertical-align:middle;';
+      btnOut.onmouseover = function(){ this.style.background='#dc2626'; this.style.color='#fff'; this.style.borderColor='#dc2626'; };
+      btnOut.onmouseout  = function(){ this.style.background='#1e3a5f'; this.style.color='#93c5fd'; this.style.borderColor='#2563eb'; };
+      btnOut.onclick = function(){
+        if(typeof logAzione==='function') logAzione('LOGOUT','');
+        setTimeout(function(){
+          sessionStorage.clear();
+          window._authToken = null;
+          window.location.reload();
+        }, 500); // aspetta 500ms per dare tempo al log di partire
+      };
+      logo.appendChild(btnOut);
+    }
     if(ruolo !== 'admin'){
       ['btn-fetch','btn-gestione','btn-salva','btn-carica'].forEach(function(cls){
         var el = document.querySelector('.'+cls);
@@ -1432,13 +1450,6 @@ function selPersona(p){
   nomInp.value=p.nominativo;
   acList.style.display="none";
   // Mostra box
-  // Logga simulazioni righe attive prima di cambiare lavoratore
-  if(typeof _logSimulazioneRiga==='function'){
-    for(var _ni=1;_ni<=31;_ni++){
-      var _nc=document.getElementById('chk_'+_ni);
-      if(_nc && _nc.checked && window._simCount[_ni]>0) _logSimulazioneRiga(_ni);
-    }
-  }
   document.getElementById("nom-name").textContent=p.nominativo;
   document.getElementById("nom-badges").innerHTML=
     `<span class="badge ${p.anzianita==="SY"?"badge-sy":"badge-sc"}">${p.anzianita||""}</span>`+
@@ -1574,17 +1585,6 @@ function stampaFattura(titoloPDF){
   var nominativo=nomEl?nomEl.value.trim():"";
   if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
 
-  // ── Prima della stampa logga simulazioni di tutte le righe attive ──
-  if(typeof _logSimulazioneRiga==='function'){
-    for(var _si=1;_si<=31;_si++){
-      var _sc=document.getElementById('chk_'+_si);
-      if(_sc && _sc.checked){
-        if(!window._simCount[_si] || window._simCount[_si]===0)
-          window._simCount[_si]=1; // forza almeno 1 se riga attiva
-        _logSimulazioneRiga(_si);
-      }
-    }
-  }
   // ── Traccia la stampa nel log ──
   logAzione('STAMPA', _dettaglioFattura());
   var persona=DB.persone.find(function(p){return p.nominativo===nominativo;})||{};
