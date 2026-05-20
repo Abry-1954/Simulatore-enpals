@@ -2459,6 +2459,25 @@ async function caricaLogGithub(){
     if(lrt) hdrs['X-Log-Token'] = lrt;
     if(window._authToken) hdrs['Authorization'] = 'Bearer ' + window._authToken;
     var r = await fetch(SERVER_RENDER + '/log-github', { headers: hdrs });
+    // Se 401 (sessione Render scaduta) — re-login automatico e riprova
+    if(r.status === 401){
+      var uVal = sessionStorage.getItem('enpals_cu') || '';
+      var pVal = sessionStorage.getItem('enpals_cp') || '';
+      if(uVal && pVal){
+        var lr = await fetch(SERVER_RENDER+'/login',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({username:uVal, password:pVal})
+        });
+        var ld = await lr.json();
+        if(ld.ok && ld.token){
+          window._authToken = ld.token;
+          sessionStorage.setItem('enpals_auth','tok:'+ld.token);
+          hdrs['Authorization'] = 'Bearer ' + ld.token;
+          r = await fetch(SERVER_RENDER + '/log-github', { headers: hdrs });
+        }
+      }
+    }
     if(!r.ok) throw new Error('HTTP ' + r.status);
     var dati = await r.json();
     if(dati && dati.length){
