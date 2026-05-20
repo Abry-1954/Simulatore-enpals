@@ -1140,13 +1140,14 @@ function calcolaEnpalsConImpGG(r, impGG, giorni){
   return {e919,e1,e25,e05,totLav,d2381,d10,d25,d128,d128det,totDat};
 }
 
+// Contatori simulazione — dichiarati qui per essere disponibili da subito
+if(typeof window._simCount==='undefined') window._simCount={};
+
 function ricalcolaTutto(){
   // Incrementa contatore ricalcoli per ogni riga attiva
-  if(typeof _simCount!=='undefined'){
-    for(var _ri=1;_ri<=31;_ri++){
-      var _chk=document.getElementById('chk_'+_ri);
-      if(_chk && _chk.checked) _simCount[_ri]=(_simCount[_ri]||0)+1;
-    }
+  for(var _ri=1;_ri<=31;_ri++){
+    var _chk=document.getElementById('chk_'+_ri);
+    if(_chk && _chk.checked) window._simCount[_ri]=(window._simCount[_ri]||0)+1;
   }
 
   let anni=new Set();
@@ -1346,7 +1347,7 @@ function onChkChange(i){
         }
       }
     }
-    if(typeof _simCount!=='undefined') _simCount[i] = 0;
+    window._simCount[i] = 0; // azzera contatore riga appena attivata
   }
   ricalcolaTutto();
 }
@@ -1431,13 +1432,6 @@ function selPersona(p){
   nomInp.value=p.nominativo;
   acList.style.display="none";
   // Mostra box
-  // Logga simulazioni righe attive prima di cambiare lavoratore
-  if(typeof _logSimulazioneRiga==='function'){
-    for(var _ni=1;_ni<=31;_ni++){
-      var _nc=document.getElementById('chk_'+_ni);
-      if(_nc && _nc.checked) _logSimulazioneRiga(_ni);
-    }
-  }
   document.getElementById("nom-name").textContent=p.nominativo;
   document.getElementById("nom-badges").innerHTML=
     `<span class="badge ${p.anzianita==="SY"?"badge-sy":"badge-sc"}">${p.anzianita||""}</span>`+
@@ -1573,13 +1567,6 @@ function stampaFattura(titoloPDF){
   var nominativo=nomEl?nomEl.value.trim():"";
   if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
 
-  // ── Prima della stampa logga simulazioni di tutte le righe attive ──
-  if(typeof _logSimulazioneRiga==='function'){
-    for(var _si=1;_si<=31;_si++){
-      var _sc=document.getElementById('chk_'+_si);
-      if(_sc && _sc.checked) _logSimulazioneRiga(_si);
-    }
-  }
   // ── Traccia la stampa nel log ──
   logAzione('STAMPA', _dettaglioFattura());
   var persona=DB.persone.find(function(p){return p.nominativo===nominativo;})||{};
@@ -2471,12 +2458,12 @@ function _dettaglioFattura(){
 // Il tracciamento STAMPA è integrato direttamente in stampaFattura() — vedi sotto
 
 // ── Contatori ricalcoli per riga ──
-var _simCount = {};   // _simCount[i] = numero ricalcoli sulla riga i
-var _simAttiva = {};  // _simAttiva[i] = true se la riga i è attiva
+// _simCount già dichiarato nel primo blocco script
+var _simAttiva = {};
 
 // Logga SIMULAZIONE per una riga specifica
 function _logSimulazioneRiga(i){
-  var count = _simCount[i] || 0;
+  var count = window._simCount[i] || 0;
   if(count === 0) return; // nessun ricalcolo, niente da loggare
 
   function val(id){ var e=document.getElementById(id); return e ? e.value.trim() : ''; }
@@ -2495,7 +2482,7 @@ function _logSimulazioneRiga(i){
 
   var det = [lav, data, tl, tit, az, netto].join('_');
   logAzione('SIMULAZIONE', det + '|R' + i + '|N' + count);
-  _simCount[i] = 0; // azzera dopo il log
+  window._simCount[i] = 0; // azzera dopo il log
 }
 
 // Traccia ricalcolo (simulazione) — loga solo sul pulsante "Ricalcola tutto" manuale
