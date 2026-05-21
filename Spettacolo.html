@@ -617,6 +617,29 @@ self.addEventListener('fetch',e=>{
         var el = document.querySelector('.'+cls);
         if(el) el.style.display='none';
       });
+      // Blocca campo nominativo — utente normale vede solo se stesso
+      var nomInput = document.getElementById('inp-nom');
+      if(nomInput){
+        nomInput.value = user.toUpperCase();
+        nomInput.readOnly = true;
+        nomInput.style.cursor = 'not-allowed';
+        nomInput.style.opacity = '0.75';
+        nomInput.title = 'Accesso limitato al proprio nominativo';
+        // Cerca automaticamente il nominativo nel DB appena disponibile
+        var _tentaNomUtente = function(){
+          if(window.DB && window.DB.persone && window.DB.persone.length){
+            var trovato = window.DB.persone.find(function(p){
+              return p.nominativo.toUpperCase() === user.toUpperCase();
+            });
+            if(trovato){
+              selPersona(trovato);
+            }
+          } else {
+            setTimeout(_tentaNomUtente, 500);
+          }
+        };
+        setTimeout(_tentaNomUtente, 500);
+      }
     } else {
       var btnLog = document.getElementById('btn-log-admin');
       if(btnLog) btnLog.style.display='inline-block';
@@ -1428,6 +1451,8 @@ const acList=document.getElementById("ac-list");
 let acIdx=-1;
 
 nomInp.addEventListener("input",function(){
+  // Se campo bloccato (utente normale) non mostrare tendina di ricerca
+  if(this.readOnly){ acList.style.display="none"; return; }
   const q=this.value.trim().toUpperCase();
   acList.innerHTML="";acIdx=-1;
   if(q.length<2){acList.style.display="none";return;}
