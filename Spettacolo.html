@@ -629,8 +629,8 @@ self.addEventListener('fetch',e=>{
         // setTimeout 0 cede il controllo al browser e poi esegue quando tutto è pronto
         var _userNome = user.toUpperCase();
         setTimeout(function(){
-          if(window.DB && window.DB.persone && typeof selPersona === 'function'){
-            var trovato = window.DB.persone.find(function(p){
+          if(typeof DB !== 'undefined' && DB.persone && typeof selPersona === 'function'){
+            var trovato = DB.persone.find(function(p){
               return p.nominativo.toUpperCase() === _userNome;
             });
             if(trovato) selPersona(trovato);
