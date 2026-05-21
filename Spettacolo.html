@@ -1567,6 +1567,15 @@ function authFetch(path, options){
   }
   // Se il path è già un URL completo usalo, altrimenti prependi il server
   var url = path.startsWith("http") ? path : "http://localhost:8765" + path;
+  // Per chiamate al server locale aggiungi sempre le credenziali negli header
+  if(url.indexOf("localhost") >= 0 || url.indexOf("127.0.0.1") >= 0){
+    var cu = sessionStorage.getItem('enpals_cu') || '';
+    var cp = sessionStorage.getItem('enpals_cp') || '';
+    if(cu && cp){
+      options.headers["X-Auth-User"] = cu;
+      options.headers["X-Auth-Pass"] = cp;
+    }
+  }
   return fetch(url, options);
 }
 
