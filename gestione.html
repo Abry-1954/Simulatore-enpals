@@ -396,7 +396,6 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 // LOGIN — sessione condivisa con Spettacolo.html
 // Stessa chiave sessionStorage: enpals_auth
 
-// Log operazioni DB tramite window.opener (Spettacolo.html)
 function logDB(azione, dettaglio){
   try{
     if(window.opener && typeof window.opener.logAzione === 'function'){
@@ -441,6 +440,8 @@ function logDB(azione, dettaglio){
       if(data.ok && data.token){
         window._authToken = data.token;
         sessionStorage.setItem(K, "tok:"+data.token);
+        sessionStorage.setItem('enpals_cu', u);
+        sessionStorage.setItem('enpals_cp', p);
         document.getElementById("login-overlay").style.display = "none";
         serverOk = true;
       } else {
@@ -456,6 +457,8 @@ function logDB(azione, dettaglio){
     if(!serverOk){
       if(u === U && p === P){
         sessionStorage.setItem(K, "1");
+        sessionStorage.setItem('enpals_cu', u);
+        sessionStorage.setItem('enpals_cp', p);
         document.getElementById("login-overlay").style.display = "none";
         // Mostra avviso server offline
         setTimeout(function(){
@@ -526,6 +529,14 @@ function fmtN(n){return n!=null?Number(n).toLocaleString('it-IT',{minimumFractio
 function pct(n){return n!=null?(n*100).toFixed(2)+'%':'—';}
 async function api(url, method='GET', body=null){
   const opts={method, headers:{'Content-Type':'application/json'}};
+  // Aggiunge sempre le credenziali per il server locale
+  var cu = sessionStorage.getItem('enpals_cu') || '';
+  var cp = sessionStorage.getItem('enpals_cp') || '';
+  if(cu && cp){
+    opts.headers['X-Auth-User'] = cu;
+    opts.headers['X-Auth-Pass'] = cp;
+  }
+  if(window._authToken) opts.headers['Authorization'] = 'Bearer ' + window._authToken;
   if(body) opts.body=JSON.stringify(body);
   const r=await fetch(API+url, opts);
   return r.json();
