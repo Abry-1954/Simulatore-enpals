@@ -607,6 +607,11 @@ self.addEventListener('fetch',e=>{
       };
       logo.appendChild(btnOut);
     }
+    // Pulsante utenti visibile solo ai master
+    var masterList = ['alberita','abramelek'];
+    var btnUsers = document.getElementById('btn-users');
+    if(btnUsers && masterList.indexOf(user) >= 0) btnUsers.style.display='';
+
     if(ruolo !== 'admin'){
       ['btn-fetch','btn-gestione','btn-salva','btn-carica'].forEach(function(cls){
         var el = document.querySelector('.'+cls);
@@ -678,6 +683,7 @@ function toggleMain(){
   <button class="btn-ricalcola" onclick="ricalcolaTutto()">⟳ Ricalcola tutto</button>
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button id="btn-log-admin" onclick="apriPannelloLog()" style="display:none;background:rgba(255,200,0,0.2);color:#fcd34d;border:1px solid rgba(255,200,0,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza log accessi">📋 Log</button>
+  <button id="btn-users" onclick="apriPannelloUtenti()" style="display:none;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Gestione utenti">👥 Utenti</button>
   <button class="btn-fetch" onclick="if(richiedeServer('Aggiorna i 3 DB'))fetchDB();" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
   <button class="btn-gestione" onclick="if(richiedeServer('Gestisci i 3 DB'))apriGestione();" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
   <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;cursor:pointer;margin-right:4px;" title="Aggiunge filigrana PROFORMA al documento">
@@ -2853,6 +2859,137 @@ function mostraLog(dati){
       '<td style="'+tdStyle+'color:#6b7280;font-size:10px;white-space:nowrap;min-width:90px;">'+ip+'</td>'+
       '</tr>';
   }).join('');
+}
+</script>
+
+<!-- ══ PANNELLO GESTIONE UTENTI ══ -->
+<div id="pannello-utenti" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;overflow-y:auto;">
+  <div style="max-width:600px;margin:40px auto;background:#0f172a;border:1px solid #1e3a8a;border-radius:12px;padding:28px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:700;color:#93c5fd;">👥 Gestione Utenti</div>
+      <button onclick="chiudiPannelloUtenti()" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;padding:4px 12px;cursor:pointer;">✕ Chiudi</button>
+    </div>
+
+    <!-- Form crea/modifica -->
+    <div style="background:#1e293b;border-radius:8px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:600;color:#fcd34d;margin-bottom:12px;" id="utenti-form-title">➕ Nuovo utente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;">
+        <div>
+          <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:4px;">USERNAME</label>
+          <input id="u-username" type="text" placeholder="es. mario" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:12px;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:4px;">PASSWORD</label>
+          <input id="u-password" type="text" placeholder="password" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:12px;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:4px;">RUOLO</label>
+          <select id="u-ruolo" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:12px;">
+            <option value="utente">utente</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <button onclick="salvaUtente()" style="background:#1e3a8a;color:#fff;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">💾 Salva</button>
+      </div>
+      <div id="u-msg" style="margin-top:8px;font-size:11px;display:none;"></div>
+    </div>
+
+    <!-- Lista utenti -->
+    <div style="font-size:11px;color:#64748b;margin-bottom:8px;">Utenti registrati:</div>
+    <div id="u-lista" style="background:#1e293b;border-radius:8px;overflow:hidden;">
+      <div style="text-align:center;padding:20px;color:#64748b;">Caricamento...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function apriPannelloUtenti(){
+  document.getElementById('pannello-utenti').style.display='block';
+  caricaListaUtenti();
+}
+function chiudiPannelloUtenti(){
+  document.getElementById('pannello-utenti').style.display='none';
+  // reset form
+  document.getElementById('u-username').value='';
+  document.getElementById('u-password').value='';
+  document.getElementById('u-ruolo').value='utente';
+  document.getElementById('utenti-form-title').textContent='➕ Nuovo utente';
+  document.getElementById('u-msg').style.display='none';
+}
+async function caricaListaUtenti(){
+  var lista = document.getElementById('u-lista');
+  lista.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Caricamento...</div>';
+  try{
+    var r = await authFetch('https://enpals-server.onrender.com/users');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var utenti = await r.json();
+    if(!utenti.length){ lista.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Nessun utente</div>'; return; }
+    var html = '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr style="background:#0f172a;"><th style="padding:8px;text-align:left;color:#64748b;font-size:11px;">Username</th><th style="padding:8px;text-align:left;color:#64748b;font-size:11px;">Ruolo</th><th style="padding:8px;"></th></tr>';
+    utenti.forEach(function(u){
+      var isMaster = u.username==='alberita'||u.username==='abramelek';
+      var bg = u.ruolo==='admin' ? '#1e3a5f' : '#1e293b';
+      var badge = u.ruolo==='admin' ? '<span style="background:#1e3a8a;color:#93c5fd;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;">admin</span>' : '<span style="background:#374151;color:#9ca3af;border-radius:4px;padding:2px 7px;font-size:10px;">utente</span>';
+      var azioni = isMaster ?
+        '<span style="color:#374151;font-size:10px;">master</span>' :
+        '<button onclick="modificaUtente(this)" data-username="'+u.username+'" data-ruolo="'+u.ruolo+'" style="background:#1e3a8a;color:#93c5fd;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:10px;margin-right:4px;">✏️</button>'+
+        '<button onclick="eliminaUtente(this)" data-username="'+u.username+'" style="background:#7f1d1d;color:#fca5a5;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:10px;">🗑</button>';
+      html += '<tr style="background:'+bg+';border-top:1px solid #0f172a;">'+
+        '<td style="padding:10px 8px;color:#e2e8f0;font-size:12px;font-weight:600;">'+u.username+'</td>'+
+        '<td style="padding:10px 8px;">'+badge+'</td>'+
+        '<td style="padding:10px 8px;text-align:right;">'+azioni+'</td></tr>';
+    });
+    html += '</table>';
+    lista.innerHTML = html;
+  }catch(e){
+    lista.innerHTML='<div style="text-align:center;padding:20px;color:#f87171;">Errore: '+e.message+'</div>';
+  }
+}
+async function salvaUtente(){
+  var username = document.getElementById('u-username').value.trim();
+  var password = document.getElementById('u-password').value.trim();
+  var ruolo    = document.getElementById('u-ruolo').value;
+  var msg = document.getElementById('u-msg');
+  if(!username||!password){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Username e password obbligatori'; return; }
+  try{
+    var r = await authFetch('https://enpals-server.onrender.com/users',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:username,password:password,ruolo:ruolo})
+    });
+    var d = await r.json();
+    if(d.ok){
+      msg.style.display='block'; msg.style.color='#34d399'; msg.textContent='✓ '+d.messaggio;
+      document.getElementById('u-username').value='';
+      document.getElementById('u-password').value='';
+      document.getElementById('u-ruolo').value='utente';
+      document.getElementById('utenti-form-title').textContent='➕ Nuovo utente';
+      caricaListaUtenti();
+    } else {
+      msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='✗ '+(d.error||'Errore');
+    }
+  }catch(e){
+    msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='✗ '+e.message;
+  }
+}
+function modificaUtente(btn){
+  var username = btn.getAttribute('data-username');
+  var ruolo    = btn.getAttribute('data-ruolo');
+  document.getElementById('u-username').value=username;
+  document.getElementById('u-password').value='';
+  document.getElementById('u-ruolo').value=ruolo;
+  document.getElementById('utenti-form-title').textContent='✏️ Modifica: '+username+' (lascia password vuota per non cambiarla)';
+  document.getElementById('u-msg').style.display='none';
+}
+async function eliminaUtente(btn){
+  var username = btn.getAttribute('data-username');
+  if(!confirm('Eliminare utente "'+username+'"?')) return;
+  try{
+    var r = await authFetch('https://enpals-server.onrender.com/users/'+username,{method:'DELETE'});
+    var d = await r.json();
+    if(d.ok){ caricaListaUtenti(); }
+    else { alert('Errore: '+(d.error||'sconosciuto')); }
+  }catch(e){ alert('Errore: '+e.message); }
 }
 </script>
 
