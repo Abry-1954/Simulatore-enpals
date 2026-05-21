@@ -2916,11 +2916,33 @@ function chiudiPannelloUtenti(){
   document.getElementById('utenti-form-title').textContent='➕ Nuovo utente';
   document.getElementById('u-msg').style.display='none';
 }
+async function _usersAuthFetch(url, options){
+  // authFetch con re-login automatico su 401
+  var r = await authFetch(url, options);
+  if(r && r.status===401){
+    var uVal=sessionStorage.getItem('enpals_cu')||'';
+    var pVal=sessionStorage.getItem('enpals_cp')||'';
+    if(uVal && pVal){
+      var lr=await fetch('https://enpals-server.onrender.com/login',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:uVal,password:pVal})
+      });
+      var ld=await lr.json();
+      if(ld.ok && ld.token){
+        window._authToken=ld.token;
+        sessionStorage.setItem('enpals_auth','tok:'+ld.token);
+        r = await authFetch(url, options);
+      }
+    }
+  }
+  return r;
+}
+
 async function caricaListaUtenti(){
   var lista = document.getElementById('u-lista');
   lista.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Caricamento...</div>';
   try{
-    var r = await authFetch('https://enpals-server.onrender.com/users');
+    var r = await _usersAuthFetch('https://enpals-server.onrender.com/users');
     if(!r.ok) throw new Error('HTTP '+r.status);
     var utenti = await r.json();
     if(!utenti.length){ lista.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Nessun utente</div>'; return; }
@@ -2950,9 +2972,10 @@ async function salvaUtente(){
   var password = document.getElementById('u-password').value.trim();
   var ruolo    = document.getElementById('u-ruolo').value;
   var msg = document.getElementById('u-msg');
-  if(!username||!password){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Username e password obbligatori'; return; }
+  if(!username){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Username obbligatorio'; return; }
+  // password può essere vuota in modifica (il server mantiene quella esistente)
   try{
-    var r = await authFetch('https://enpals-server.onrender.com/users',{
+    var r = await _usersAuthFetch('https://enpals-server.onrender.com/users',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username:username,password:password,ruolo:ruolo})
@@ -2985,7 +3008,7 @@ async function eliminaUtente(btn){
   var username = btn.getAttribute('data-username');
   if(!confirm('Eliminare utente "'+username+'"?')) return;
   try{
-    var r = await authFetch('https://enpals-server.onrender.com/users/'+username,{method:'DELETE'});
+    var r = await _usersAuthFetch('https://enpals-server.onrender.com/users/'+username,{method:'DELETE'});
     var d = await r.json();
     if(d.ok){ caricaListaUtenti(); }
     else { alert('Errore: '+(d.error||'sconosciuto')); }
