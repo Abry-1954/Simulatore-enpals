@@ -626,21 +626,16 @@ self.addEventListener('fetch',e=>{
         nomInput.style.opacity = '0.75';
         nomInput.title = 'Accesso limitato al proprio nominativo';
         // Cerca automaticamente il nominativo nel DB e popola il riquadro
-        // Il DB è embedded nell'HTML — usiamo DOMContentLoaded o direttamente
-        var _cercaNomUtente = function(){
-          if(typeof selPersona === 'function' && window.DB && window.DB.persone && window.DB.persone.length){
+        // setTimeout 0 cede il controllo al browser e poi esegue quando tutto è pronto
+        var _userNome = user.toUpperCase();
+        setTimeout(function(){
+          if(window.DB && window.DB.persone && typeof selPersona === 'function'){
             var trovato = window.DB.persone.find(function(p){
-              return p.nominativo.toUpperCase() === user.toUpperCase();
+              return p.nominativo.toUpperCase() === _userNome;
             });
-            if(trovato){
-              selPersona(trovato);
-            }
-          } else {
-            setTimeout(_cercaNomUtente, 300);
+            if(trovato) selPersona(trovato);
           }
-        };
-        // Parte subito ma riprova se selPersona non è ancora definita
-        _cercaNomUtente();
+        }, 0);
       }
     } else {
       var btnLog = document.getElementById('btn-log-admin');
