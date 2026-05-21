@@ -2917,11 +2917,27 @@ function chiudiPannelloUtenti(){
   document.getElementById('u-msg').style.display='none';
 }
 async function _usersAuthFetch(url, options){
-  // authFetch con re-login automatico su 401
+  // Aggiunge sempre le credenziali negli header come fallback per sessioni scadute
+  options = options || {};
+  options.headers = options.headers || {};
+  var uVal = sessionStorage.getItem('enpals_cu') || '';
+  var pVal = sessionStorage.getItem('enpals_cp') || '';
+  if(uVal && pVal){
+    options.headers['X-Auth-User'] = uVal;
+    options.headers['X-Auth-Pass'] = pVal;
+    // Se POST, aggiunge anche nel body
+    if(options.body){
+      try{
+        var bod = JSON.parse(options.body);
+        bod['_auth_user'] = uVal;
+        bod['_auth_pass'] = pVal;
+        options.body = JSON.stringify(bod);
+      }catch(e){}
+    }
+  }
   var r = await authFetch(url, options);
   if(r && r.status===401){
-    var uVal=sessionStorage.getItem('enpals_cu')||'';
-    var pVal=sessionStorage.getItem('enpals_cp')||'';
+    // Re-login JWT e riprova
     if(uVal && pVal){
       var lr=await fetch('https://enpals-server.onrender.com/login',{
         method:'POST', headers:{'Content-Type':'application/json'},
