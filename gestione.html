@@ -71,6 +71,29 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 .sub-tab.active{background:#e8edf5;color:var(--accent);border-color:var(--accent);font-weight:600;}
 .sub-panel{display:none;}.sub-panel.active{display:block;}
 </style>
+<!-- ══ LOGIN OVERLAY (sessione condivisa con Spettacolo.html) ══ -->
+<style>
+#login-overlay{position:fixed;inset:0;background:#1e3a8a;z-index:9999;display:flex;align-items:center;justify-content:center;}
+.login-box{background:#fff;border-radius:12px;padding:2.5rem 2rem;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;}
+.login-logo{font-family:"DM Mono",monospace;font-size:13px;color:#2563eb;letter-spacing:.1em;margin-bottom:.5rem;}
+.login-title{font-family:"DM Sans",sans-serif;font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:1.75rem;}
+.login-group{text-align:left;margin-bottom:1rem;}
+.login-group label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:.35rem;}
+.login-group input{width:100%;padding:.55rem .75rem;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:"DM Sans",sans-serif;}
+.login-btn{width:100%;background:#1e3a8a;color:#fff;border:none;border-radius:7px;padding:.7rem;font-size:14px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;margin-top:.5rem;}
+.login-btn:hover{background:#2563eb;}
+.login-err{color:#dc2626;font-size:12px;margin-top:.6rem;display:none;}
+</style>
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">ENPALS / GESTIONE</div>
+    <div class="login-title">Accesso</div>
+    <div class="login-group"><label>Utente</label><input type="text" id="login-user" autocomplete="username" onkeydown="if(event.key==='Enter')doLoginGestione()"></div>
+    <div class="login-group"><label>Password</label><input type="password" id="login-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLoginGestione()"></div>
+    <button class="login-btn" onclick="doLoginGestione()">Entra</button>
+    <div class="login-err" id="login-err">Credenziali non valide.</div>
+  </div>
+</div>
 </head>
 <body>
 
@@ -363,6 +386,97 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════
+// LOGIN — sessione condivisa con Spettacolo.html
+// Stessa chiave sessionStorage: enpals_auth
+// ══════════════════════════════════════════════════════════════
+(function(){
+  var K = "enpals_auth";
+  var U = "alberita", P = "12111957";
+
+  function applyLogin(){
+    var overlay = document.getElementById("login-overlay");
+    if(!overlay) return;
+    var saved = sessionStorage.getItem(K);
+    // Se già loggato (token server o login locale) entra direttamente
+    if(saved === "1" || (saved && saved.startsWith("tok:"))){
+      overlay.style.display = "none";
+    }
+  }
+
+  window.doLoginGestione = async function(){
+    var u = document.getElementById("login-user").value.trim();
+    var p = document.getElementById("login-pass").value.trim();
+    var errEl = document.getElementById("login-err");
+    var btn = document.querySelector(".login-btn");
+    errEl.style.display = "none";
+    btn.textContent = "Accesso..."; btn.disabled = true;
+
+    // 1. Prova login sul server Render
+    var SERVER_URL = "https://enpals-server.onrender.com";
+    var serverOk = false;
+    try {
+      var res = await fetch(SERVER_URL+"/login", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username:u, password:p}),
+        signal: AbortSignal.timeout(30000)
+      });
+      var data = await res.json();
+      if(data.ok && data.token){
+        window._authToken = data.token;
+        sessionStorage.setItem(K, "tok:"+data.token);
+        sessionStorage.setItem('enpals_cu', u);
+        sessionStorage.setItem('enpals_cp', p);
+        document.getElementById("login-overlay").style.display = "none";
+        serverOk = true;
+      } else {
+        errEl.style.display = "block";
+        btn.textContent = "Entra"; btn.disabled = false;
+        return;
+      }
+    } catch(e) {
+      console.log("Server non raggiungibile, uso login locale:", e.message);
+    }
+
+    // 2. Fallback login locale
+    if(!serverOk){
+      if(u === U && p === P){
+        sessionStorage.setItem(K, "1");
+        sessionStorage.setItem('enpals_cu', u);
+        sessionStorage.setItem('enpals_cp', p);
+        document.getElementById("login-overlay").style.display = "none";
+        // Mostra avviso server offline
+        setTimeout(function(){
+          var av=document.createElement("div");
+          av.textContent="⚠ Server non raggiungibile — accesso locale attivo";
+          av.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#92400e;color:#fef3c7;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3);";
+          document.body.appendChild(av);
+          setTimeout(function(){av.remove();},4000);
+        },300);
+      } else {
+        errEl.style.display = "block";
+      }
+    }
+    btn.textContent = "Entra"; btn.disabled = false;
+  };
+
+  // ── Blocca accesso se utente normale ──
+  function verificaRuoloGestione(){
+    var ruolo = sessionStorage.getItem('enpals_ruolo');
+    var saved = sessionStorage.getItem("enpals_auth");
+    // Se già loggato e non admin → blocca
+    if((saved==="1" || (saved && saved.startsWith("tok:"))) && ruolo && ruolo !== 'admin'){
+      document.body.innerHTML = '<div style="position:fixed;inset:0;background:#1e3a8a;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;"><div style="font-family:DM Mono,monospace;font-size:13px;color:#93c5fd;letter-spacing:.1em;">ENPALS / GESTIONE</div><div style="background:#fff;border-radius:12px;padding:2rem;text-align:center;max-width:340px;"><div style="font-size:40px;margin-bottom:12px;">🔒</div><div style="font-weight:700;font-size:16px;color:#1a1a2e;margin-bottom:8px;">Accesso negato</div><div style="font-size:13px;color:#6b7280;">Questa sezione è riservata agli amministratori.</div><button onclick="window.close()" style="margin-top:16px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-size:13px;">Chiudi</button></div></div>';
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", function(){
+    applyLogin();
+    verificaRuoloGestione();
+  });
+})();
+
 const API = 'http://localhost:8765';
 let DATA = {persone:[], aziende:[], tariffe:[], inps:[], fasce:[], massimali:[], tasse:[]};
 
@@ -401,6 +515,14 @@ function fmtN(n){return n!=null?Number(n).toLocaleString('it-IT',{minimumFractio
 function pct(n){return n!=null?(n*100).toFixed(2)+'%':'—';}
 async function api(url, method='GET', body=null){
   const opts={method, headers:{'Content-Type':'application/json'}};
+  // Aggiunge sempre le credenziali per il server locale
+  var cu = sessionStorage.getItem('enpals_cu') || '';
+  var cp = sessionStorage.getItem('enpals_cp') || '';
+  if(cu && cp){
+    opts.headers['X-Auth-User'] = cu;
+    opts.headers['X-Auth-Pass'] = cp;
+  }
+  if(window._authToken) opts.headers['Authorization'] = 'Bearer ' + window._authToken;
   if(body) opts.body=JSON.stringify(body);
   const r=await fetch(API+url, opts);
   return r.json();
