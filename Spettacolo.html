@@ -704,15 +704,15 @@ function toggleMain(){
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button id="btn-log-admin" onclick="apriPannelloLog()" style="display:none;background:rgba(255,200,0,0.2);color:#fcd34d;border:1px solid rgba(255,200,0,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza log accessi">📋 Log</button>
   <button id="btn-users" onclick="apriPannelloUtenti()" style="display:none;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Gestione utenti">👥 Utenti</button>
-  <button class="btn-fetch" onclick="if(richiedeServer('Aggiorna i 3 DB'))fetchDB();" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
-  <button class="btn-gestione" onclick="if(richiedeServer('Gestisci i 3 DB'))apriGestione();" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
+  <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 3 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
+  <button class="btn-gestione" onclick="richiedeServer('Gestisci i 3 DB', apriGestione);" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
   <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;cursor:pointer;margin-right:4px;" title="Aggiunge filigrana PROFORMA al documento">
     <input type="checkbox" id="chk-proforma" style="cursor:pointer;accent-color:#f87171;">
     <span style="color:#fca5a5;font-weight:600;">PROFORMA</span>
   </label>
   <button class="btn-stampa" onclick="stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
-  <button class="btn-salva" onclick="if(richiedeServer('Salva su DB Fatture'))salvaFatturaSuDB();" title="Salva fattura su database">💾 Salva su DB Fatture</button>
-  <button class="btn-carica" onclick="if(richiedeServer('Carica Fattura'))apriModaleFatture();" title="Carica fattura da database">📂 Carica Fattura</button>
+  <button class="btn-salva" onclick="richiedeServer('Salva su DB Fatture', salvaFatturaSuDB);" title="Salva fattura su database">💾 Salva su DB Fatture</button>
+  <button class="btn-carica" onclick="richiedeServer('Carica Fattura', apriModaleFatture);" title="Carica fattura da database">📂 Carica Fattura</button>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
   <span id="server-status" style="font-size:11px;color:#fca5a5;margin-left:.5rem;">🔴 Server offline — solo calcoli</span>
 </div>
@@ -1605,12 +1605,31 @@ async function checkServer(){
   }
 }
 
-function richiedeServer(nomeAzione){
-  if(!_serverOnline){
-    alert("⚠ Funzione non disponibile\n\n\""+nomeAzione+"\" richiede il server locale (server.py).\n\nAvvia avvia.bat (Windows) o avvia.sh (Mac/Linux) nella cartella del programma.");
-    return false;
+async function richiedeServer(nomeAzione, callback){
+  if(_serverOnline){
+    if(callback) callback();
+    return true;
   }
-  return true;
+  // Server non ancora online — mostra messaggio e riprova per 30 secondi
+  var statusEl = document.getElementById('server-status');
+  var tentativo = 0;
+  var MAX = 6; // 6 tentativi x 5 sec = 30 sec
+  statusEl.textContent = '⏳ Attesa server locale...';
+  statusEl.style.color = '#fcd34d';
+  var interval = setInterval(async function(){
+    tentativo++;
+    await checkServer();
+    if(_serverOnline){
+      clearInterval(interval);
+      statusEl.textContent = '🟢 Server attivo';
+      statusEl.style.color = '#86efac';
+      if(callback) callback();
+    } else if(tentativo >= MAX){
+      clearInterval(interval);
+      alert("⚠ Funzione non disponibile\n\n\""+nomeAzione+"\" richiede il server locale (server.py).\n\nAvvia avvia.bat (Windows) o avvia.sh (Mac/Linux) nella cartella del programma.");
+    }
+  }, 5000);
+  return false;
 }
 
 // Controlla server all'avvio e ogni 30 secondi
