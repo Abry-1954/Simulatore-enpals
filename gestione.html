@@ -84,6 +84,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 .login-btn:hover{background:#2563eb;}
 .login-err{color:#dc2626;font-size:12px;margin-top:.6rem;display:none;}
 </style>
+<style>
+.btn-chiudi{position:fixed;top:12px;right:16px;z-index:1000;background:#7f1d1d;color:#fca5a5;border:1px solid #dc2626;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-chiudi:hover{background:#dc2626;color:#fff;}
+</style>
+<button class="btn-chiudi" onclick="window.close()">✕ Chiudi</button>
+
 <div id="login-overlay">
   <div class="login-box">
     <div class="login-logo">ENPALS / GESTIONE</div>
@@ -389,6 +395,15 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 // ══════════════════════════════════════════════════════════════
 // LOGIN — sessione condivisa con Spettacolo.html
 // Stessa chiave sessionStorage: enpals_auth
+
+// Log operazioni DB tramite window.opener (Spettacolo.html)
+function logDB(azione, dettaglio){
+  try{
+    if(window.opener && typeof window.opener.logAzione === 'function'){
+      window.opener.logAzione('GESTIONE_DB', azione + ': ' + dettaglio);
+    }
+  } catch(e){ console.log('logDB error:', e.message); }
+}
 // ══════════════════════════════════════════════════════════════
 (function(){
   var K = "enpals_auth";
@@ -426,8 +441,6 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
       if(data.ok && data.token){
         window._authToken = data.token;
         sessionStorage.setItem(K, "tok:"+data.token);
-        sessionStorage.setItem('enpals_cu', u);
-        sessionStorage.setItem('enpals_cp', p);
         document.getElementById("login-overlay").style.display = "none";
         serverOk = true;
       } else {
@@ -443,8 +456,6 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     if(!serverOk){
       if(u === U && p === P){
         sessionStorage.setItem(K, "1");
-        sessionStorage.setItem('enpals_cu', u);
-        sessionStorage.setItem('enpals_cp', p);
         document.getElementById("login-overlay").style.display = "none";
         // Mostra avviso server offline
         setTimeout(function(){
@@ -515,14 +526,6 @@ function fmtN(n){return n!=null?Number(n).toLocaleString('it-IT',{minimumFractio
 function pct(n){return n!=null?(n*100).toFixed(2)+'%':'—';}
 async function api(url, method='GET', body=null){
   const opts={method, headers:{'Content-Type':'application/json'}};
-  // Aggiunge sempre le credenziali per il server locale
-  var cu = sessionStorage.getItem('enpals_cu') || '';
-  var cp = sessionStorage.getItem('enpals_cp') || '';
-  if(cu && cp){
-    opts.headers['X-Auth-User'] = cu;
-    opts.headers['X-Auth-Pass'] = cp;
-  }
-  if(window._authToken) opts.headers['Authorization'] = 'Bearer ' + window._authToken;
   if(body) opts.body=JSON.stringify(body);
   const r=await fetch(API+url, opts);
   return r.json();
@@ -602,13 +605,13 @@ async function salvaPersona(){
   if(!d.nominativo){alert('Il nominativo è obbligatorio');return;}
   d.id=d.id?parseInt(d.id):null;
   const r=await api('/persone','POST',d);
-  if(r.ok){chiudiModali();await caricaPersone();showAlert('persone',r.msg);}
+  if(r.ok){logDB(d.id?'Modificata persona':'Inserita persona',d.nominativo||'');chiudiModali();await caricaPersone();showAlert('persone',r.msg);}
   else showAlert('persone','Errore: '+r.error,false);
 }
 async function eliminaPersona(id, nome){
   confermaElimina('Elimina "'+nome+'"?', async()=>{
     const r=await api('/persone?id='+id,'DELETE');
-    if(r.ok){await caricaPersone();showAlert('persone',nome+' eliminata');}
+    if(r.ok){logDB('Eliminata persona',nome);await caricaPersone();showAlert('persone',nome+' eliminata');}
     else showAlert('persone','Errore: '+r.error,false);
   });
 }
@@ -648,13 +651,13 @@ async function salvaAzienda(){
   if(!d.rag){alert('La ragione sociale è obbligatoria');return;}
   d.id=d.id?parseInt(d.id):null;
   const r=await api('/aziende','POST',d);
-  if(r.ok){chiudiModali();await caricaAziende();showAlert('aziende',r.msg);}
+  if(r.ok){logDB(d.id?'Modificata azienda':'Inserita azienda',d.rag||'');chiudiModali();await caricaAziende();showAlert('aziende',r.msg);}
   else showAlert('aziende','Errore: '+r.error,false);
 }
 async function eliminaAzienda(id,nome){
   confermaElimina('Elimina "'+nome+'"?',async()=>{
     const r=await api('/aziende?id='+id,'DELETE');
-    if(r.ok){await caricaAziende();showAlert('aziende',nome+' eliminata');}
+    if(r.ok){logDB('Eliminata azienda',nome);await caricaAziende();showAlert('aziende',nome+' eliminata');}
     else showAlert('aziende','Errore: '+r.error,false);
   });
 }
@@ -749,7 +752,7 @@ async function salvaTariffa(){
   .forEach(k=>{const el=document.getElementById('t-'+k);if(el)d[k]=el.value===''?null:el.value;});
   d.id=d.id?parseInt(d.id):null;
   const r=await api('/variabili/tariffe','POST',d);
-  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  if(r.ok){logDB('Salvata variabile tariffe',d.anno||d.categoria||'');chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
   else showAlert('variabili','Errore: '+r.error,false);
 }
 
@@ -764,7 +767,7 @@ async function salvaINPS(){
   ['id','anno','tipo_soggetto','codice','valore'].forEach(k=>{const el=document.getElementById('i-'+k);if(el)d[k]=el.value===''?null:el.value;});
   d.id=d.id?parseInt(d.id):null;
   const r=await api('/variabili/inps','POST',d);
-  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  if(r.ok){logDB('Salvata variabile inps',d.anno||d.categoria||'');chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
   else showAlert('variabili','Errore: '+r.error,false);
 }
 
@@ -779,7 +782,7 @@ async function salvaFascia(){
   ['id','anno','fascia','da_valore','a_valore','contribuzione'].forEach(k=>{const el=document.getElementById('f-'+k);if(el)d[k]=el.value===''?null:el.value;});
   d.id=d.id?parseInt(d.id):null;
   const r=await api('/variabili/fasce','POST',d);
-  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  if(r.ok){logDB('Salvata variabile fasce',d.anno||d.categoria||'');chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
   else showAlert('variabili','Errore: '+r.error,false);
 }
 
@@ -794,7 +797,7 @@ async function salvaMassimale(){
   ['id','anno','mass_retr_gg','mass_malat_gg'].forEach(k=>{const el=document.getElementById('m-'+k);if(el)d[k]=el.value===''?null:el.value;});
   d.id=d.id?parseInt(d.id):null;
   const r=await api('/variabili/massimali','POST',d);
-  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  if(r.ok){logDB('Salvata variabile massimali',d.anno||d.categoria||'');chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
   else showAlert('variabili','Errore: '+r.error,false);
 }
 
@@ -809,14 +812,14 @@ async function salvaTassa(){
   ['id','anno','iva','rit_acc_noada','rit_acc_ada_min36','rit_acc_ada_mag36'].forEach(k=>{const el=document.getElementById('x-'+k);if(el)d[k]=el.value===''?null:el.value;});
   d.id=d.id?parseInt(d.id):null;
   const r=await api('/variabili/tasse','POST',d);
-  if(r.ok){chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
+  if(r.ok){logDB('Salvata variabile tasse',d.anno||d.categoria||'');chiudiModali();await caricaVariabili();showAlert('variabili',r.msg);}
   else showAlert('variabili','Errore: '+r.error,false);
 }
 
 async function eliminaVar(tab, id, desc){
   confermaElimina('Elimina "'+desc+'" da '+tab+'?', async()=>{
     const r=await api('/variabili/'+tab+'?id='+id,'DELETE');
-    if(r.ok){await caricaVariabili();showAlert('variabili',desc+' eliminato');}
+    if(r.ok){logDB('Eliminata variabile '+tab,desc);await caricaVariabili();showAlert('variabili',desc+' eliminato');}
     else showAlert('variabili','Errore: '+r.error,false);
   });
 }
