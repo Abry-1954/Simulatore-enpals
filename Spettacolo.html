@@ -1590,6 +1590,8 @@ ricalcolaTutto();
 // ══════════════════════════════════════════════════════════════
 var _serverOnline = false;
 
+var _dbCaricatiDaServer = false;
+
 async function checkServer(){
   try{
     const r = await authFetch("/db", {method:"GET", signal: AbortSignal.timeout(2000)});
@@ -1597,6 +1599,12 @@ async function checkServer(){
       _serverOnline = true;
       document.getElementById("server-status").textContent = "🟢 Server attivo";
       document.getElementById("server-status").style.color = "#86efac";
+      // Carica DB automaticamente una volta sola per sessione
+      if(!_dbCaricatiDaServer){
+        _dbCaricatiDaServer = true;
+        console.log("✓ Server locale — aggiornamento DB automatico...");
+        fetchDB();
+      }
     }
   }catch(e){
     _serverOnline = false;
