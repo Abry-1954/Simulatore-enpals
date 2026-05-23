@@ -568,6 +568,8 @@ self.addEventListener('fetch',e=>{
         sessionStorage.setItem(K,"1");
         sessionStorage.setItem('enpals_ruolo','admin');
         sessionStorage.setItem('enpals_user', u);
+        sessionStorage.setItem('enpals_cu', u);
+        sessionStorage.setItem('enpals_cp', p);
         document.getElementById("login-overlay").style.display="none";
         applicaRuolo('admin', u);
         if(!window._loginLoggato){ window._loginLoggato=true; logAzione('LOGIN OK', ''); }
