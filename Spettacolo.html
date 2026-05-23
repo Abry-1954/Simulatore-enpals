@@ -487,6 +487,7 @@ self.addEventListener('fetch',e=>{
 
   // ── Login: prova server, fallback locale ──
   window._loginLoggato = false;
+  window._isFileLocal = window.location.protocol === 'file:';
   window.doLogin=async function(){
     window._loginLoggato = false;
     var u=document.getElementById("login-user").value.trim();
@@ -497,8 +498,9 @@ self.addEventListener('fetch',e=>{
     btn.textContent="Accesso..."; btn.disabled=true;
 
     // 1. Prova login sul server Render — con retry automatico se addormentato
+    // Se aperto da file:// (bat locale), salta Render e usa login locale diretto
     var serverOk = false;
-    var MAX_TENTATIVI = 10;  // max 10 tentativi = ~90 secondi
+    var MAX_TENTATIVI = window._isFileLocal ? 0 : 10;
     var tentativo = 0;
     var res = null;
     while(!serverOk && tentativo < MAX_TENTATIVI){
@@ -611,6 +613,11 @@ self.addEventListener('fetch',e=>{
     var masterList = ['alberita','abramelek'];
     var btnUsers = document.getElementById('btn-users');
     if(btnUsers && masterList.indexOf(user) >= 0) btnUsers.style.display='';
+    // Pulsante Salva HTML visibile solo agli admin
+    if(ruolo === 'admin'){
+      var btnSalvaHtml = document.getElementById('btn-salva-html');
+      if(btnSalvaHtml) btnSalvaHtml.style.display='';
+    }
 
     if(ruolo !== 'admin'){
       ['btn-fetch','btn-gestione','btn-salva','btn-carica'].forEach(function(cls){
@@ -706,6 +713,7 @@ function toggleMain(){
   <button id="btn-users" onclick="apriPannelloUtenti()" style="display:none;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Gestione utenti">👥 Utenti</button>
   <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 3 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
   <button class="btn-gestione" onclick="richiedeServer('Gestisci i 3 DB', apriGestione);" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
+  <button class="btn-fetch" id="btn-salva-html" onclick="salvaHTML();" title="Scarica Spettacolo.html con DB aggiornati embedded" style="display:none;">💾 Salva HTML</button>
   <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;cursor:pointer;margin-right:4px;" title="Aggiunge filigrana PROFORMA al documento">
     <input type="checkbox" id="chk-proforma" style="cursor:pointer;accent-color:#f87171;">
     <span style="color:#fca5a5;font-weight:600;">PROFORMA</span>
@@ -1646,6 +1654,32 @@ setInterval(checkServer, 30000);
 
 function apriGestione(){
   window.open('gestione.html','_blank');
+}
+
+function salvaHTML(){
+  // Prende il sorgente corrente della pagina
+  var sorgente = document.documentElement.outerHTML;
+  // Aggiorna il DB embedded con i dati attuali in memoria
+  if(typeof DB !== 'undefined'){
+    // Sostituisce const DB = {...} con i dati aggiornati
+    var dbStr = JSON.stringify(DB);
+    sorgente = sorgente.replace(/const DB\s*=\s*\{[\s\S]*?\};\s*\/\/ END_DB/, 'const DB = ' + dbStr + '; // END_DB');
+    if(sorgente.indexOf('// END_DB') === -1){
+      // Fallback: cerca il pattern senza commento finale
+      sorgente = sorgente.replace(/const DB\s*=\s*\{(?:[^{}]|\{[^{}]*\})*\};/, 'const DB = ' + dbStr + ';');
+    }
+  }
+  // Crea il blob e scarica
+  var blob = new Blob([sorgente], {type: 'text/html;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'Spettacolo.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+  alert('✓ Spettacolo.html scaricato!\n\nSostituisci il file in F:\\Nuova Fatturazione Doppiaggio\\\ne caricalo su GitHub per aggiornare i DB embedded.');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2961,6 +2995,27 @@ function mostraLog(dati){
 </div>
 
 <script>
+async function _syncUsersLocale(){
+  if(!_serverOnline) return;
+  try{
+    // Legge users completi dal server locale
+    var cu = sessionStorage.getItem('enpals_cu')||'';
+    var cp = sessionStorage.getItem('enpals_cp')||'';
+    var rl = await fetch('http://localhost:8765/users-full', {
+      headers:{'X-Auth-User':cu,'X-Auth-Pass':cp}
+    });
+    if(!rl || !rl.ok) return;
+    var usersCompleti = await rl.json();
+    // Invia al server locale per aggiornare users.json
+    var rs = await fetch('http://localhost:8765/sync-users', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
+      body: JSON.stringify(usersCompleti)
+    });
+    if(rs && rs.ok) console.log('✓ users.json locale sincronizzato');
+  } catch(e){ console.log('sync users locale:', e.message); }
+}
+
 function apriPannelloUtenti(){
   document.getElementById('pannello-utenti').style.display='block';
   caricaListaUtenti();
@@ -3062,6 +3117,7 @@ async function salvaUtente(){
       document.getElementById('u-ruolo').value='utente';
       document.getElementById('utenti-form-title').textContent='➕ Nuovo utente';
       caricaListaUtenti();
+      _syncUsersLocale();
     } else {
       msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='✗ '+(d.error||'Errore');
     }
@@ -3084,7 +3140,7 @@ async function eliminaUtente(btn){
   try{
     var r = await _usersAuthFetch('https://enpals-server.onrender.com/users/'+username,{method:'DELETE'});
     var d = await r.json();
-    if(d.ok){ caricaListaUtenti(); }
+    if(d.ok){ caricaListaUtenti(); _syncUsersLocale(); }
     else { alert('Errore: '+(d.error||'sconosciuto')); }
   }catch(e){ alert('Errore: '+e.message); }
 }
