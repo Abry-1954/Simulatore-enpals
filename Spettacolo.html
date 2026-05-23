@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
+<html lang="it" style="--hdr-h: 50px;"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
@@ -9,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="ENPALS">
 <meta name="theme-color" content="#1e3a8a">
 <title>Fatturazione ENPALS — Prospetto Multi-Riga</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&amp;family=DM+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:#f0f0f0; --bg2:#ffffff; --bg3:#f7f7f7; --bg4:#efefef;
@@ -459,7 +457,7 @@ self.addEventListener('fetch',e=>{
   link.href=url;
   document.head.appendChild(link);
 })();
-</script>
+</script><link rel="manifest" href="blob:null/1dfb5de3-79b9-4a7a-a0ff-751df8b80a2d">
 <script>
 (function(){
   // ═══════════════════════════════════════════════════════
@@ -693,29 +691,29 @@ function toggleMain(){
 </script>
 </head>
 <body>
-<div id="login-overlay">
+<div id="login-overlay" style="display: none;">
   <div class="login-box">
     <div class="login-logo">ENPALS / FATTURAZIONE</div>
     <div class="login-title">Accesso</div>
     <div class="login-group"><label>Utente</label><input type="text" id="login-user" autocomplete="username"></div>
     <div class="login-group"><label>Password</label><input type="password" id="login-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="login-btn" onclick="doLogin()">Entra</button>
-    <div class="login-err" id="login-err">Utente o password errati.</div>
+    <div class="login-err" id="login-err" style="display: none;">Utente o password errati.</div>
   </div>
 </div>
 
 <!-- HEADER -->
 <div class="hdr">
-  <span class="hdr-logo">ENPALS/PROSPETTO</span>
+  <span class="hdr-logo">ENPALS/PROSPETTO  |  abramelek 👑<button title="Logout" style="margin-left: 12px; padding: 2px 10px; font-size: 11px; background: rgb(127, 29, 29); color: rgb(252, 165, 165); border: 1px solid rgb(220, 38, 38); border-radius: 6px; cursor: pointer; vertical-align: middle; font-weight: 600;">⏻ Esci</button></span>
   <div class="hdr-sep"></div>
   <span class="hdr-anno" id="hdr-anno">Anno —</span>
   <button class="btn-ricalcola" onclick="ricalcolaTutto()">⟳ Ricalcola tutto</button>
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
-  <button id="btn-log-admin" onclick="apriPannelloLog()" style="display:none;background:rgba(255,200,0,0.2);color:#fcd34d;border:1px solid rgba(255,200,0,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza log accessi">📋 Log</button>
-  <button id="btn-users" onclick="apriPannelloUtenti()" style="display:none;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Gestione utenti">👥 Utenti</button>
+  <button id="btn-log-admin" onclick="apriPannelloLog()" style="display: inline-block; background: rgba(255, 200, 0, 0.2); color: rgb(252, 211, 77); border: 1px solid rgba(255, 200, 0, 0.4); border-radius: var(--radius-sm); padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;" title="Visualizza log accessi">📋 Log</button>
+  <button id="btn-users" onclick="apriPannelloUtenti()" style="background: rgba(99, 102, 241, 0.2); color: rgb(165, 180, 252); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;" title="Gestione utenti">👥 Utenti</button>
   <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 3 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
   <button class="btn-gestione" onclick="richiedeServer('Gestisci i 3 DB', apriGestione);" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
-  <button class="btn-fetch" id="btn-salva-html" onclick="salvaHTML();" title="Scarica Spettacolo.html con DB aggiornati embedded" style="display:none;">💾 Salva HTML</button>
+  <button class="btn-fetch" id="btn-salva-html" onclick="salvaHTML();" title="Scarica Spettacolo.html con DB aggiornati embedded" style="">💾 Salva HTML</button>
   <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;cursor:pointer;margin-right:4px;" title="Aggiunge filigrana PROFORMA al documento">
     <input type="checkbox" id="chk-proforma" style="cursor:pointer;accent-color:#f87171;">
     <span style="color:#fca5a5;font-weight:600;">PROFORMA</span>
@@ -723,8 +721,8 @@ function toggleMain(){
   <button class="btn-stampa" onclick="stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
   <button class="btn-salva" onclick="richiedeServer('Salva su DB Fatture', salvaFatturaSuDB);" title="Salva fattura su database">💾 Salva Fatture su DB</button>
   <button class="btn-carica" onclick="richiedeServer('Carica Fattura', apriModaleFatture);" title="Carica fattura da database">📂 Carica Fattura da DB</button>
-  <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
-  <span id="server-status" style="font-size:11px;color:#fca5a5;margin-left:.5rem;">🔴 Server offline — solo calcoli</span>
+  <span id="fetch-status" style="font-size: 11px; color: rgb(147, 197, 253);"></span>
+  <span id="server-status" style="font-size: 11px; color: rgb(134, 239, 172); margin-left: 0.5rem;">🟢 Server attivo</span>
 </div>
 
 <div class="layout" id="main-layout">
@@ -739,7 +737,7 @@ function toggleMain(){
     <div class="sec-label">Lavoratore</div>
     <div class="ac-wrap">
       <input class="ac-input" type="text" id="inp-nom" placeholder="Cerca nominativo…" autocomplete="off">
-      <div class="ac-list" id="ac-list"></div>
+      <div class="ac-list" id="ac-list" style="display: none;"><div class="ac-item">TEST DOPPIATORE<small>DOPPIATORE · SY · FATTURA REGIME ORDINARIO</small></div><div class="ac-item">TESTA FRANCESCO<small>DOPPIATORE · SC · FATTURA REGIME AGEVOLATO</small></div></div>
     </div>
     <div id="nom-box" style="display:none;margin-top:8px;" class="nom-box">
       <div class="nom-name" id="nom-name"></div>
@@ -757,7 +755,7 @@ function toggleMain(){
     <div class="sec-label">Azienda</div>
     <div class="ac-wrap">
       <input class="ac-input" type="text" id="inp-az" placeholder="Cerca azienda…" autocomplete="off">
-      <div class="ac-list" id="ac-list-az"></div>
+      <div class="ac-list" id="ac-list-az" style="display: none;"></div>
     </div>
     <div id="az-box" style="display:none;margin-top:8px;" class="nom-box">
       <div class="nom-name" id="az-name"></div>
@@ -836,35 +834,775 @@ function toggleMain(){
       <div class="gh">Imponibile</div>
       <div class="gh">Titolo</div>
     </div>
-    <div id="rows-container"></div>
+    <div id="rows-container"><div class="grid-row active" id="row_1">
+    <div class="chk-wrap"><input type="checkbox" id="chk_1" onchange="onChkChange(1)"></div>
+    <div class="row-num">1</div>
+    <div><select class="cell-select" id="tf_1" onchange="onRigaChange(1)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_1" onchange="onAttChange(1)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_1" onchange="onRigaChange(1)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_1" value="2026-05-23" onchange="onRigaChange(1)"></div>
+    <div><input class="cell-input" type="date" id="df_1" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_1" onchange="onRigaChange(1)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_1" min="1" max="31" value="1" onchange="onRigaChange(1)"></div>
+    <div><input class="cell-input" type="number" id="tu_1" min="1" value="1" onchange="onRigaChange(1)"></div>
+    <div><input class="cell-input" type="number" id="ri_1" min="0" onchange="onRigaChange(1)"></div>
+    <div class="cell-result zero" id="res_1">—</div>
+    <div><input class="cell-input" type="text" id="tit_1" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_2">
+    <div class="chk-wrap"><input type="checkbox" id="chk_2" onchange="onChkChange(2)"></div>
+    <div class="row-num">2</div>
+    <div><select class="cell-select" id="tf_2" disabled="" onchange="onRigaChange(2)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_2" disabled="" onchange="onAttChange(2)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_2" disabled="" onchange="onRigaChange(2)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_2" disabled="" value="2026-05-23" onchange="onRigaChange(2)"></div>
+    <div><input class="cell-input" type="date" id="df_2" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_2" disabled="" onchange="onRigaChange(2)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_2" min="1" max="31" value="1" disabled="" onchange="onRigaChange(2)"></div>
+    <div><input class="cell-input" type="number" id="tu_2" min="1" value="1" disabled="" onchange="onRigaChange(2)"></div>
+    <div><input class="cell-input" type="number" id="ri_2" min="0" disabled="" onchange="onRigaChange(2)"></div>
+    <div class="cell-result zero" id="res_2">—</div>
+    <div><input class="cell-input" type="text" id="tit_2" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_3">
+    <div class="chk-wrap"><input type="checkbox" id="chk_3" onchange="onChkChange(3)"></div>
+    <div class="row-num">3</div>
+    <div><select class="cell-select" id="tf_3" disabled="" onchange="onRigaChange(3)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_3" disabled="" onchange="onAttChange(3)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_3" disabled="" onchange="onRigaChange(3)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_3" disabled="" value="2026-05-23" onchange="onRigaChange(3)"></div>
+    <div><input class="cell-input" type="date" id="df_3" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_3" disabled="" onchange="onRigaChange(3)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_3" min="1" max="31" value="1" disabled="" onchange="onRigaChange(3)"></div>
+    <div><input class="cell-input" type="number" id="tu_3" min="1" value="1" disabled="" onchange="onRigaChange(3)"></div>
+    <div><input class="cell-input" type="number" id="ri_3" min="0" disabled="" onchange="onRigaChange(3)"></div>
+    <div class="cell-result zero" id="res_3">—</div>
+    <div><input class="cell-input" type="text" id="tit_3" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_4">
+    <div class="chk-wrap"><input type="checkbox" id="chk_4" onchange="onChkChange(4)"></div>
+    <div class="row-num">4</div>
+    <div><select class="cell-select" id="tf_4" disabled="" onchange="onRigaChange(4)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_4" disabled="" onchange="onAttChange(4)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_4" disabled="" onchange="onRigaChange(4)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_4" disabled="" value="2026-05-23" onchange="onRigaChange(4)"></div>
+    <div><input class="cell-input" type="date" id="df_4" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_4" disabled="" onchange="onRigaChange(4)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_4" min="1" max="31" value="1" disabled="" onchange="onRigaChange(4)"></div>
+    <div><input class="cell-input" type="number" id="tu_4" min="1" value="1" disabled="" onchange="onRigaChange(4)"></div>
+    <div><input class="cell-input" type="number" id="ri_4" min="0" disabled="" onchange="onRigaChange(4)"></div>
+    <div class="cell-result zero" id="res_4">—</div>
+    <div><input class="cell-input" type="text" id="tit_4" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_5">
+    <div class="chk-wrap"><input type="checkbox" id="chk_5" onchange="onChkChange(5)"></div>
+    <div class="row-num">5</div>
+    <div><select class="cell-select" id="tf_5" disabled="" onchange="onRigaChange(5)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_5" disabled="" onchange="onAttChange(5)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_5" disabled="" onchange="onRigaChange(5)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_5" disabled="" value="2026-05-23" onchange="onRigaChange(5)"></div>
+    <div><input class="cell-input" type="date" id="df_5" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_5" disabled="" onchange="onRigaChange(5)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_5" min="1" max="31" value="1" disabled="" onchange="onRigaChange(5)"></div>
+    <div><input class="cell-input" type="number" id="tu_5" min="1" value="1" disabled="" onchange="onRigaChange(5)"></div>
+    <div><input class="cell-input" type="number" id="ri_5" min="0" disabled="" onchange="onRigaChange(5)"></div>
+    <div class="cell-result zero" id="res_5">—</div>
+    <div><input class="cell-input" type="text" id="tit_5" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_6">
+    <div class="chk-wrap"><input type="checkbox" id="chk_6" onchange="onChkChange(6)"></div>
+    <div class="row-num">6</div>
+    <div><select class="cell-select" id="tf_6" disabled="" onchange="onRigaChange(6)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_6" disabled="" onchange="onAttChange(6)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_6" disabled="" onchange="onRigaChange(6)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_6" disabled="" value="2026-05-23" onchange="onRigaChange(6)"></div>
+    <div><input class="cell-input" type="date" id="df_6" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_6" disabled="" onchange="onRigaChange(6)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_6" min="1" max="31" value="1" disabled="" onchange="onRigaChange(6)"></div>
+    <div><input class="cell-input" type="number" id="tu_6" min="1" value="1" disabled="" onchange="onRigaChange(6)"></div>
+    <div><input class="cell-input" type="number" id="ri_6" min="0" disabled="" onchange="onRigaChange(6)"></div>
+    <div class="cell-result zero" id="res_6">—</div>
+    <div><input class="cell-input" type="text" id="tit_6" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_7">
+    <div class="chk-wrap"><input type="checkbox" id="chk_7" onchange="onChkChange(7)"></div>
+    <div class="row-num">7</div>
+    <div><select class="cell-select" id="tf_7" disabled="" onchange="onRigaChange(7)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_7" disabled="" onchange="onAttChange(7)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_7" disabled="" onchange="onRigaChange(7)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_7" disabled="" value="2026-05-23" onchange="onRigaChange(7)"></div>
+    <div><input class="cell-input" type="date" id="df_7" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_7" disabled="" onchange="onRigaChange(7)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_7" min="1" max="31" value="1" disabled="" onchange="onRigaChange(7)"></div>
+    <div><input class="cell-input" type="number" id="tu_7" min="1" value="1" disabled="" onchange="onRigaChange(7)"></div>
+    <div><input class="cell-input" type="number" id="ri_7" min="0" disabled="" onchange="onRigaChange(7)"></div>
+    <div class="cell-result zero" id="res_7">—</div>
+    <div><input class="cell-input" type="text" id="tit_7" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_8">
+    <div class="chk-wrap"><input type="checkbox" id="chk_8" onchange="onChkChange(8)"></div>
+    <div class="row-num">8</div>
+    <div><select class="cell-select" id="tf_8" disabled="" onchange="onRigaChange(8)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_8" disabled="" onchange="onAttChange(8)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_8" disabled="" onchange="onRigaChange(8)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_8" disabled="" value="2026-05-23" onchange="onRigaChange(8)"></div>
+    <div><input class="cell-input" type="date" id="df_8" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_8" disabled="" onchange="onRigaChange(8)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_8" min="1" max="31" value="1" disabled="" onchange="onRigaChange(8)"></div>
+    <div><input class="cell-input" type="number" id="tu_8" min="1" value="1" disabled="" onchange="onRigaChange(8)"></div>
+    <div><input class="cell-input" type="number" id="ri_8" min="0" disabled="" onchange="onRigaChange(8)"></div>
+    <div class="cell-result zero" id="res_8">—</div>
+    <div><input class="cell-input" type="text" id="tit_8" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_9">
+    <div class="chk-wrap"><input type="checkbox" id="chk_9" onchange="onChkChange(9)"></div>
+    <div class="row-num">9</div>
+    <div><select class="cell-select" id="tf_9" disabled="" onchange="onRigaChange(9)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_9" disabled="" onchange="onAttChange(9)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_9" disabled="" onchange="onRigaChange(9)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_9" disabled="" value="2026-05-23" onchange="onRigaChange(9)"></div>
+    <div><input class="cell-input" type="date" id="df_9" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_9" disabled="" onchange="onRigaChange(9)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_9" min="1" max="31" value="1" disabled="" onchange="onRigaChange(9)"></div>
+    <div><input class="cell-input" type="number" id="tu_9" min="1" value="1" disabled="" onchange="onRigaChange(9)"></div>
+    <div><input class="cell-input" type="number" id="ri_9" min="0" disabled="" onchange="onRigaChange(9)"></div>
+    <div class="cell-result zero" id="res_9">—</div>
+    <div><input class="cell-input" type="text" id="tit_9" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_10">
+    <div class="chk-wrap"><input type="checkbox" id="chk_10" onchange="onChkChange(10)"></div>
+    <div class="row-num">10</div>
+    <div><select class="cell-select" id="tf_10" disabled="" onchange="onRigaChange(10)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_10" disabled="" onchange="onAttChange(10)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_10" disabled="" onchange="onRigaChange(10)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_10" disabled="" value="2026-05-23" onchange="onRigaChange(10)"></div>
+    <div><input class="cell-input" type="date" id="df_10" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_10" disabled="" onchange="onRigaChange(10)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_10" min="1" max="31" value="1" disabled="" onchange="onRigaChange(10)"></div>
+    <div><input class="cell-input" type="number" id="tu_10" min="1" value="1" disabled="" onchange="onRigaChange(10)"></div>
+    <div><input class="cell-input" type="number" id="ri_10" min="0" disabled="" onchange="onRigaChange(10)"></div>
+    <div class="cell-result zero" id="res_10">—</div>
+    <div><input class="cell-input" type="text" id="tit_10" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_11">
+    <div class="chk-wrap"><input type="checkbox" id="chk_11" onchange="onChkChange(11)"></div>
+    <div class="row-num">11</div>
+    <div><select class="cell-select" id="tf_11" disabled="" onchange="onRigaChange(11)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_11" disabled="" onchange="onAttChange(11)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_11" disabled="" onchange="onRigaChange(11)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_11" disabled="" value="2026-05-23" onchange="onRigaChange(11)"></div>
+    <div><input class="cell-input" type="date" id="df_11" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_11" disabled="" onchange="onRigaChange(11)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_11" min="1" max="31" value="1" disabled="" onchange="onRigaChange(11)"></div>
+    <div><input class="cell-input" type="number" id="tu_11" min="1" value="1" disabled="" onchange="onRigaChange(11)"></div>
+    <div><input class="cell-input" type="number" id="ri_11" min="0" disabled="" onchange="onRigaChange(11)"></div>
+    <div class="cell-result zero" id="res_11">—</div>
+    <div><input class="cell-input" type="text" id="tit_11" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_12">
+    <div class="chk-wrap"><input type="checkbox" id="chk_12" onchange="onChkChange(12)"></div>
+    <div class="row-num">12</div>
+    <div><select class="cell-select" id="tf_12" disabled="" onchange="onRigaChange(12)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_12" disabled="" onchange="onAttChange(12)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_12" disabled="" onchange="onRigaChange(12)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_12" disabled="" value="2026-05-23" onchange="onRigaChange(12)"></div>
+    <div><input class="cell-input" type="date" id="df_12" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_12" disabled="" onchange="onRigaChange(12)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_12" min="1" max="31" value="1" disabled="" onchange="onRigaChange(12)"></div>
+    <div><input class="cell-input" type="number" id="tu_12" min="1" value="1" disabled="" onchange="onRigaChange(12)"></div>
+    <div><input class="cell-input" type="number" id="ri_12" min="0" disabled="" onchange="onRigaChange(12)"></div>
+    <div class="cell-result zero" id="res_12">—</div>
+    <div><input class="cell-input" type="text" id="tit_12" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_13">
+    <div class="chk-wrap"><input type="checkbox" id="chk_13" onchange="onChkChange(13)"></div>
+    <div class="row-num">13</div>
+    <div><select class="cell-select" id="tf_13" disabled="" onchange="onRigaChange(13)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_13" disabled="" onchange="onAttChange(13)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_13" disabled="" onchange="onRigaChange(13)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_13" disabled="" value="2026-05-23" onchange="onRigaChange(13)"></div>
+    <div><input class="cell-input" type="date" id="df_13" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_13" disabled="" onchange="onRigaChange(13)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_13" min="1" max="31" value="1" disabled="" onchange="onRigaChange(13)"></div>
+    <div><input class="cell-input" type="number" id="tu_13" min="1" value="1" disabled="" onchange="onRigaChange(13)"></div>
+    <div><input class="cell-input" type="number" id="ri_13" min="0" disabled="" onchange="onRigaChange(13)"></div>
+    <div class="cell-result zero" id="res_13">—</div>
+    <div><input class="cell-input" type="text" id="tit_13" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_14">
+    <div class="chk-wrap"><input type="checkbox" id="chk_14" onchange="onChkChange(14)"></div>
+    <div class="row-num">14</div>
+    <div><select class="cell-select" id="tf_14" disabled="" onchange="onRigaChange(14)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_14" disabled="" onchange="onAttChange(14)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_14" disabled="" onchange="onRigaChange(14)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_14" disabled="" value="2026-05-23" onchange="onRigaChange(14)"></div>
+    <div><input class="cell-input" type="date" id="df_14" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_14" disabled="" onchange="onRigaChange(14)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_14" min="1" max="31" value="1" disabled="" onchange="onRigaChange(14)"></div>
+    <div><input class="cell-input" type="number" id="tu_14" min="1" value="1" disabled="" onchange="onRigaChange(14)"></div>
+    <div><input class="cell-input" type="number" id="ri_14" min="0" disabled="" onchange="onRigaChange(14)"></div>
+    <div class="cell-result zero" id="res_14">—</div>
+    <div><input class="cell-input" type="text" id="tit_14" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_15">
+    <div class="chk-wrap"><input type="checkbox" id="chk_15" onchange="onChkChange(15)"></div>
+    <div class="row-num">15</div>
+    <div><select class="cell-select" id="tf_15" disabled="" onchange="onRigaChange(15)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_15" disabled="" onchange="onAttChange(15)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_15" disabled="" onchange="onRigaChange(15)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_15" disabled="" value="2026-05-23" onchange="onRigaChange(15)"></div>
+    <div><input class="cell-input" type="date" id="df_15" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_15" disabled="" onchange="onRigaChange(15)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_15" min="1" max="31" value="1" disabled="" onchange="onRigaChange(15)"></div>
+    <div><input class="cell-input" type="number" id="tu_15" min="1" value="1" disabled="" onchange="onRigaChange(15)"></div>
+    <div><input class="cell-input" type="number" id="ri_15" min="0" disabled="" onchange="onRigaChange(15)"></div>
+    <div class="cell-result zero" id="res_15">—</div>
+    <div><input class="cell-input" type="text" id="tit_15" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_16">
+    <div class="chk-wrap"><input type="checkbox" id="chk_16" onchange="onChkChange(16)"></div>
+    <div class="row-num">16</div>
+    <div><select class="cell-select" id="tf_16" disabled="" onchange="onRigaChange(16)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_16" disabled="" onchange="onAttChange(16)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_16" disabled="" onchange="onRigaChange(16)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_16" disabled="" value="2026-05-23" onchange="onRigaChange(16)"></div>
+    <div><input class="cell-input" type="date" id="df_16" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_16" disabled="" onchange="onRigaChange(16)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_16" min="1" max="31" value="1" disabled="" onchange="onRigaChange(16)"></div>
+    <div><input class="cell-input" type="number" id="tu_16" min="1" value="1" disabled="" onchange="onRigaChange(16)"></div>
+    <div><input class="cell-input" type="number" id="ri_16" min="0" disabled="" onchange="onRigaChange(16)"></div>
+    <div class="cell-result zero" id="res_16">—</div>
+    <div><input class="cell-input" type="text" id="tit_16" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_17">
+    <div class="chk-wrap"><input type="checkbox" id="chk_17" onchange="onChkChange(17)"></div>
+    <div class="row-num">17</div>
+    <div><select class="cell-select" id="tf_17" disabled="" onchange="onRigaChange(17)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_17" disabled="" onchange="onAttChange(17)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_17" disabled="" onchange="onRigaChange(17)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_17" disabled="" value="2026-05-23" onchange="onRigaChange(17)"></div>
+    <div><input class="cell-input" type="date" id="df_17" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_17" disabled="" onchange="onRigaChange(17)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_17" min="1" max="31" value="1" disabled="" onchange="onRigaChange(17)"></div>
+    <div><input class="cell-input" type="number" id="tu_17" min="1" value="1" disabled="" onchange="onRigaChange(17)"></div>
+    <div><input class="cell-input" type="number" id="ri_17" min="0" disabled="" onchange="onRigaChange(17)"></div>
+    <div class="cell-result zero" id="res_17">—</div>
+    <div><input class="cell-input" type="text" id="tit_17" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_18">
+    <div class="chk-wrap"><input type="checkbox" id="chk_18" onchange="onChkChange(18)"></div>
+    <div class="row-num">18</div>
+    <div><select class="cell-select" id="tf_18" disabled="" onchange="onRigaChange(18)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_18" disabled="" onchange="onAttChange(18)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_18" disabled="" onchange="onRigaChange(18)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_18" disabled="" value="2026-05-23" onchange="onRigaChange(18)"></div>
+    <div><input class="cell-input" type="date" id="df_18" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_18" disabled="" onchange="onRigaChange(18)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_18" min="1" max="31" value="1" disabled="" onchange="onRigaChange(18)"></div>
+    <div><input class="cell-input" type="number" id="tu_18" min="1" value="1" disabled="" onchange="onRigaChange(18)"></div>
+    <div><input class="cell-input" type="number" id="ri_18" min="0" disabled="" onchange="onRigaChange(18)"></div>
+    <div class="cell-result zero" id="res_18">—</div>
+    <div><input class="cell-input" type="text" id="tit_18" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_19">
+    <div class="chk-wrap"><input type="checkbox" id="chk_19" onchange="onChkChange(19)"></div>
+    <div class="row-num">19</div>
+    <div><select class="cell-select" id="tf_19" disabled="" onchange="onRigaChange(19)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_19" disabled="" onchange="onAttChange(19)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_19" disabled="" onchange="onRigaChange(19)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_19" disabled="" value="2026-05-23" onchange="onRigaChange(19)"></div>
+    <div><input class="cell-input" type="date" id="df_19" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_19" disabled="" onchange="onRigaChange(19)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_19" min="1" max="31" value="1" disabled="" onchange="onRigaChange(19)"></div>
+    <div><input class="cell-input" type="number" id="tu_19" min="1" value="1" disabled="" onchange="onRigaChange(19)"></div>
+    <div><input class="cell-input" type="number" id="ri_19" min="0" disabled="" onchange="onRigaChange(19)"></div>
+    <div class="cell-result zero" id="res_19">—</div>
+    <div><input class="cell-input" type="text" id="tit_19" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_20">
+    <div class="chk-wrap"><input type="checkbox" id="chk_20" onchange="onChkChange(20)"></div>
+    <div class="row-num">20</div>
+    <div><select class="cell-select" id="tf_20" disabled="" onchange="onRigaChange(20)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_20" disabled="" onchange="onAttChange(20)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_20" disabled="" onchange="onRigaChange(20)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_20" disabled="" value="2026-05-23" onchange="onRigaChange(20)"></div>
+    <div><input class="cell-input" type="date" id="df_20" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_20" disabled="" onchange="onRigaChange(20)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_20" min="1" max="31" value="1" disabled="" onchange="onRigaChange(20)"></div>
+    <div><input class="cell-input" type="number" id="tu_20" min="1" value="1" disabled="" onchange="onRigaChange(20)"></div>
+    <div><input class="cell-input" type="number" id="ri_20" min="0" disabled="" onchange="onRigaChange(20)"></div>
+    <div class="cell-result zero" id="res_20">—</div>
+    <div><input class="cell-input" type="text" id="tit_20" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_21">
+    <div class="chk-wrap"><input type="checkbox" id="chk_21" onchange="onChkChange(21)"></div>
+    <div class="row-num">21</div>
+    <div><select class="cell-select" id="tf_21" disabled="" onchange="onRigaChange(21)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_21" disabled="" onchange="onAttChange(21)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_21" disabled="" onchange="onRigaChange(21)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_21" disabled="" value="2026-05-23" onchange="onRigaChange(21)"></div>
+    <div><input class="cell-input" type="date" id="df_21" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_21" disabled="" onchange="onRigaChange(21)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_21" min="1" max="31" value="1" disabled="" onchange="onRigaChange(21)"></div>
+    <div><input class="cell-input" type="number" id="tu_21" min="1" value="1" disabled="" onchange="onRigaChange(21)"></div>
+    <div><input class="cell-input" type="number" id="ri_21" min="0" disabled="" onchange="onRigaChange(21)"></div>
+    <div class="cell-result zero" id="res_21">—</div>
+    <div><input class="cell-input" type="text" id="tit_21" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_22">
+    <div class="chk-wrap"><input type="checkbox" id="chk_22" onchange="onChkChange(22)"></div>
+    <div class="row-num">22</div>
+    <div><select class="cell-select" id="tf_22" disabled="" onchange="onRigaChange(22)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_22" disabled="" onchange="onAttChange(22)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_22" disabled="" onchange="onRigaChange(22)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_22" disabled="" value="2026-05-23" onchange="onRigaChange(22)"></div>
+    <div><input class="cell-input" type="date" id="df_22" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_22" disabled="" onchange="onRigaChange(22)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_22" min="1" max="31" value="1" disabled="" onchange="onRigaChange(22)"></div>
+    <div><input class="cell-input" type="number" id="tu_22" min="1" value="1" disabled="" onchange="onRigaChange(22)"></div>
+    <div><input class="cell-input" type="number" id="ri_22" min="0" disabled="" onchange="onRigaChange(22)"></div>
+    <div class="cell-result zero" id="res_22">—</div>
+    <div><input class="cell-input" type="text" id="tit_22" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_23">
+    <div class="chk-wrap"><input type="checkbox" id="chk_23" onchange="onChkChange(23)"></div>
+    <div class="row-num">23</div>
+    <div><select class="cell-select" id="tf_23" disabled="" onchange="onRigaChange(23)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_23" disabled="" onchange="onAttChange(23)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_23" disabled="" onchange="onRigaChange(23)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_23" disabled="" value="2026-05-23" onchange="onRigaChange(23)"></div>
+    <div><input class="cell-input" type="date" id="df_23" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_23" disabled="" onchange="onRigaChange(23)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_23" min="1" max="31" value="1" disabled="" onchange="onRigaChange(23)"></div>
+    <div><input class="cell-input" type="number" id="tu_23" min="1" value="1" disabled="" onchange="onRigaChange(23)"></div>
+    <div><input class="cell-input" type="number" id="ri_23" min="0" disabled="" onchange="onRigaChange(23)"></div>
+    <div class="cell-result zero" id="res_23">—</div>
+    <div><input class="cell-input" type="text" id="tit_23" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_24">
+    <div class="chk-wrap"><input type="checkbox" id="chk_24" onchange="onChkChange(24)"></div>
+    <div class="row-num">24</div>
+    <div><select class="cell-select" id="tf_24" disabled="" onchange="onRigaChange(24)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_24" disabled="" onchange="onAttChange(24)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_24" disabled="" onchange="onRigaChange(24)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_24" disabled="" value="2026-05-23" onchange="onRigaChange(24)"></div>
+    <div><input class="cell-input" type="date" id="df_24" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_24" disabled="" onchange="onRigaChange(24)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_24" min="1" max="31" value="1" disabled="" onchange="onRigaChange(24)"></div>
+    <div><input class="cell-input" type="number" id="tu_24" min="1" value="1" disabled="" onchange="onRigaChange(24)"></div>
+    <div><input class="cell-input" type="number" id="ri_24" min="0" disabled="" onchange="onRigaChange(24)"></div>
+    <div class="cell-result zero" id="res_24">—</div>
+    <div><input class="cell-input" type="text" id="tit_24" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_25">
+    <div class="chk-wrap"><input type="checkbox" id="chk_25" onchange="onChkChange(25)"></div>
+    <div class="row-num">25</div>
+    <div><select class="cell-select" id="tf_25" disabled="" onchange="onRigaChange(25)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_25" disabled="" onchange="onAttChange(25)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_25" disabled="" onchange="onRigaChange(25)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_25" disabled="" value="2026-05-23" onchange="onRigaChange(25)"></div>
+    <div><input class="cell-input" type="date" id="df_25" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_25" disabled="" onchange="onRigaChange(25)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_25" min="1" max="31" value="1" disabled="" onchange="onRigaChange(25)"></div>
+    <div><input class="cell-input" type="number" id="tu_25" min="1" value="1" disabled="" onchange="onRigaChange(25)"></div>
+    <div><input class="cell-input" type="number" id="ri_25" min="0" disabled="" onchange="onRigaChange(25)"></div>
+    <div class="cell-result zero" id="res_25">—</div>
+    <div><input class="cell-input" type="text" id="tit_25" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_26">
+    <div class="chk-wrap"><input type="checkbox" id="chk_26" onchange="onChkChange(26)"></div>
+    <div class="row-num">26</div>
+    <div><select class="cell-select" id="tf_26" disabled="" onchange="onRigaChange(26)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_26" disabled="" onchange="onAttChange(26)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_26" disabled="" onchange="onRigaChange(26)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_26" disabled="" value="2026-05-23" onchange="onRigaChange(26)"></div>
+    <div><input class="cell-input" type="date" id="df_26" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_26" disabled="" onchange="onRigaChange(26)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_26" min="1" max="31" value="1" disabled="" onchange="onRigaChange(26)"></div>
+    <div><input class="cell-input" type="number" id="tu_26" min="1" value="1" disabled="" onchange="onRigaChange(26)"></div>
+    <div><input class="cell-input" type="number" id="ri_26" min="0" disabled="" onchange="onRigaChange(26)"></div>
+    <div class="cell-result zero" id="res_26">—</div>
+    <div><input class="cell-input" type="text" id="tit_26" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_27">
+    <div class="chk-wrap"><input type="checkbox" id="chk_27" onchange="onChkChange(27)"></div>
+    <div class="row-num">27</div>
+    <div><select class="cell-select" id="tf_27" disabled="" onchange="onRigaChange(27)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_27" disabled="" onchange="onAttChange(27)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_27" disabled="" onchange="onRigaChange(27)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_27" disabled="" value="2026-05-23" onchange="onRigaChange(27)"></div>
+    <div><input class="cell-input" type="date" id="df_27" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_27" disabled="" onchange="onRigaChange(27)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_27" min="1" max="31" value="1" disabled="" onchange="onRigaChange(27)"></div>
+    <div><input class="cell-input" type="number" id="tu_27" min="1" value="1" disabled="" onchange="onRigaChange(27)"></div>
+    <div><input class="cell-input" type="number" id="ri_27" min="0" disabled="" onchange="onRigaChange(27)"></div>
+    <div class="cell-result zero" id="res_27">—</div>
+    <div><input class="cell-input" type="text" id="tit_27" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_28">
+    <div class="chk-wrap"><input type="checkbox" id="chk_28" onchange="onChkChange(28)"></div>
+    <div class="row-num">28</div>
+    <div><select class="cell-select" id="tf_28" disabled="" onchange="onRigaChange(28)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_28" disabled="" onchange="onAttChange(28)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_28" disabled="" onchange="onRigaChange(28)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_28" disabled="" value="2026-05-23" onchange="onRigaChange(28)"></div>
+    <div><input class="cell-input" type="date" id="df_28" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_28" disabled="" onchange="onRigaChange(28)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_28" min="1" max="31" value="1" disabled="" onchange="onRigaChange(28)"></div>
+    <div><input class="cell-input" type="number" id="tu_28" min="1" value="1" disabled="" onchange="onRigaChange(28)"></div>
+    <div><input class="cell-input" type="number" id="ri_28" min="0" disabled="" onchange="onRigaChange(28)"></div>
+    <div class="cell-result zero" id="res_28">—</div>
+    <div><input class="cell-input" type="text" id="tit_28" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_29">
+    <div class="chk-wrap"><input type="checkbox" id="chk_29" onchange="onChkChange(29)"></div>
+    <div class="row-num">29</div>
+    <div><select class="cell-select" id="tf_29" disabled="" onchange="onRigaChange(29)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_29" disabled="" onchange="onAttChange(29)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_29" disabled="" onchange="onRigaChange(29)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_29" disabled="" value="2026-05-23" onchange="onRigaChange(29)"></div>
+    <div><input class="cell-input" type="date" id="df_29" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_29" disabled="" onchange="onRigaChange(29)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_29" min="1" max="31" value="1" disabled="" onchange="onRigaChange(29)"></div>
+    <div><input class="cell-input" type="number" id="tu_29" min="1" value="1" disabled="" onchange="onRigaChange(29)"></div>
+    <div><input class="cell-input" type="number" id="ri_29" min="0" disabled="" onchange="onRigaChange(29)"></div>
+    <div class="cell-result zero" id="res_29">—</div>
+    <div><input class="cell-input" type="text" id="tit_29" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_30">
+    <div class="chk-wrap"><input type="checkbox" id="chk_30" onchange="onChkChange(30)"></div>
+    <div class="row-num">30</div>
+    <div><select class="cell-select" id="tf_30" disabled="" onchange="onRigaChange(30)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_30" disabled="" onchange="onAttChange(30)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_30" disabled="" onchange="onRigaChange(30)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_30" disabled="" value="2026-05-23" onchange="onRigaChange(30)"></div>
+    <div><input class="cell-input" type="date" id="df_30" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_30" disabled="" onchange="onRigaChange(30)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_30" min="1" max="31" value="1" disabled="" onchange="onRigaChange(30)"></div>
+    <div><input class="cell-input" type="number" id="tu_30" min="1" value="1" disabled="" onchange="onRigaChange(30)"></div>
+    <div><input class="cell-input" type="number" id="ri_30" min="0" disabled="" onchange="onRigaChange(30)"></div>
+    <div class="cell-result zero" id="res_30">—</div>
+    <div><input class="cell-input" type="text" id="tit_30" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div><div class="grid-row" id="row_31">
+    <div class="chk-wrap"><input type="checkbox" id="chk_31" onchange="onChkChange(31)"></div>
+    <div class="row-num">31</div>
+    <div><select class="cell-select" id="tf_31" disabled="" onchange="onRigaChange(31)" title="Tipo Fattura">
+      <option value="">—</option><option value="FATTURA REGIME ORDINARIO">Fatt. Ord.</option><option value="FATTURA REGIME AGEVOLATO">Fatt. Agev.</option><option value="RICEVUTA SEMPLICE">Ric. Semplice</option><option value="RICEVUTA ADATTATORI">Ric. Adat.</option><option value="RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA">Ric. Agev. Adat.</option>
+    </select></div>
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px;">
+      <select class="cell-select" id="att_31" disabled="" onchange="onAttChange(31)" title="Attività">
+        <option value="">— att. —</option><option value="DOPPIATORE">Doppiatore</option><option value="ADATTATORE">Adattatore</option><option value="ASSISTENTE">Assistente</option><option value="DIRETTORE">Direttore</option>
+      </select>
+      <select class="cell-select" id="tl_31" disabled="" onchange="onRigaChange(31)" title="Tipo Lavoro">
+        <option value="">— tipo —</option>
+      </select>
+    </div>
+    <div><input class="cell-input" type="date" id="dl_31" disabled="" value="2026-05-23" onchange="onRigaChange(31)"></div>
+    <div><input class="cell-input" type="date" id="df_31" disabled="" value="2026-05-23"></div>
+    <div><select class="cell-select" id="anz_31" disabled="" onchange="onRigaChange(31)">
+      <option value="SY">SY</option><option value="SC">SC</option>
+    </select></div>
+    <div><input class="cell-input" type="number" id="gg_31" min="1" max="31" value="1" disabled="" onchange="onRigaChange(31)"></div>
+    <div><input class="cell-input" type="number" id="tu_31" min="1" value="1" disabled="" onchange="onRigaChange(31)"></div>
+    <div><input class="cell-input" type="number" id="ri_31" min="0" disabled="" onchange="onRigaChange(31)"></div>
+    <div class="cell-result zero" id="res_31">—</div>
+    <div><input class="cell-input" type="text" id="tit_31" disabled="" placeholder="Titolo…" style="min-width:120px;"></div>
+  </div></div>
   </div>
 
 <!-- PANNELLO AD HOC riga 1 -->
 <div id="adhoc-panel" style="display:none;margin-top:1rem;">
   <div style="background:#fff0f0;border:2px solid #dc2626;border-radius:8px;padding:1rem 1.25rem;">
     <div style="font-family:DM Mono,monospace;font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">
-      &#9881; Turno Ad Hoc &mdash; Adattatore (Riga 1)
+      ⚙ Turno Ad Hoc — Adattatore (Riga 1)
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.75rem;align-items:end;">
       <div>
-        <label style="font-size:11px;color:#555;display:block;margin-bottom:3px;">Netto desiderato &euro;</label>
-        <input type="number" id="adhoc-netto" min="0" step="0.01" placeholder="Es. 500.00"
-          style="width:100%;background:#fff;border:1px solid #dc2626;border-radius:5px;padding:6px 9px;font-size:13px;font-family:DM Mono,monospace;font-weight:600;">
+        <label style="font-size:11px;color:#555;display:block;margin-bottom:3px;">Netto desiderato €</label>
+        <input type="number" id="adhoc-netto" min="0" step="0.01" placeholder="Es. 500.00" style="width:100%;background:#fff;border:1px solid #dc2626;border-radius:5px;padding:6px 9px;font-size:13px;font-family:DM Mono,monospace;font-weight:600;">
       </div>
       <div>
         <label style="font-size:11px;color:#555;display:block;margin-bottom:3px;">Giorni</label>
-        <input type="number" id="adhoc-giorni" min="1" max="31" value="1"
-          style="width:100%;background:#fff;border:1px solid #dc2626;border-radius:5px;padding:6px 9px;font-size:13px;font-family:DM Mono,monospace;font-weight:600;text-align:center;">
+        <input type="number" id="adhoc-giorni" min="1" max="31" value="1" style="width:100%;background:#fff;border:1px solid #dc2626;border-radius:5px;padding:6px 9px;font-size:13px;font-family:DM Mono,monospace;font-weight:600;text-align:center;">
       </div>
       <div>
         <label style="font-size:11px;color:#555;display:block;margin-bottom:3px;">Turni</label>
-        <input type="number" id="adhoc-turni" min="1" value="1"
-          style="width:100%;background:#fff;border:1px solid #dc2626;border-radius:5px;padding:6px 9px;font-size:13px;font-family:DM Mono,monospace;font-weight:600;text-align:center;">
+        <input type="number" id="adhoc-turni" min="1" value="1" style="width:100%;background:#fff;border:1px solid #dc2626;border-radius:5px;padding:6px 9px;font-size:13px;font-family:DM Mono,monospace;font-weight:600;text-align:center;">
       </div>
       <div>
-        <button onclick="eseguiAdHoc()"
-          style="background:#991b1b;color:#fff;border:none;border-radius:5px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">
-          &#8635; Calcola Ad Hoc
+        <button onclick="eseguiAdHoc()" style="background:#991b1b;color:#fff;border:none;border-radius:5px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">
+          ↻ Calcola Ad Hoc
         </button>
       </div>
     </div>
@@ -3148,5 +3886,5 @@ async function eliminaUtente(btn){
 }
 </script>
 
-</body>
-</html>
+
+</body></html>
