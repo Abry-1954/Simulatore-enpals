@@ -2714,6 +2714,7 @@ async function caricaLogGithub(){
 
 async function azzeraLog(){
   if(!confirm("Sei sicuro di voler cancellare TUTTI i record del log?\nQuesta operazione non può essere annullata.")) return;
+  var btn = document.querySelector('[onclick="azzeraLog()"]');
   try{
     var cu = sessionStorage.getItem("enpals_cu") || "";
     var cp = sessionStorage.getItem("enpals_cp") || "";
@@ -2723,8 +2724,18 @@ async function azzeraLog(){
     });
     var d = await r.json();
     if(d.ok){
-      alert("✓ Log azzerato con successo!");
-      caricaLogGithub();
+      // Mostra countdown nel pulsante e ricarica automaticamente
+      if(btn) btn.disabled = true;
+      var sec = 15;
+      var iv = setInterval(function(){
+        if(btn) btn.textContent = '⏳ Ricarico tra ' + sec + 's...';
+        sec--;
+        if(sec < 0){
+          clearInterval(iv);
+          if(btn){ btn.disabled=false; btn.textContent='🗑 Azzera Log'; }
+          caricaLogGithub();
+        }
+      }, 1000);
     } else {
       alert("✗ Errore: "+(d.error||"sconosciuto"));
     }
