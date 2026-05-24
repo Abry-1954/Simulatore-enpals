@@ -724,7 +724,7 @@ function toggleMain(){
   <button class="btn-salva" onclick="richiedeServer('Salva su DB Fatture', salvaFatturaSuDB);" title="Salva fattura su database">💾 Salva Fatture su DB</button>
   <button class="btn-carica" onclick="richiedeServer('Carica Fattura', apriModaleFatture);" title="Carica fattura da database">📂 Carica Fattura da DB</button>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
-  <span id="server-status" style="font-size:11px;color:#fca5a5;margin-left:.5rem;">🔴 Server offline — solo calcoli</span>
+  <span id="server-status" style="font-size:11px;color:#93c5fd;margin-left:.5rem;">🔵 Modalità standard</span>
 </div>
 
 <div class="layout" id="main-layout">
@@ -1606,19 +1606,22 @@ async function checkServer(){
     const r = await authFetch("/db", {method:"GET", signal: AbortSignal.timeout(2000)});
     if(r.ok){
       _serverOnline = true;
-      document.getElementById("server-status").textContent = "🟢 Server attivo";
-      document.getElementById("server-status").style.color = "#86efac";
       // Carica DB automaticamente una volta sola per sessione
       if(!_dbCaricatiDaServer){
         _dbCaricatiDaServer = true;
+        document.getElementById("server-status").textContent = "🟡 Caricamento DB...";
+        document.getElementById("server-status").style.color = "#fcd34d";
         console.log("✓ Server locale — aggiornamento DB automatico...");
         fetchDB();
+      } else {
+        document.getElementById("server-status").textContent = "🟢 DB aggiornati";
+        document.getElementById("server-status").style.color = "#86efac";
       }
     }
   }catch(e){
     _serverOnline = false;
-    document.getElementById("server-status").textContent = "🔴 Server offline — solo calcoli";
-    document.getElementById("server-status").style.color = "#fca5a5";
+    document.getElementById("server-status").textContent = "🔵 Modalità standard";
+    document.getElementById("server-status").style.color = "#93c5fd";
   }
 }
 
@@ -2146,7 +2149,7 @@ async function fetchDB(){
       if(pAggiornata) selPersona(pAggiornata);
     }
     _serverOnline=true;
-    document.getElementById("server-status").textContent="🟢 Server attivo";
+    document.getElementById("server-status").textContent="🟢 DB aggiornati";
     document.getElementById("server-status").style.color="#86efac";
     status.style.color="#86efac";
     status.textContent="✓ Database aggiornato! ("+new Date().toLocaleTimeString("it-IT")+")";
