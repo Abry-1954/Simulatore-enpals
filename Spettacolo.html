@@ -695,39 +695,80 @@ function toggleMain(){
 <body>
 <div id="login-overlay">
   <div class="login-box">
-    <div style="margin-bottom:1.2rem;">
-      <svg width="200" height="110" viewBox="0 0 680 320" role="img" style="display:block;margin:0 auto;">
-        <title>VoxLedger</title>
+    <div style="margin-bottom:0.5rem;">
+      <svg width="220" height="120" viewBox="0 0 680 340" role="img" style="display:block;margin:0 auto;">
+        <title>DIVA</title>
         <defs>
-          <linearGradient id="bgL" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#0f1e3d"/>
-            <stop offset="100%" style="stop-color:#0d2a4a"/>
+          <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#0a0f1e"/>
+            <stop offset="100%" style="stop-color:#0d1a35"/>
           </linearGradient>
-          <linearGradient id="wL" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#1e4d8c"/>
-            <stop offset="40%" style="stop-color:#2d7dd2"/>
-            <stop offset="70%" style="stop-color:#4db8ff"/>
-            <stop offset="100%" style="stop-color:#38e8c0"/>
+          <linearGradient id="gold2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#f5d27a"/>
+            <stop offset="50%" style="stop-color:#c9922a"/>
+            <stop offset="100%" style="stop-color:#a06a10"/>
           </linearGradient>
-          <linearGradient id="cL" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#4db8ff"/>
-            <stop offset="100%" style="stop-color:#38e8c0"/>
+          <linearGradient id="goldH2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#e8c45a"/>
+            <stop offset="100%" style="stop-color:#f5d27a"/>
+          </linearGradient>
+          <linearGradient id="wave2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#1a3a6e;stop-opacity:0"/>
+            <stop offset="20%" style="stop-color:#2d6dd2;stop-opacity:0.8"/>
+            <stop offset="50%" style="stop-color:#c9922a;stop-opacity:0.9"/>
+            <stop offset="80%" style="stop-color:#2d6dd2;stop-opacity:0.8"/>
+            <stop offset="100%" style="stop-color:#1a3a6e;stop-opacity:0"/>
           </linearGradient>
         </defs>
-        <rect width="680" height="320" rx="16" fill="url(#bgL)"/>
-        <circle cx="340" cy="130" r="72" fill="none" stroke="#1e4d8c" stroke-width="1"/>
-        <circle cx="340" cy="130" r="58" fill="#0d1f3c"/>
-        <rect x="278" y="118" width="7" height="24" rx="3.5" fill="url(#wL)" opacity="0.5"/>
-        <rect x="290" y="108" width="7" height="44" rx="3.5" fill="url(#wL)" opacity="0.65"/>
-        <rect x="302" y="114" width="7" height="32" rx="3.5" fill="url(#wL)" opacity="0.8"/>
-        <path d="M316 132 L330 148 L362 112" fill="none" stroke="url(#cL)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="330" cy="148" r="3" fill="#38e8c0" opacity="0.9"/>
-        <rect x="371" y="114" width="7" height="32" rx="3.5" fill="url(#wL)" opacity="0.8"/>
-        <rect x="383" y="108" width="7" height="44" rx="3.5" fill="url(#wL)" opacity="0.65"/>
-        <rect x="395" y="118" width="7" height="24" rx="3.5" fill="url(#wL)" opacity="0.5"/>
-        <text x="340" y="232" text-anchor="middle" font-family="DM Sans,Segoe UI,sans-serif" font-size="38" font-weight="700" letter-spacing="3" fill="#ffffff">Vox<tspan fill="url(#cL)">Ledger</tspan></text>
-        <line x1="240" y1="247" x2="440" y2="247" stroke="url(#wL)" stroke-width="0.8" opacity="0.5"/>
-        <text x="340" y="276" text-anchor="middle" font-family="DM Sans,Segoe UI,sans-serif" font-size="13" font-weight="400" letter-spacing="2.5" fill="#7ab8e8" opacity="0.85">OGNI VOCE CONTA</text>
+        <rect width="680" height="340" rx="20" fill="url(#bg2)"/>
+        <ellipse cx="340" cy="108" rx="52" ry="52" fill="none" stroke="#c9922a" stroke-width="0.5" opacity="0.3"/>
+        <ellipse cx="340" cy="108" rx="68" ry="68" fill="none" stroke="#c9922a" stroke-width="0.3" opacity="0.15"/>
+        <rect x="322" y="64" width="36" height="52" rx="18" fill="url(#gold2)" opacity="0.95"/>
+        <line x1="330" y1="72" x2="330" y2="108" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="336" y1="68" x2="336" y2="112" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="342" y1="68" x2="342" y2="112" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="348" y1="72" x2="348" y2="108" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="323" y1="80" x2="357" y2="80" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="322" y1="88" x2="358" y2="88" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="322" y1="96" x2="358" y2="96" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="323" y1="104" x2="357" y2="104" stroke="#0a0f1e" stroke-width="0.8" opacity="0.4"/>
+        <rect x="322" y="64" width="36" height="52" rx="18" fill="none" stroke="#f5d27a" stroke-width="1.2"/>
+        <rect x="334" y="116" width="12" height="10" rx="2" fill="#8a6010"/>
+        <rect x="332" y="126" width="16" height="6" rx="2" fill="#a07020"/>
+        <rect x="326" y="132" width="28" height="6" rx="3" fill="url(#gold2)"/>
+        <rect x="338" y="138" width="4" height="28" rx="2" fill="#7a5010"/>
+        <ellipse cx="340" cy="170" rx="22" ry="5" fill="url(#gold2)" opacity="0.8"/>
+        <ellipse cx="340" cy="170" rx="22" ry="5" fill="none" stroke="#f5d27a" stroke-width="0.8"/>
+        <rect x="192" y="162" width="4" height="16" rx="2" fill="url(#wave2)" opacity="0.4"/>
+        <rect x="200" y="155" width="4" height="30" rx="2" fill="url(#wave2)" opacity="0.55"/>
+        <rect x="208" y="150" width="4" height="40" rx="2" fill="url(#wave2)" opacity="0.7"/>
+        <rect x="216" y="157" width="4" height="26" rx="2" fill="url(#wave2)" opacity="0.75"/>
+        <rect x="224" y="145" width="4" height="50" rx="2" fill="url(#wave2)" opacity="0.85"/>
+        <rect x="232" y="152" width="4" height="36" rx="2" fill="url(#wave2)" opacity="0.9"/>
+        <rect x="240" y="148" width="4" height="44" rx="2" fill="url(#wave2)" opacity="0.95"/>
+        <rect x="248" y="155" width="4" height="30" rx="2" fill="url(#wave2)" opacity="0.9"/>
+        <rect x="256" y="160" width="4" height="20" rx="2" fill="url(#wave2)" opacity="0.8"/>
+        <rect x="264" y="158" width="4" height="24" rx="2" fill="url(#wave2)" opacity="0.7"/>
+        <rect x="272" y="163" width="4" height="14" rx="2" fill="url(#wave2)" opacity="0.5"/>
+        <rect x="280" y="161" width="4" height="18" rx="2" fill="url(#wave2)" opacity="0.4"/>
+        <rect x="288" y="164" width="4" height="12" rx="2" fill="url(#wave2)" opacity="0.3"/>
+        <rect x="388" y="164" width="4" height="12" rx="2" fill="url(#wave2)" opacity="0.3"/>
+        <rect x="396" y="161" width="4" height="18" rx="2" fill="url(#wave2)" opacity="0.4"/>
+        <rect x="404" y="163" width="4" height="14" rx="2" fill="url(#wave2)" opacity="0.5"/>
+        <rect x="412" y="158" width="4" height="24" rx="2" fill="url(#wave2)" opacity="0.7"/>
+        <rect x="420" y="160" width="4" height="20" rx="2" fill="url(#wave2)" opacity="0.8"/>
+        <rect x="428" y="155" width="4" height="30" rx="2" fill="url(#wave2)" opacity="0.9"/>
+        <rect x="436" y="148" width="4" height="44" rx="2" fill="url(#wave2)" opacity="0.95"/>
+        <rect x="444" y="152" width="4" height="36" rx="2" fill="url(#wave2)" opacity="0.9"/>
+        <rect x="452" y="145" width="4" height="50" rx="2" fill="url(#wave2)" opacity="0.85"/>
+        <rect x="460" y="157" width="4" height="26" rx="2" fill="url(#wave2)" opacity="0.75"/>
+        <rect x="468" y="150" width="4" height="40" rx="2" fill="url(#wave2)" opacity="0.7"/>
+        <rect x="476" y="155" width="4" height="30" rx="2" fill="url(#wave2)" opacity="0.55"/>
+        <rect x="484" y="162" width="4" height="16" rx="2" fill="url(#wave2)" opacity="0.4"/>
+        <text x="340" y="232" text-anchor="middle" font-family="DM Sans,Segoe UI,sans-serif" font-size="64" font-weight="700" letter-spacing="16" fill="url(#goldH2)">DIVA</text>
+        <line x1="200" y1="248" x2="480" y2="248" stroke="#c9922a" stroke-width="0.6" opacity="0.4"/>
+        <text x="340" y="270" text-anchor="middle" font-family="DM Sans,Segoe UI,sans-serif" font-size="11" font-weight="400" letter-spacing="2" fill="#7ab8e8" opacity="0.7">DUBBING INVOICE VERIFICATION &amp; AUDIT</text>
+        <text x="340" y="302" text-anchor="middle" font-family="DM Sans,Segoe UI,sans-serif" font-size="13" font-weight="400" letter-spacing="1.5" fill="#f5d27a" opacity="0.9">Ogni voce ha il suo valore</text>
       </svg>
     </div>
     <div class="login-title">Accesso</div>
@@ -740,7 +781,7 @@ function toggleMain(){
 
 <!-- HEADER -->
 <div class="hdr">
-  <span class="hdr-logo">VoxLedger / Simulatore Fatture</span>
+  <span class="hdr-logo">DIVA / Simulatore Fatture</span>
   <div class="hdr-sep"></div>
   <span class="hdr-anno" id="hdr-anno">Anno —</span>
   <button class="btn-ricalcola" onclick="ricalcolaTutto()">⟳ Ricalcola tutto</button>
