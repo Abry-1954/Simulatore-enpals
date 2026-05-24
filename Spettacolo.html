@@ -2712,6 +2712,19 @@ async function caricaLogGithub(){
   }
 }
 
+function utcToIta(ts){
+  if(!ts) return ts;
+  try{
+    var d = new Date(ts.replace(' ','T')+'Z');
+    if(isNaN(d)) return ts;
+    return d.toLocaleString('it-IT', {
+      year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit',
+      timeZone:'Europe/Rome'
+    }).replace(',','');
+  } catch(e){ return ts; }
+}
+
 async function azzeraLog(){
   if(!confirm("Sei sicuro di voler cancellare TUTTI i record del log?\nQuesta operazione non può essere annullata.")) return;
   var btn = document.querySelector('[onclick="azzeraLog()"]');
@@ -2849,7 +2862,7 @@ function apriDettaglioLog(idx){
   box.onclick = function(e){ e.stopPropagation(); };
 
   var righe = [
-    ['📅 Data/Ora', r.ts],
+    ['📅 Data/Ora', utcToIta(r.ts)],
     ['👤 Utente', r.utente + ' (' + r.ruolo + ')'],
     ['⚡ Azione', r.azione],
   ];
@@ -2988,7 +3001,7 @@ function mostraLog(dati){
     var ip = r.ip ? r.ip.split(',')[0].trim() : '';
     var tdStyle = 'padding:5px 8px;vertical-align:middle;';
     return '<tr style="background:'+bg+';">'+
-      '<td style="'+tdStyle+'color:#9ca3af;white-space:nowrap;font-size:11px;min-width:130px;">'+r.ts+'</td>'+
+      '<td style="'+tdStyle+'color:#9ca3af;white-space:nowrap;font-size:11px;min-width:130px;">'+utcToIta(r.ts)+'</td>'+
       '<td style="'+tdStyle+'font-weight:600;font-size:12px;min-width:80px;">'+r.utente+'</td>'+
       '<td style="'+tdStyle+'color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';font-size:12px;min-width:60px;">'+r.ruolo+'</td>'+
       '<td style="'+tdStyle+'min-width:90px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;white-space:nowrap;">'+r.azione+'</span></td>'+
