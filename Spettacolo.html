@@ -2493,6 +2493,7 @@ async function eliminaFattura(rec_nbr, rif){
   <div style="background:#1a1a2e;border-radius:12px;max-width:1300px;margin:0 auto;padding:20px;color:#e2e8f0;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="font-family:'DM Mono',monospace;font-size:14px;color:#93c5fd;font-weight:600;">📋 Log Accessi e Utilizzo</div>
+      <button onclick="azzeraLog()" style="background:#7f1d1d;color:#fca5a5;border:1px solid #dc2626;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px;margin-right:8px;" title="Cancella tutti i record del log">🗑 Azzera Log</button>
       <button onclick="chiudiPannelloLog()" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px;">✕ Chiudi</button>
     </div>
     <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
@@ -2708,6 +2709,27 @@ async function caricaLogGithub(){
     document.getElementById('log-empty').style.display='block';
     document.getElementById('log-body').innerHTML='';
     document.getElementById('log-empty').textContent='Errore: ' + e.message + ' — il repository potrebbe essere privato';
+  }
+}
+
+async function azzeraLog(){
+  if(!confirm("Sei sicuro di voler cancellare TUTTI i record del log?\nQuesta operazione non può essere annullata.")) return;
+  try{
+    var cu = sessionStorage.getItem("enpals_cu") || "";
+    var cp = sessionStorage.getItem("enpals_cp") || "";
+    var r = await fetch("https://enpals-server.onrender.com/log-reset", {
+      method: "POST",
+      headers: {"Content-Type":"application/json","X-Auth-User":cu,"X-Auth-Pass":cp}
+    });
+    var d = await r.json();
+    if(d.ok){
+      alert("✓ Log azzerato con successo!");
+      caricaLogGithub();
+    } else {
+      alert("✗ Errore: "+(d.error||"sconosciuto"));
+    }
+  } catch(e){
+    alert("✗ Errore di rete: "+e.message);
   }
 }
 
