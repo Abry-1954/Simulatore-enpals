@@ -1636,6 +1636,13 @@ function resetTutto(){
   persona=null;
   nomInp.value="";
   document.getElementById("nom-box").style.display="none";
+  // Reset azienda
+  var inpAz = document.getElementById("inp-az");
+  if(inpAz) inpAz.value="";
+  var azName = document.getElementById("az-name");
+  if(azName) azName.textContent="";
+  var azBox = document.getElementById("az-box");
+  if(azBox) azBox.style.display="none";
   for(let i=1;i<=31;i++){
     const chk=document.getElementById("chk_"+i);
     if(chk)chk.checked=false;
