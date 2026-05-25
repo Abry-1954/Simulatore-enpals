@@ -511,12 +511,13 @@ self.addEventListener('fetch',e=>{
           btn.textContent = '⏳ Server in avvio... (' + tentativo + '/' + MAX_TENTATIVI + ')';
           await new Promise(function(r){ setTimeout(r, 8000); }); // aspetta 8 sec tra tentativi
         }
-        res = await fetch(SERVER_URL+"/login", {
+        var fetchOpts = {
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({username:u, password:p}),
-          signal: AbortSignal.timeout(15000)
-        });
+          body:JSON.stringify({username:u, password:p})
+        };
+        try{ fetchOpts.signal = AbortSignal.timeout(15000); }catch(ex){}
+        res = await fetch(SERVER_URL+"/login", fetchOpts);
         break; // se arriva qui senza errore, esce dal while
       } catch(e){
         console.log('Tentativo '+tentativo+' fallito:', e.message);
@@ -3326,6 +3327,12 @@ async function eliminaUtente(btn){
 <script>
 var _wtSteps = [
   {
+    id: null,
+    title: '0. Prima di iniziare',
+    text: "Se accedi come utente standard, il tuo nominativo sarà già precompilato automaticamente con il tuo nome utente. Non potrai modificarlo — il sistema è configurato per emettere fatture solo a tuo nome. Se sei un amministratore, potrai cercare qualsiasi lavoratore liberamente.",
+    pos: 'center'
+  },
+  {
     id: 'inp-nom',
     title: '1. Cerca il lavoratore',
     text: 'Digita il cognome del lavoratore nella casella di ricerca. Apparirà un elenco — seleziona il nome corretto per popolare automaticamente i dati anagrafici.',
@@ -3507,6 +3514,52 @@ function wtMostra(idx){
   wtClick();
   var step = _wtSteps[idx];
   
+  // Step 0 — mostra alert nativo centrato e obbligatorio
+  if(step.id === null){
+    // Aggiorna dots e numero step nel bubble normale
+    document.getElementById('wt-step-num').textContent = 'STEP 1 di ' + _wtSteps.length;
+    document.getElementById('wt-title').textContent = step.title;
+    document.getElementById('wt-text').textContent = step.text;
+    wtDisegnaCanvas(null);
+    document.getElementById('wt-bubble').style.display = 'none';
+    wtDisegnaCanvas(null);
+    document.getElementById('wt-bubble').style.display = 'none';
+    // Crea dialog se non esiste
+    if(!document.getElementById('wt-dialog')){
+      var dlg = document.createElement('dialog');
+      dlg.id = 'wt-dialog';
+      dlg.style.cssText = 'border:none;border-radius:14px;padding:28px 24px;max-width:500px;width:90vw;background:#0f172a;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.8);';
+      document.body.appendChild(dlg);
+    }
+    var dlg2 = document.getElementById('wt-dialog');
+    var titleTxt = step.title;
+    var bodyTxt = step.text;
+    dlg2.innerHTML = '';
+    var d1 = document.createElement('div');
+    d1.style.cssText = 'font-size:11px;color:#64748b;font-family:DM Mono,monospace;margin-bottom:8px;';
+    d1.textContent = 'INFORMAZIONE IMPORTANTE';
+    dlg2.appendChild(d1);
+    var d2 = document.createElement('div');
+    d2.style.cssText = 'font-size:16px;font-weight:700;color:#93c5fd;margin-bottom:12px;font-family:DM Sans,sans-serif;';
+    d2.textContent = titleTxt;
+    dlg2.appendChild(d2);
+    var d3 = document.createElement('div');
+    d3.style.cssText = 'font-size:14px;color:#cbd5e1;line-height:1.7;font-family:DM Sans,sans-serif;margin-bottom:20px;';
+    d3.textContent = bodyTxt;
+    dlg2.appendChild(d3);
+    var d4 = document.createElement('div');
+    d4.style.cssText = 'text-align:right;';
+    var btn2 = document.createElement('button');
+    btn2.textContent = 'Ho capito → Avanti';
+    btn2.style.cssText = 'background:#2563eb;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;';
+    btn2.onclick = function(){ dlg2.close(); wtStep(1); };
+    d4.appendChild(btn2);
+    dlg2.appendChild(d4);
+    dlg2.showModal();
+    return;
+  }
+  document.getElementById('wt-bubble').style.display = '';
+  
   // Cerca l'elemento — gestisci il caso btn-stampa-wt
   var elId = step.id === 'btn-stampa-wt' ? null : step.id;
   var el = elId ? document.getElementById(elId) : document.querySelector('.btn-stampa');
@@ -3622,11 +3675,25 @@ function wtPosizionaBubble(rect, pos){
   var margin = 16;
   
   if(!rect){
+    // Usa modal centrato con position:fixed
+    bubble.style.position = 'fixed';
+    bubble.style.width = Math.min(500, window.innerWidth * 0.85) + 'px';
+    bubble.style.maxWidth = '85vw';
     bubble.style.top = '50%';
     bubble.style.left = '50%';
-    bubble.style.transform = 'translate(-50%,-50%)';
+    bubble.style.marginTop = '0';
+    bubble.style.marginLeft = '0';
+    bubble.style.transform = 'translate(-50%, -50%)';
+    bubble.style.zIndex = '10001';
     return;
   }
+  // Reset per gli altri step
+  bubble.style.position = 'absolute';
+  bubble.style.width = bw + 'px';
+  bubble.style.maxWidth = '';
+  bubble.style.transform = 'none';
+  bubble.style.marginTop = '';
+  bubble.style.marginLeft = '';
   
   bubble.style.transform = '';
   var bh = bubble.offsetHeight || 200;
