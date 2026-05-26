@@ -2797,7 +2797,7 @@ async function caricaLogGithub(){
     var dati = await r.json();
     if(dati && dati.length){
       // Ordina per data decrescente (più recenti prima)
-      dati.sort(function(a,b){ return b.ts.localeCompare(a.ts); });
+      dati.sort(function(a,b){ return (b.seq||0)-(a.seq||0) || b.ts.localeCompare(a.ts); });
       _logData = dati;
       mostraLog(_logData);
       document.querySelector('#pannello-log div div:first-child div:first-child').textContent = '☁ Log GitHub — ' + dati.length + ' righe';
@@ -2816,13 +2816,22 @@ async function caricaLogGithub(){
 function utcToIta(ts){
   if(!ts) return ts;
   try{
-    var d = new Date(ts.replace(' ','T')+'Z');
+    // Preserva il decimale dal timestamp originale (es. "17:53:26.9")
+    var decimal = '';
+    var tsPulito = ts;
+    var dotIdx = ts.lastIndexOf('.');
+    if(dotIdx > -1 && dotIdx > ts.lastIndexOf(':')){
+      decimal = ts.substring(dotIdx); // es. ".9"
+      tsPulito = ts.substring(0, dotIdx);
+    }
+    var d = new Date(tsPulito.replace(' ','T')+'Z');
     if(isNaN(d)) return ts;
-    return d.toLocaleString('it-IT', {
+    var str = d.toLocaleString('it-IT', {
       year:'numeric', month:'2-digit', day:'2-digit',
       hour:'2-digit', minute:'2-digit', second:'2-digit',
       timeZone:'Europe/Rome'
     }).replace(',','');
+    return str + decimal;
   } catch(e){ return ts; }
 }
 
@@ -3102,7 +3111,7 @@ function mostraLog(dati){
     var ip = r.ip ? r.ip.split(',')[0].trim() : '';
     var tdStyle = 'padding:5px 8px;vertical-align:middle;';
     return '<tr style="background:'+bg+';">'+
-      '<td style="'+tdStyle+'color:#9ca3af;white-space:nowrap;font-size:11px;min-width:130px;">'+utcToIta(r.ts)+'</td>'+
+      '<td style="'+tdStyle+'color:#9ca3af;white-space:nowrap;font-size:11px;min-width:130px;">'+(r.seq ? '<span style="color:#4b5563;font-size:10px;margin-right:4px;">#'+String(r.seq).padStart(4,'0')+'</span>' : '')+utcToIta(r.ts)+'</td>'+
       '<td style="'+tdStyle+'font-weight:600;font-size:12px;min-width:80px;">'+r.utente+'</td>'+
       '<td style="'+tdStyle+'color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';font-size:12px;min-width:60px;">'+r.ruolo+'</td>'+
       '<td style="'+tdStyle+'min-width:90px;"><span style="background:'+col+'22;color:'+col+';border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;white-space:nowrap;">'+r.azione+'</span></td>'+
