@@ -1940,8 +1940,7 @@ function stampaFattura(titoloPDF){
   "<span style=\"font-size:10px;color:#555;flex:1;\">Salva come: <strong>"+pageTitle+".pdf</strong></span>"+
   "<button onclick=\"window.print()\" style=\"background:#1e3a8a;color:#fff;border:none;border-radius:5px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;\">&#128424; 1. Stampa / Salva PDF</button>"+
   
-  "<button onclick=\"window.close()\" style=\"background:#888;color:#fff;border:none;border-radius:5px;padding:7px 12px;font-size:12px;cursor:pointer;\">&#10005; Chiudi</button>"+
-  "<button onclick=\"if(!confirm('Hai già salvato il PDF? Clicca OK solo se hai già salvato il file.'))return;var obj=encodeURIComponent('Fattura '+document.title);var body=encodeURIComponent('Gentile,\\n\\nIn allegato la fattura relativa alla lavorazione.\\nNome file: '+document.title+'.pdf\\n\\nCordiali saluti');window.open('mailto:?subject='+obj+'&body='+body);\" style=\"background:#059669;color:#fff;border:none;border-radius:5px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;\">&#9993; Invia per Email</button></div>"+
+  "<button onclick=\"window.close()\" style=\"background:#888;color:#fff;border:none;border-radius:5px;padding:7px 12px;font-size:12px;cursor:pointer;\">&#10005; Chiudi</button></div>"+
   "<div class=\"doc-title\"><h1>ENPALS &mdash; FATTURAZIONE</h1><h2>"+escHtml(tf1)+"</h2></div>"+
   "<div class=\"header\">"+
   "<div class=\"col\"><div class=\"col-title\">Lavoratore</div>"+
@@ -2662,12 +2661,10 @@ function logAzione(azione, dettaglio){
     body:payload
   }).catch(function(){});
 
-  // 2. Manda a Render — sempre per LOGIN OK (evita problemi di timing al boot)
-  // Per le altre azioni, salta Render se il server locale è attivo
-  if(_serverOnline && azione !== 'LOGIN OK' && azione !== 'LOGIN KO CREDENZIALI ERRATE' && azione !== 'LOGOUT') return;
+  // 2. Manda a Render — con re-login automatico se sessione scaduta (Render resetta RAM)
   var SERVER_RENDER = 'https://enpals-server.onrender.com';
 
-  var _logInviato = false; // evita doppio invio per re-login
+  var _logInviato = false;
   function _inviaLog(tok, tentativo){
     var hdrs = {'Content-Type':'application/json'};
     if(tok) hdrs['Authorization'] = 'Bearer ' + tok;
