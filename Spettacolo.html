@@ -2664,13 +2664,14 @@ function logAzione(azione, dettaglio){
   // 2. Manda a Render — con re-login automatico se sessione scaduta (Render resetta RAM)
   var SERVER_RENDER = 'https://enpals-server.onrender.com';
 
+  var _logInviato = false; // evita doppio invio per re-login
   function _inviaLog(tok, tentativo){
     var hdrs = {'Content-Type':'application/json'};
     if(tok) hdrs['Authorization'] = 'Bearer ' + tok;
     fetch(SERVER_RENDER+'/log-azione',{
       method:'POST', headers:hdrs, body:payload
     }).then(function(r){
-      if(r.status===401 && tentativo===1){
+      if(r.status===401 && tentativo===1 && !_logInviato){
         // Sessione Render scaduta (RAM resettata) — ri-login automatico
         var uVal = sessionStorage.getItem('enpals_cu') || '';
         var pVal = sessionStorage.getItem('enpals_cp') || '';
@@ -2680,17 +2681,18 @@ function logAzione(azione, dettaglio){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({username:uVal, password:pVal})
         }).then(function(lr){ return lr.json(); }).then(function(ld){
-          if(ld.ok && ld.token){
+          if(ld.ok && ld.token && !_logInviato){
             window._authToken = ld.token;
             sessionStorage.setItem('enpals_auth','tok:'+ld.token);
             console.log('Re-login Render OK — riprovo log');
             _inviaLog(ld.token, 2);
           }
         }).catch(function(){});
-      } else if(!r.ok){
-        console.warn('Log '+azione+' HTTP '+r.status);
-      } else {
+      } else if(r.ok){
+        _logInviato = true;
         console.log('Log '+azione+' OK');
+      } else {
+        console.warn('Log '+azione+' HTTP '+r.status);
       }
     }).catch(function(e){
       console.warn('Log '+azione+' errore rete:', e.message);
