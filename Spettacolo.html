@@ -2662,7 +2662,9 @@ function logAzione(azione, dettaglio){
     body:payload
   }).catch(function(){});
 
-  // 2. Manda a Render — con re-login automatico se sessione scaduta (Render resetta RAM)
+  // 2. Manda a Render — sempre per LOGIN OK (evita problemi di timing al boot)
+  // Per le altre azioni, salta Render se il server locale è attivo
+  if(_serverOnline && azione !== 'LOGIN OK' && azione !== 'LOGIN KO CREDENZIALI ERRATE' && azione !== 'LOGOUT') return;
   var SERVER_RENDER = 'https://enpals-server.onrender.com';
 
   var _logInviato = false; // evita doppio invio per re-login
