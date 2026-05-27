@@ -2797,7 +2797,7 @@ async function caricaLogGithub(){
     var dati = await r.json();
     if(dati && dati.length){
       // Ordina per data decrescente (più recenti prima)
-      dati.sort(function(a,b){ return (b.seq||0)-(a.seq||0) || b.ts.localeCompare(a.ts); });
+      dati.sort(function(a,b){ var tc = b.ts.localeCompare(a.ts); return tc !== 0 ? tc : (a.seq||0)-(b.seq||0); });
       _logData = dati;
       mostraLog(_logData);
       document.querySelector('#pannello-log div div:first-child div:first-child').textContent = '☁ Log GitHub — ' + dati.length + ' righe';
