@@ -2616,17 +2616,17 @@ async function eliminaFattura(rec_nbr, rif){
     <div style="overflow-x:auto;">
       <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px;">
         <thead>
-          <tr style="background:#1e3a8a;color:#93c5fd;">
+          <tr id="log-thead-row" style="background:#1e3a8a;color:#93c5fd;">
             <th style="padding:8px;text-align:left;white-space:nowrap;min-width:130px;">Data/Ora</th>
-            <th style="padding:8px;text-align:left;min-width:80px;">Utente</th>
-            <th style="padding:8px;text-align:left;min-width:60px;">Ruolo</th>
-            <th style="padding:8px;text-align:left;min-width:90px;">Azione</th>
-            <th style="padding:8px;text-align:left;min-width:150px;">Lavoratore</th>
-            <th style="padding:8px;text-align:left;min-width:130px;">Azienda</th>
-            <th style="padding:8px;text-align:left;min-width:140px;">Titolo</th>
-            <th style="padding:8px;text-align:right;min-width:100px;">Netto €</th>
-            <th style="padding:8px;text-align:center;min-width:80px;">Utilizzo</th>
-            <th style="padding:8px;text-align:left;min-width:90px;">IP</th>
+            <th style="padding:8px;text-align:left;min-width:80px;cursor:pointer;user-select:none;" onclick="sortLog('utente')" title="Ordina per Utente">Utente <span id="sort-arrow-utente">↕</span></th>
+            <th style="padding:8px;text-align:left;min-width:60px;cursor:pointer;user-select:none;" onclick="sortLog('ruolo')" title="Ordina per Ruolo">Ruolo <span id="sort-arrow-ruolo">↕</span></th>
+            <th style="padding:8px;text-align:left;min-width:90px;cursor:pointer;user-select:none;" onclick="sortLog('azione')" title="Ordina per Azione">Azione <span id="sort-arrow-azione">↕</span></th>
+            <th style="padding:8px;text-align:left;min-width:150px;cursor:pointer;user-select:none;" onclick="sortLog('lavoratore')" title="Ordina per Lavoratore">Lavoratore <span id="sort-arrow-lavoratore">↕</span></th>
+            <th style="padding:8px;text-align:left;min-width:130px;cursor:pointer;user-select:none;" onclick="sortLog('azienda')" title="Ordina per Azienda">Azienda <span id="sort-arrow-azienda">↕</span></th>
+            <th style="padding:8px;text-align:left;min-width:140px;cursor:pointer;user-select:none;" onclick="sortLog('titolo')" title="Ordina per Titolo">Titolo <span id="sort-arrow-titolo">↕</span></th>
+            <th style="padding:8px;text-align:right;min-width:100px;cursor:pointer;user-select:none;" onclick="sortLog('netto')" title="Ordina per Netto €">Netto € <span id="sort-arrow-netto">↕</span></th>
+            <th style="padding:8px;text-align:center;min-width:80px;cursor:pointer;user-select:none;" onclick="sortLog('utilizzo')" title="Ordina per Utilizzo">Utilizzo <span id="sort-arrow-utilizzo">↕</span></th>
+            <th style="padding:8px;text-align:left;min-width:90px;cursor:pointer;user-select:none;" onclick="sortLog('ip')" title="Ordina per IP">IP <span id="sort-arrow-ip">↕</span></th>
           </tr>
         </thead>
         <tbody id="log-body"></tbody>
@@ -3093,6 +3093,7 @@ function mostraLog(dati){
     'DB_AZIENDA':'#fb923c','SALVA_FATTURA':'#34d399','LOGOUT':'#dc2626'
   };
 
+  window._logRighe = dati;
   tbody.innerHTML = dati.map(function(r,i){
     var bg = i%2===0?'#111827':'#1f2937';
     var col = colori[r.azione]||'#e2e8f0';
@@ -3109,8 +3110,8 @@ function mostraLog(dati){
     if(titolo.length>35)     titolo=titolo.substring(0,35)+'…';
     if(!isStampaSimul && lavoratore.length>60) lavoratore=lavoratore.substring(0,60)+'…';
     var ip = r.ip ? r.ip.split(',')[0].trim() : '';
-    var tdStyle = 'padding:5px 8px;vertical-align:middle;';
-    return '<tr style="background:'+bg+';">'+
+    var tdStyle = 'padding:5px 8px;vertical-align:middle;cursor:pointer;';
+    return '<tr style="background:'+bg+';" onclick="apriDettaglioLog('+i+')">'+
       '<td style="'+tdStyle+'color:#9ca3af;white-space:nowrap;font-size:11px;min-width:130px;">'+(r.seq ? '<span style="color:#4b5563;font-size:10px;margin-right:4px;">#'+String(r.seq).padStart(4,'0')+'</span>' : '')+utcToIta(r.ts)+'</td>'+
       '<td style="'+tdStyle+'font-weight:600;font-size:12px;min-width:80px;">'+r.utente+'</td>'+
       '<td style="'+tdStyle+'color:'+(r.ruolo==='admin'?'#fcd34d':'#93c5fd')+';font-size:12px;min-width:60px;">'+r.ruolo+'</td>'+
@@ -3123,6 +3124,57 @@ function mostraLog(dati){
       '<td style="'+tdStyle+'color:#6b7280;font-size:10px;white-space:nowrap;min-width:90px;">'+ip+'</td>'+
       '</tr>';
   }).join('');
+}
+
+// ── Sort colonne log ──
+var _sortCol = null;
+var _sortDir = 1; // 1=asc, -1=desc
+
+function sortLog(col){
+  if(_sortCol === col){
+    _sortDir = -_sortDir;
+  } else {
+    _sortCol = col;
+    _sortDir = 1;
+  }
+  // Aggiorna frecce intestazione
+  ['utente','ruolo','azione','lavoratore','azienda','titolo','netto','utilizzo','ip'].forEach(function(c){
+    var el = document.getElementById('sort-arrow-'+c);
+    if(!el) return;
+    if(c === col) el.textContent = _sortDir === 1 ? ' ▲' : ' ▼';
+    else el.textContent = ' ↕';
+  });
+
+  var dati = (_logData || []).slice();
+  dati.sort(function(a,b){
+    var va, vb;
+    if(col==='utente'){ va=a.utente||''; vb=b.utente||''; }
+    else if(col==='ruolo'){ va=a.ruolo||''; vb=b.ruolo||''; }
+    else if(col==='azione'){ va=a.azione||''; vb=b.azione||''; }
+    else if(col==='ip'){ va=(a.ip||'').split(',')[0].trim(); vb=(b.ip||'').split(',')[0].trim(); }
+    else {
+      // lavoratore/azienda/titolo/netto/utilizzo: estratti dal dettaglio
+      var da2 = a.azione==='STAMPA'||a.azione==='SIMULAZIONE'||a.azione==='SALVA' ? _parseDettaglio(a.dettaglio||'') : {};
+      var db2 = b.azione==='STAMPA'||b.azione==='SIMULAZIONE'||b.azione==='SALVA' ? _parseDettaglio(b.dettaglio||'') : {};
+      if(col==='lavoratore'){ va=da2.lav||a.dettaglio||''; vb=db2.lav||b.dettaglio||''; }
+      else if(col==='azienda'){ va=da2.az||''; vb=db2.az||''; }
+      else if(col==='titolo'){ va=da2.tit||''; vb=db2.tit||''; }
+      else if(col==='netto'){
+        // Ordina numericamente
+        va=parseFloat((da2.netto||'').replace(/[€\s.,]/g,function(c){ return c==='.'||c===',' ? '' : ''; }).replace(',','.')) || 0;
+        vb=parseFloat((db2.netto||'').replace(/[€\s.,]/g,function(c){ return c==='.'||c===',' ? '' : ''; }).replace(',','.')) || 0;
+        return _sortDir * (va - vb);
+      }
+      else if(col==='utilizzo'){
+        va=parseInt(da2.nRicalcoli||'0')||0;
+        vb=parseInt(db2.nRicalcoli||'0')||0;
+        return _sortDir * (va - vb);
+      }
+    }
+    if(typeof va==='string') return _sortDir * va.localeCompare(vb);
+    return _sortDir * (va - vb);
+  });
+  mostraLog(dati);
 }
 </script>
 
