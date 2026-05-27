@@ -2612,7 +2612,7 @@ async function eliminaFattura(rec_nbr, rif){
       <input id="log-filter-a" type="date" oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;">
       <button onclick="resetFiltriAvanzati()" style="background:#374151;color:#9ca3af;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:11px;">✕ Reset</button>
     </div>
-    <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+    <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;"></div>
     <div style="overflow-x:auto;">
       <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px;">
         <thead>
@@ -3069,17 +3069,24 @@ function mostraLog(dati){
 
   // Riepilogo
   var login=0,simul=0,stampe=0,fail=0;
+  var lavSet = {};
   dati.forEach(function(r){
     if(r.azione==='LOGIN OK') login++;
     if(r.azione==='SIMULAZIONE') simul++;
     if(r.azione==='STAMPA') stampe++;
     if(r.azione==='LOGIN KO CREDENZIALI ERRATE') fail++;
+    if(r.azione==='STAMPA'||r.azione==='SIMULAZIONE'||r.azione==='SALVA'){
+      var d = _parseDettaglio(r.dettaglio||'');
+      if(d.lav) lavSet[d.lav.trim().toUpperCase()] = 1;
+    }
   });
+  var lavUnici = Object.keys(lavSet).length;
   summary.innerHTML = [
     ['🔑 Login riusciti', login, '#86efac'],
     ['📊 Simulazioni', simul, '#93c5fd'],
     ['🖨 Stampe', stampe, '#fcd34d'],
-    ['⚠ Login falliti', fail, '#fca5a5']
+    ['⚠ Login falliti', fail, '#fca5a5'],
+    ['🎭 Lavoratori', lavUnici, '#fb923c']
   ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:8px;text-align:center;"><div style="font-size:10px;color:#9ca3af;">'+x[0]+'</div><div style="font-size:22px;font-weight:700;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
 
   if(!dati.length){
