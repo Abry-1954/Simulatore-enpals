@@ -1682,8 +1682,9 @@ function authFetch(path, options){
   if(window._authToken){
     options.headers["Authorization"] = "Bearer " + window._authToken;
   }
-  // Se il path è già un URL completo usalo, altrimenti prependi il server
-  var url = path.startsWith("http") ? path : "http://localhost:8765" + path;
+  // Usa sempre SERVER_URL dinamico (rispetta il toggle locale/online)
+  var baseUrl = window.SERVER_URL || "http://localhost:8765";
+  var url = path.startsWith("http") ? path : baseUrl + path;
   // Per chiamate al server locale aggiungi sempre le credenziali negli header
   if(url.indexOf("localhost") >= 0 || url.indexOf("127.0.0.1") >= 0){
     var cu = sessionStorage.getItem('enpals_cu') || '';
@@ -1719,7 +1720,7 @@ async function checkServer(){
         _dbCaricatiDaServer = true;
         document.getElementById("server-status").textContent = "🟡 Caricamento DB...";
         document.getElementById("server-status").style.color = "#fcd34d";
-        console.log("✓ Server locale — aggiornamento DB automatico...");
+        console.log("✓ Server " + (window._spOnline ? "online (Render)" : "locale") + " — aggiornamento DB automatico...");
         fetchDB();
       } else {
         document.getElementById("server-status").textContent = "🟢 DB aggiornati";
