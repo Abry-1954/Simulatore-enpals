@@ -466,7 +466,15 @@ self.addEventListener('fetch',e=>{
   // CONFIGURAZIONE SERVER
   // Cambia questo URL con quello del tuo server Render
   // ═══════════════════════════════════════════════════════
-  var SERVER_URL = "https://enpals-server.onrender.com";
+  var _spOnline = sessionStorage.getItem('enpals_modo_sp') !== 'locale';
+  var SERVER_URL = _spOnline ? "https://enpals-server.onrender.com" : "http://localhost:8765";
+  window._spOnline = _spOnline;
+
+  // Inizializza pulsante toggle al caricamento
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('toggle-modo-sp');
+    if(btn){ btn.textContent = _spOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _spOnline ? '#1e3a8a' : '#374151'; }
+  });
 
   // Credenziali locali di fallback (usate solo se server offline)
   var U="alberita", P="12111957", K="enpals_auth";
@@ -613,10 +621,10 @@ self.addEventListener('fetch',e=>{
       };
       logo.appendChild(btnOut);
     }
-    // Pulsante utenti visibile solo ai master
+    // Pulsante utenti visibile solo ai master e solo in modalità locale
     var masterList = ['alberita','abramelek'];
     var btnUsers = document.getElementById('btn-users');
-    if(btnUsers && masterList.indexOf(user) >= 0) btnUsers.style.display='';
+    if(btnUsers && masterList.indexOf(user) >= 0 && !window._spOnline) btnUsers.style.display='';
     // Pulsante Salva HTML visibile solo agli admin
     if(ruolo === 'admin'){
       var btnSalvaHtml = document.getElementById('btn-salva-html');
@@ -799,6 +807,7 @@ function toggleMain(){
   <span class="hdr-logo">DIVA / Simulatore Fatture</span>
   <div class="hdr-sep"></div>
   <span class="hdr-anno" id="hdr-anno">Anno —</span>
+  <button id="toggle-modo-sp" onclick="toggleModoSP()" style="background:#1e3a8a;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Cambia modalità locale/online">☁ Online</button>
   <button class="btn-ricalcola" onclick="ricalcolaTutto()">⟳ Ricalcola tutto</button>
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button onclick="avviaWalkthrough()" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Guida rapida">❓ Guida</button>
@@ -3807,6 +3816,16 @@ window.addEventListener('resize', function(){
     wtMostra(_wtCurrent);
   }
 });
+</script>
+
+<script>
+function toggleModoSP(){
+  var online = sessionStorage.getItem('enpals_modo_sp') !== 'locale';
+  sessionStorage.setItem('enpals_modo_sp', online ? 'locale' : 'online');
+  sessionStorage.removeItem('enpals_auth');
+  window._authToken = null;
+  window.location.reload();
+}
 </script>
 
 </body>
