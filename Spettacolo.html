@@ -507,9 +507,13 @@ self.addEventListener('fetch',e=>{
     if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
 
     // 1. Prova login sul server Render — con retry automatico se addormentato
-    // Se aperto da file:// (bat locale), salta Render e usa login locale diretto
+    // Se aperto da file:// (bat locale) E modalità locale, salta Render e usa login locale diretto
     var serverOk = false;
-    var MAX_TENTATIVI = window._isFileLocal ? 0 : 10;
+    var soloLocale = window._isFileLocal && !window._spOnline;
+    var soloOnline = window._spOnline;
+    var MAX_TENTATIVI = soloLocale ? 0 : (soloOnline ? 5 : 10);
+    // In modalità online usa SEMPRE Render, mai localhost
+    var loginURL = soloOnline ? "https://enpals-server.onrender.com" : SERVER_URL;
     var tentativo = 0;
     var res = null;
     while(!serverOk && tentativo < MAX_TENTATIVI){
@@ -525,7 +529,7 @@ self.addEventListener('fetch',e=>{
           body:JSON.stringify({username:u, password:p})
         };
         try{ fetchOpts.signal = AbortSignal.timeout(15000); }catch(ex){}
-        res = await fetch(SERVER_URL+"/login", fetchOpts);
+        res = await fetch(loginURL+"/login", fetchOpts);
         break; // se arriva qui senza errore, esce dal while
       } catch(e){
         console.log('Tentativo '+tentativo+' fallito:', e.message);
@@ -568,8 +572,15 @@ self.addEventListener('fetch',e=>{
       console.log("Server non raggiungibile, uso login locale:", e.message);
     }
 
-    // 2. Fallback: login locale (solo admin)
+    // 2. Fallback: login locale (solo admin, solo in modalità locale)
     if(!serverOk){
+      // In modalità online non c'è fallback locale — mostra errore
+      if(window._spOnline){
+        errEl.textContent="Server non raggiungibile. Riprova tra qualche secondo.";
+        errEl.style.display="block";
+        btn.textContent="Entra"; btn.disabled=false;
+        return;
+      }
       var ADMINS = {'alberita':'12111957','abramelek':'22041954'};
       if(ADMINS[u] && ADMINS[u]===p){
         window._authToken = null;
