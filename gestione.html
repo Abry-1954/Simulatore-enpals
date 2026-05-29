@@ -108,6 +108,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
   <span class="hdr-title">Gestione Database</span>
   <div class="hdr-sep"></div>
   <button class="btn-sim" onclick="window.open('Spettacolo.html','_blank')">📊 Simulatore</button>
+  <button id="toggle-modo-g" onclick="toggleModoG()" style="background:#374151;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:11px;font-weight:600;margin-left:6px;">💾 Locale</button>
   <span class="hdr-status" id="hdr-status">Connessione al server...</span>
 </div>
 
@@ -491,7 +492,24 @@ function logDB(azione, dettaglio){
   });
 })();
 
-const API = 'http://localhost:8765';
+// ── TOGGLE LOCALE / ONLINE ──────────────────────────
+// Eredita il modo da ENP-Management (enpals_modo_mgmt) o da Spettacolo (enpals_modo_sp) se non impostato localmente
+var _gOnline = sessionStorage.getItem('enpals_modo_g') === 'online'
+            || (!sessionStorage.getItem('enpals_modo_g') && sessionStorage.getItem('enpals_modo_mgmt') === 'online')
+            || (!sessionStorage.getItem('enpals_modo_g') && sessionStorage.getItem('enpals_modo_sp') === 'online');
+function _getAPI(){ return _gOnline ? 'https://enpals-server.onrender.com' : 'http://localhost:8765'; }
+function toggleModoG(){
+  _gOnline = !_gOnline;
+  sessionStorage.setItem('enpals_modo_g', _gOnline ? 'online' : 'locale');
+  var btn = document.getElementById('toggle-modo-g');
+  if(btn){ btn.textContent = _gOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _gOnline ? '#1e3a8a' : '#374151'; }
+  aggiornaTutti();
+}
+// Applica stato iniziale pulsante al caricamento
+document.addEventListener('DOMContentLoaded', function(){
+  var btn = document.getElementById('toggle-modo-g');
+  if(btn && _gOnline){ btn.textContent = '☁ Online'; btn.style.background = '#1e3a8a'; }
+});
 let DATA = {persone:[], aziende:[], tariffe:[], inps:[], fasce:[], massimali:[], tasse:[]};
 
 // ── UTILS ──────────────────────────────────────────
@@ -538,7 +556,7 @@ async function api(url, method='GET', body=null){
   }
   if(window._authToken) opts.headers['Authorization'] = 'Bearer ' + window._authToken;
   if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(API+url, opts);
+  const r=await fetch(_getAPI()+url, opts);
   return r.json();
 }
 function confermaElimina(msg, fn){ if(confirm('⚠ '+msg+'\n\nSei sicuro?')) fn(); }
