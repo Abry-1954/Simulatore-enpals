@@ -873,7 +873,10 @@ function toggleMain(){
       }
     }
     document.addEventListener('DOMContentLoaded', function(){
-      mgmtSetModo(_spOnline ? 'online' : 'locale');
+      var stored = sessionStorage.getItem('enpals_modo_mgmt');
+      var isLocale = window.location.protocol === 'file:' || window.location.hostname === 'localhost';
+      var modo = stored ? stored : (isLocale ? 'locale' : 'online');
+      mgmtSetModo(modo);
     });
     </script>
     <button onclick="if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(function(){});}avviaWalkthrough();" style="width:100%;background:transparent;color:#2563eb;border:1px solid #2563eb;border-radius:6px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;" title="Guida rapida per emettere una fattura">▶ Primi cenni sull'utilizzo di DIVA</button>
