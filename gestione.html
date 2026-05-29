@@ -508,7 +508,7 @@ function toggleModoG(){
 // Applica stato iniziale pulsante al caricamento
 document.addEventListener('DOMContentLoaded', function(){
   var btn = document.getElementById('toggle-modo-g');
-  if(btn && _gOnline){ btn.textContent = '☁ Online'; btn.style.background = '#1e3a8a'; }
+  if(btn){ btn.textContent = _gOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _gOnline ? '#1e3a8a' : '#374151'; }
 });
 let DATA = {persone:[], aziende:[], tariffe:[], inps:[], fasce:[], massimali:[], tasse:[]};
 
