@@ -473,6 +473,7 @@ self.addEventListener('fetch',e=>{
   var _spOnline = _storedModo ? (_storedModo === 'online') : _isGitHubPages;
   var SERVER_URL = _spOnline ? "https://enpals-server.onrender.com" : "http://localhost:8765";
   window.SERVER_URL = SERVER_URL;
+  window.SERVER_URL = SERVER_URL;
   window._spOnline = _spOnline;
 
   // Inizializza pulsante toggle al caricamento
@@ -654,7 +655,7 @@ self.addEventListener('fetch',e=>{
     // Pulsante utenti visibile solo ai master e solo in modalità locale
     var masterList = ['alberita','abramelek'];
     var btnUsers = document.getElementById('btn-users');
-    if(btnUsers && masterList.indexOf(user) >= 0 && !window._spOnline) btnUsers.style.display='';
+    if(btnUsers && masterList.indexOf(user) >= 0) btnUsers.style.display='';
     // Pulsante Salva HTML visibile solo agli admin
     if(ruolo === 'admin'){
       var btnSalvaHtml = document.getElementById('btn-salva-html');
