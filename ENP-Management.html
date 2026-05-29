@@ -871,6 +871,9 @@ function toggleMain(){
         btnLoc.style.background='#374151'; btnLoc.style.color='#fff';
         btnOn.style.background='transparent'; btnOn.style.color='#93c5fd';
       }
+      // Aggiorna anche il pulsante header
+      var btnHeader = document.getElementById('toggle-modo-sp');
+      if(btnHeader){ btnHeader.textContent = _spOnline ? '☁ Online' : '💾 Locale'; btnHeader.style.background = _spOnline ? '#1e3a8a' : '#374151'; }
     }
     document.addEventListener('DOMContentLoaded', function(){
       var stored = sessionStorage.getItem('enpals_modo_mgmt');
