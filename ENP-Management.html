@@ -850,8 +850,8 @@ function toggleMain(){
     <div class="login-group"><label>Password</label><input type="password" id="login-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <!-- Toggle Locale/Online -->
     <div style="display:flex;gap:0;margin-bottom:12px;border-radius:8px;overflow:hidden;border:1px solid #2563eb;">
-      <button id="mgmt-btn-online" onclick="mgmtSetModo('online')" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;">💾 Locale</button>
-      <button id="mgmt-btn-locale" onclick="mgmtSetModo('locale')" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;">☁ Online</button>
+      <button id="mgmt-btn-online" onclick="mgmtSetModo('online')" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;">☁ Online</button>
+      <button id="mgmt-btn-locale" onclick="mgmtSetModo('locale')" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;">💾 Locale</button>
     </div>
     <button class="login-btn" onclick="doLogin()">Entra</button>
     <div class="login-err" id="login-err">Utente o password errati.</div>
@@ -865,11 +865,11 @@ function toggleMain(){
       var btnOn = document.getElementById('mgmt-btn-online');
       var btnLoc = document.getElementById('mgmt-btn-locale');
       if(_spOnline){
-        btnLoc.style.background='#1e3a8a'; btnLoc.style.color='#fff';
-        btnOn.style.background='transparent'; btnOn.style.color='#93c5fd';
-      } else {
-        btnOn.style.background='#374151'; btnOn.style.color='#fff';
+        btnOn.style.background='#1e3a8a'; btnOn.style.color='#fff';
         btnLoc.style.background='transparent'; btnLoc.style.color='#93c5fd';
+      } else {
+        btnLoc.style.background='#374151'; btnLoc.style.color='#fff';
+        btnOn.style.background='transparent'; btnOn.style.color='#93c5fd';
       }
     }
     document.addEventListener('DOMContentLoaded', function(){
