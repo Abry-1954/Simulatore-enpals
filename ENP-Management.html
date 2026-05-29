@@ -478,7 +478,7 @@ self.addEventListener('fetch',e=>{
   // Inizializza pulsante toggle al caricamento
   document.addEventListener('DOMContentLoaded', function(){
     var btn = document.getElementById('toggle-modo-sp');
-    if(btn){ btn.textContent = _spOnline ? '💾 Locale' : '☁ Online'; btn.style.background = _spOnline ? '#374151' : '#1e3a8a'; }
+    if(btn){ btn.textContent = _spOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _spOnline ? '#1e3a8a' : '#374151'; }
     // In modalità online: svuota persone embedded (arrivano solo da Supabase)
     // e nascondi pulsante Salva HTML
     if(_spOnline){
