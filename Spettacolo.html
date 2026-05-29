@@ -466,7 +466,11 @@ self.addEventListener('fetch',e=>{
   // CONFIGURAZIONE SERVER
   // Cambia questo URL con quello del tuo server Render
   // ═══════════════════════════════════════════════════════
-  var _spOnline = sessionStorage.getItem('enpals_modo_sp') === 'online';
+  // Se aperto da GitHub Pages → default Online
+  // Se aperto da file:// o localhost → default Locale
+  var _isGitHubPages = window.location.hostname.indexOf('github.io') >= 0;
+  var _storedModo = sessionStorage.getItem('enpals_modo_sp');
+  var _spOnline = _storedModo ? (_storedModo === 'online') : _isGitHubPages;
   var SERVER_URL = _spOnline ? "https://enpals-server.onrender.com" : "http://localhost:8765";
   window._spOnline = _spOnline;
 
@@ -818,7 +822,7 @@ function toggleMain(){
   <span class="hdr-logo">DIVA / Simulatore Fatture</span>
   <div class="hdr-sep"></div>
   <span class="hdr-anno" id="hdr-anno">Anno —</span>
-  <button id="toggle-modo-sp" onclick="toggleModoSP()" style="background:#374151;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Cambia modalità locale/online">💾 Locale</button>
+  <button id="toggle-modo-sp" onclick="toggleModoSP()" style="background:#1e3a8a;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Cambia modalità locale/online">☁ Online</button>
   <button class="btn-ricalcola" onclick="ricalcolaTutto()">⟳ Ricalcola tutto</button>
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button onclick="avviaWalkthrough()" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Guida rapida">❓ Guida</button>
