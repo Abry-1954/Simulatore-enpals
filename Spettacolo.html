@@ -667,9 +667,9 @@ self.addEventListener('fetch',e=>{
         nomInput.style.opacity = '0.75';
         nomInput.title = 'Accesso limitato al proprio nominativo';
         // Cerca automaticamente il nominativo nel DB e popola il riquadro
-        // setTimeout 0 cede il controllo al browser e poi esegue quando tutto è pronto
         var _userNome = user.toUpperCase();
-        setTimeout(function(){
+
+        function _cercaPersonaEControlla(){
           if(typeof DB !== 'undefined' && DB.persone && typeof selPersona === 'function'){
             var trovato = DB.persone.find(function(p){
               return p.nominativo.toUpperCase() === _userNome;
@@ -684,7 +684,21 @@ self.addEventListener('fetch',e=>{
               document.body.appendChild(errDiv);
             }
           }
-        }, 800);
+        }
+
+        if(window._spOnline){
+          // Online: aspetta che fetchDB() abbia caricato le persone da Supabase
+          // Se DB già pronto (es. fetchDB completato prima del login) → esegui subito
+          if(DB.persone && DB.persone.length > 0){
+            _cercaPersonaEControlla();
+          } else {
+            // Registra callback: fetchDB lo chiamerà appena le persone sono caricate
+            window._onDbReady = _cercaPersonaEControlla;
+          }
+        } else {
+          // Locale: le persone sono già nell'embedded, cerca subito
+          setTimeout(_cercaPersonaEControlla, 0);
+        }
       }
     } else {
       var btnLog = document.getElementById('btn-log-admin');
@@ -2288,6 +2302,12 @@ async function fetchDB(){
       if(pAggiornata) selPersona(pAggiornata);
     }
     _serverOnline=true;
+    // Notifica chi aspettava il DB (es. applicaRuolo utente normale online)
+    if(typeof window._onDbReady === 'function'){
+      var cb = window._onDbReady;
+      window._onDbReady = null;
+      cb();
+    }
     document.getElementById("server-status").textContent="🟢 DB aggiornati";
     document.getElementById("server-status").style.color="#86efac";
     status.style.color="#86efac";
