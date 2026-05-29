@@ -478,6 +478,13 @@ self.addEventListener('fetch',e=>{
   document.addEventListener('DOMContentLoaded', function(){
     var btn = document.getElementById('toggle-modo-sp');
     if(btn){ btn.textContent = _spOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _spOnline ? '#1e3a8a' : '#374151'; }
+    // In modalità online: svuota persone embedded (arrivano solo da Supabase)
+    // e nascondi pulsante Salva HTML
+    if(_spOnline){
+      if(typeof DB !== 'undefined') DB.persone = [];
+      var btnSalva = document.getElementById('btn-salva-html');
+      if(btnSalva) btnSalva.style.display = 'none';
+    }
   });
 
   // Credenziali locali di fallback (usate solo se server offline)
@@ -667,9 +674,17 @@ self.addEventListener('fetch',e=>{
             var trovato = DB.persone.find(function(p){
               return p.nominativo.toUpperCase() === _userNome;
             });
-            if(trovato) selPersona(trovato);
+            if(trovato){
+              selPersona(trovato);
+            } else if(window._spOnline){
+              // Online: persona non trovata su Supabase → accesso bloccato
+              var errDiv = document.createElement('div');
+              errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+              errDiv.innerHTML = '<div style="background:#1e293b;border:1px solid #dc2626;border-radius:12px;padding:32px;text-align:center;max-width:400px;"><div style="font-size:48px;margin-bottom:16px;">🔒</div><div style="color:#fca5a5;font-size:18px;font-weight:700;margin-bottom:12px;">Accesso non disponibile</div><div style="color:#94a3b8;font-size:14px;margin-bottom:24px;">Il tuo profilo non è stato ancora configurato per l\'accesso online.<br><br>Contatta l\'amministratore.</div><button onclick="sessionStorage.clear();location.reload();" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;">Torna al login</button></div>';
+              document.body.appendChild(errDiv);
+            }
           }
-        }, 0);
+        }, 800);
       }
     } else {
       var btnLog = document.getElementById('btn-log-admin');
