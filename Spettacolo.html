@@ -570,6 +570,13 @@ self.addEventListener('fetch',e=>{
         document.getElementById("login-overlay").style.display="none";
         serverOk = true;
         applicaRuolo(data.ruolo || 'utente', u);
+        // Online: avvia fetchDB subito dopo login, così _onDbReady scatta quando Supabase risponde
+        if(window._spOnline && !_dbCaricatiDaServer){
+          _dbCaricatiDaServer = true;
+          document.getElementById("server-status").textContent = "🟡 Caricamento DB...";
+          document.getElementById("server-status").style.color = "#fcd34d";
+          fetchDB();
+        }
         if(!window._loginLoggato){ window._loginLoggato=true; logAzione('LOGIN OK', ''); }
         console.log("✓ Login server OK — ruolo:"+data.ruolo+" token:"+data.expires_hours+"h");
       } else {
