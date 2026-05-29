@@ -612,6 +612,7 @@ function renderPersone(){
       <td><div style="display:flex;gap:4px;">
         <button class="btn btn-outline btn-sm" onclick="modificaPersonaById(${p.id})">✏</button>
         <button class="btn btn-danger btn-sm" onclick="eliminaPersona(${p.id},'${(p.nominativo||'').replace(/'/g,"\\'")}')">🗑</button>
+                <button class="btn btn-sm" style="background:rgba(37,99,235,0.3);color:#93c5fd;border:1px solid #2563eb;display:${_gOnline?'none':'inline-block'}" data-pid="${p.id}" onclick="esportaPersonaSupabase(this)" title="Esporta su Supabase">☁</button>
       </div></td>
     </tr>`).join('');
 }
@@ -643,6 +644,28 @@ async function eliminaPersona(id, nome){
     if(r.ok){logDB('Eliminata persona',nome);await caricaPersone();showAlert('persone',nome+' eliminata');}
     else showAlert('persone','Errore: '+r.error,false);
   });
+}
+async function esportaPersonaSupabase(btn){
+  const id = parseInt(btn.getAttribute('data-pid'));
+  const p = DATA.persone.find(x=>x.id===id);
+  const nome = p ? p.nominativo : 'persona';
+  if(!confirm('Esporta "'+nome+'" su Supabase?')) return;
+  if(!p){ showAlert('persone','Persona non trovata',false); return; }
+  // Invia a Render che la scrive su Supabase
+  var cu = sessionStorage.getItem('enpals_cu')||'';
+  var cp = sessionStorage.getItem('enpals_cp')||'';
+  try{
+    const r = await fetch('https://enpals-server.onrender.com/importa-persona',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
+      body: JSON.stringify(p)
+    });
+    const res = await r.json();
+    if(r.ok && res.ok) showAlert('persone','☁ '+nome+' esportata su Supabase!');
+    else showAlert('persone','Errore: '+(res.error||'risposta non valida'),false);
+  } catch(e){
+    showAlert('persone','Errore connessione Render: '+e.message,false);
+  }
 }
 
 // ══════════════════════════════════════════════════
