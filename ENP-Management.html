@@ -1748,11 +1748,7 @@ function resetTutto(){
 // ═══════════════════════════════════════════════════════
 // HELPER: fetch autenticata (locale o server Render)
 // ═══════════════════════════════════════════════════════
-var _SERVER = (function(){
-  // Legge SERVER_URL definito nel blocco login
-  try { return window.SERVER_URL || (window._spOnline ? 'https://enpals-server.onrender.com' : 'http://localhost:8765'); }
-  catch(e){ return window._spOnline ? 'https://enpals-server.onrender.com' : 'http://localhost:8765'; }
-})();
+// SERVER_URL letto dinamicamente da window.SERVER_URL in authFetch
 
 function authFetch(path, options){
   options = options || {};
