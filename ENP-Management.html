@@ -3361,7 +3361,33 @@ async function _syncUsersLocale(){
           headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
           body: JSON.stringify(usersCompleti)
         });
-        if(rg && rg.ok){ console.log('✓ users.json salvato su GitHub'); if(typeof logAzione==='function') logAzione('SYNC_USERS_GITHUB','users.json aggiornato su GitHub da locale'); }
+        if(rg && rg.ok){
+          console.log('✓ users.json salvato su GitHub');
+          if(typeof logAzione==='function') logAzione('SYNC_USERS_GITHUB','users.json aggiornato su GitHub da locale');
+          // Attendi 15 secondi che GitHub propaghi, poi scarica in locale e aggiorna lista
+          var msgEl = document.getElementById('u-msg');
+          if(msgEl){ msgEl.textContent='⏳ Sincronizzazione GitHub in corso... aggiornamento locale tra 15 secondi'; msgEl.style.color='#fcd34d'; msgEl.style.display='block'; }
+          setTimeout(async function(){
+            try{
+              var cu2 = sessionStorage.getItem('enpals_cu')||'';
+              var cp2 = sessionStorage.getItem('enpals_cp')||'';
+              var rd = await fetch('https://enpals-server.onrender.com/users-full', { headers:{'X-Auth-User':cu2,'X-Auth-Pass':cp2} });
+              if(rd && rd.ok){
+                var aggiornati = await rd.json();
+                var rlocale = await fetch('http://localhost:8765/sync-users', {
+                  method:'POST',
+                  headers:{'Content-Type':'application/json','X-Auth-User':cu2,'X-Auth-Pass':cp2},
+                  body: JSON.stringify(aggiornati)
+                });
+                if(rlocale && rlocale.ok){
+                  if(msgEl){ msgEl.textContent='✅ users.json allineato locale ↔ GitHub'; msgEl.style.color='#86efac'; }
+                  if(typeof logAzione==='function') logAzione('SCARICA_USERS_GITHUB','users.json scaricato da GitHub e salvato in locale');
+                  caricaListaUtenti();
+                }
+              }
+            } catch(e2){ console.log('auto-sync locale:', e2.message); }
+          }, 15000);
+        }
       } catch(eg){ console.log('GitHub sync (non bloccante):', eg.message); }
     }
   } catch(e){ console.log('sync users:', e.message); }
