@@ -3361,7 +3361,7 @@ async function _syncUsersLocale(){
           headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
           body: JSON.stringify(usersCompleti)
         });
-        if(rg && rg.ok) console.log('✓ users.json salvato su GitHub');
+        if(rg && rg.ok){ console.log('✓ users.json salvato su GitHub'); if(typeof logAzione==='function') logAzione('SYNC_USERS_GITHUB','users.json aggiornato su GitHub da locale'); }
       } catch(eg){ console.log('GitHub sync (non bloccante):', eg.message); }
     }
   } catch(e){ console.log('sync users:', e.message); }
@@ -3386,6 +3386,7 @@ async function scaricaUsersGitHub(){
       body: JSON.stringify(usersCompleti)
     });
     if(rs && rs.ok){
+      if(typeof logAzione==='function') logAzione('SCARICA_USERS_GITHUB','users.json scaricato da GitHub e salvato in locale');
       alert('✅ users.json scaricato da GitHub e salvato in locale!');
       caricaListaUtenti();
     } else {
