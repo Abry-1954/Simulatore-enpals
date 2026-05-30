@@ -3289,7 +3289,10 @@ function sortLog(col){
   <div style="max-width:600px;margin:40px auto;background:#0f172a;border:1px solid #1e3a8a;border-radius:12px;padding:28px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <div style="font-size:16px;font-weight:700;color:#93c5fd;">👥 Gestione Utenti</div>
-      <button onclick="chiudiPannelloUtenti()" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;padding:4px 12px;cursor:pointer;">✕ Chiudi</button>
+      <div style="display:flex;gap:8px;">
+        <button onclick="scaricaUsersGitHub()" style="background:rgba(37,99,235,0.3);color:#93c5fd;border:1px solid #2563eb;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;" title="Scarica users.json da GitHub al locale">⬇ Scarica da GitHub</button>
+        <button onclick="chiudiPannelloUtenti()" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;padding:4px 12px;cursor:pointer;">✕ Chiudi</button>
+      </div>
     </div>
 
     <!-- Form crea/modifica -->
@@ -3328,7 +3331,6 @@ function sortLog(col){
 async function _syncUsersLocale(){
   if(!_serverOnline) return;
   try{
-    // Legge users completi dal server locale
     var cu = sessionStorage.getItem('enpals_cu')||'';
     var cp = sessionStorage.getItem('enpals_cp')||'';
     var rl = await fetch((window.SERVER_URL||'http://localhost:8765')+'/users-full', {
@@ -3336,14 +3338,60 @@ async function _syncUsersLocale(){
     });
     if(!rl || !rl.ok) return;
     var usersCompleti = await rl.json();
-    // Invia al server locale per aggiornare users.json
-    var rs = await fetch((window.SERVER_URL||'http://localhost:8765')+'/sync-users', {
+    if(window._spOnline){
+      // Online: locale → GitHub via Render
+      var rs = await fetch('https://enpals-server.onrender.com/sync-users-github', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
+        body: JSON.stringify(usersCompleti)
+      });
+      if(rs && rs.ok) console.log('✓ users.json salvato su GitHub');
+    } else {
+      // Locale: salva in locale E manda a GitHub via Render
+      var rs = await fetch('http://localhost:8765/sync-users', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
+        body: JSON.stringify(usersCompleti)
+      });
+      if(rs && rs.ok) console.log('✓ users.json locale aggiornato');
+      // Manda anche a Render per GitHub
+      try{
+        var rg = await fetch('https://enpals-server.onrender.com/sync-users-github', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
+          body: JSON.stringify(usersCompleti)
+        });
+        if(rg && rg.ok) console.log('✓ users.json salvato su GitHub');
+      } catch(eg){ console.log('GitHub sync (non bloccante):', eg.message); }
+    }
+  } catch(e){ console.log('sync users:', e.message); }
+}
+
+// Scarica users.json da GitHub (via Render) e lo salva in locale
+async function scaricaUsersGitHub(){
+  var cu = sessionStorage.getItem('enpals_cu')||'';
+  var cp = sessionStorage.getItem('enpals_cp')||'';
+  var msgEl = document.getElementById('u-msg');
+  try{
+    // Legge users da Render (che li ha caricati da GitHub)
+    var rl = await fetch('https://enpals-server.onrender.com/users-full', {
+      headers:{'X-Auth-User':cu,'X-Auth-Pass':cp}
+    });
+    if(!rl || !rl.ok){ alert('Errore lettura da Render'); return; }
+    var usersCompleti = await rl.json();
+    // Salva in locale
+    var rs = await fetch('http://localhost:8765/sync-users', {
       method:'POST',
       headers:{'Content-Type':'application/json','X-Auth-User':cu,'X-Auth-Pass':cp},
       body: JSON.stringify(usersCompleti)
     });
-    if(rs && rs.ok) console.log('✓ users.json locale sincronizzato');
-  } catch(e){ console.log('sync users locale:', e.message); }
+    if(rs && rs.ok){
+      alert('✅ users.json scaricato da GitHub e salvato in locale!');
+      caricaListaUtenti();
+    } else {
+      alert('❌ Errore salvataggio in locale (server locale acceso?)');
+    }
+  } catch(e){ alert('Errore: '+e.message); }
 }
 
 function apriPannelloUtenti(){
