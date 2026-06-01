@@ -665,10 +665,18 @@ self.addEventListener('fetch',e=>{
     }
 
     if(ruolo !== 'admin'){
-      ['btn-fetch','btn-gestione','btn-salva','btn-carica'].forEach(function(cls){
+      // Nascondi fetch e gestione DB sempre per utenti normali
+      ['btn-fetch','btn-gestione'].forEach(function(cls){
         var el = document.querySelector('.'+cls);
         if(el) el.style.display='none';
       });
+      // Salva e Carica: visibili online (le loro fatture su Supabase), nascosti in locale
+      if(!window._spOnline){
+        ['btn-salva','btn-carica'].forEach(function(cls){
+          var el = document.querySelector('.'+cls);
+          if(el) el.style.display='none';
+        });
+      }
       // Blocca campo nominativo — utente normale vede solo se stesso
       var nomInput = document.getElementById('inp-nom');
       if(nomInput){
