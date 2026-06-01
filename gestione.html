@@ -116,6 +116,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
   <div class="tab active" onclick="showTab('persone')">👤 Persone</div>
   <div class="tab" onclick="showTab('aziende')">🏢 Aziende</div>
   <div class="tab" onclick="showTab('variabili')">📊 Variabili</div>
+  <div class="tab" onclick="showTab('fatture')">🧾 Fatture</div>
 </div>
 
 <!-- ══════════ PERSONE ══════════ -->
@@ -233,6 +234,25 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     <div class="tbl-wrap"><table class="tbl"><thead><tr>
       <th>Anno</th><th>IVA %</th><th>Rit.Acc. NoAda %</th><th>Rit.Acc. Ada <36 %</th><th>Rit.Acc. Ada ≥36 %</th><th>Azioni</th>
     </tr></thead><tbody id="tbody-tasse"></tbody></table></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-fatture">
+  <div class="alert-bar" id="alert-fatture"></div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+    <input id="fatture-cerca-nom" type="text" placeholder="Cerca nominativo..." style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;width:200px;" oninput="renderFatture()">
+    <select id="fatture-anno" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;" onchange="renderFatture()">
+      <option value="">Tutti gli anni</option>
+    </select>
+    <span id="fatture-count" style="font-size:12px;color:#64748b;margin-left:4px;"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl"><thead><tr>
+      <th>#</th><th>Rif.</th><th>Nominativo</th><th>Azienda</th>
+      <th>Data Fattura</th><th>Imponibile</th><th>Netto</th>
+      <th>Data Pagamento</th><th>Azioni</th>
+    </tr></thead>
+    <tbody id="fatture-tbody"></tbody></table>
   </div>
 </div>
 
@@ -563,7 +583,8 @@ function confermaElimina(msg, fn){ if(confirm('⚠ '+msg+'\n\nSei sicuro?')) fn(
 
 // ── TABS ──────────────────────────────────────────
 function showTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['persone','aziende','variabili'][i]===name));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['persone','aziende','variabili','fatture'][i]===name));
+  if(name==='fatture') caricaFatture();
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
 }
@@ -887,6 +908,63 @@ function modificaINPSById(id){ const r=DATA.inps.find(x=>x.id==id); if(r) apriMo
 function modificaFasciaById(id){ const r=DATA.fasce.find(x=>x.id==id); if(r) apriModaleFascia(r); }
 function modificaMassimaleById(id){ const r=DATA.massimali.find(x=>x.id==id); if(r) apriModaleMassimale(r); }
 function modificaTassaById(id){ const r=DATA.tasse.find(x=>x.id==id); if(r) apriModaleTassa(r); }
+
+// ══════════════════════════════════════════════════
+// FATTURE
+// ══════════════════════════════════════════════════
+var _fattureAll = [];
+
+async function caricaFatture(){
+  const r = await api('/fatture');
+  if(!r || r.error){ showAlert('fatture','Errore caricamento fatture',false); return; }
+  _fattureAll = Array.isArray(r) ? r : [];
+  const anni = [...new Set(_fattureAll.map(f=>(f.rif_nbr||'').split('-')[0]).filter(Boolean))].sort().reverse();
+  const sel = document.getElementById('fatture-anno');
+  const valAtt = sel.value;
+  sel.innerHTML = '<option value="">Tutti gli anni</option>';
+  anni.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+  if(valAtt) sel.value = valAtt;
+  renderFatture();
+}
+
+function renderFatture(){
+  const cerca = (document.getElementById('fatture-cerca-nom').value||'').toLowerCase();
+  const anno = document.getElementById('fatture-anno').value;
+  let righe = _fattureAll.filter(f=>{
+    const nomOk = !cerca || (f.nominativo||'').toLowerCase().includes(cerca);
+    const annoOk = !anno || (f.rif_nbr||'').startsWith(anno+'-');
+    return nomOk && annoOk;
+  });
+  document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
+  const tbody = document.getElementById('fatture-tbody');
+  if(!righe.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
+  let n=0;
+  tbody.innerHTML = righe.map(f=>{
+    n++;
+    const imp = f.tot_imponibile!=null ? parseFloat(f.tot_imponibile).toFixed(2)+' €' : '—';
+    const netto = f.tot_netto!=null ? parseFloat(f.tot_netto).toFixed(2)+' €' : '—';
+    const dataPag = f.data_pagamento ? f.data_pagamento.substring(0,10) : '—';
+    const dataFatt = f.data_fattura ? f.data_fattura.substring(0,10) : '—';
+    return '<tr><td>'+n+'</td><td>'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td><td>'+dataFatt+'</td><td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td><td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',\''+( f.data_pagamento||'').substring(0,10)+'\')" title="Modifica data pagamento">✏</button><button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',\''+( f.nominativo||'').replace(/\'/g,"\\'")+'\')">🗑</button></div></td></tr>';
+  }).join('');
+}
+
+function modificaDataPagamento(rec_nbr, dataPag){
+  const nuova = prompt('Data pagamento (AAAA-MM-GG):', dataPag||'');
+  if(nuova === null) return;
+  api('/fatture', 'POST', {rec_nbr: rec_nbr, data_pagamento: nuova||null}).then(r=>{
+    if(r && r.error===undefined){ showAlert('fatture','Data pagamento aggiornata'); caricaFatture(); }
+    else showAlert('fatture','Errore: '+(r&&r.error||'sconosciuto'),false);
+  });
+}
+
+async function eliminaFattura(rec_nbr, nome){
+  confermaElimina('Elimina fattura di "'+nome+'"?', async()=>{
+    const r = await api('/fatture?id='+rec_nbr,'DELETE');
+    if(r && r.ok!==false){ logDB('Eliminata fattura',nome+' rec='+rec_nbr); caricaFatture(); showAlert('fatture','Fattura eliminata'); }
+    else showAlert('fatture','Errore eliminazione',false);
+  });
+}
 
 async function init(){
   try{
