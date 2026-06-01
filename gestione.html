@@ -249,9 +249,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
   <div class="tbl-wrap">
     <table class="tbl"><thead><tr>
       <th>#</th><th>Rif.</th><th>Nominativo</th><th>Azienda</th>
-      <th>Tipo Fattura</th><th>Data Fattura</th><th>Anzianità</th>
-      <th style="text-align:center;">GG</th><th style="text-align:center;">Turni</th><th style="text-align:center;">Righe</th>
-      <th style="text-align:right;">Imponibile</th><th style="text-align:right;">Netto</th>
+      <th>Data Fattura</th><th>Imponibile</th><th>Netto</th>
       <th>Data Pagamento</th><th>Azioni</th>
     </tr></thead>
     <tbody id="fatture-tbody"></tbody></table>
@@ -939,7 +937,7 @@ function renderFatture(){
   });
   document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
   const tbody = document.getElementById('fatture-tbody');
-  if(!righe.length){ tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
+  if(!righe.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
   let n=0;
   tbody.innerHTML = righe.map(f=>{
     n++;
@@ -947,90 +945,8 @@ function renderFatture(){
     const netto = f.tot_netto!=null ? parseFloat(f.tot_netto).toFixed(2)+' €' : '—';
     const dataPag = f.data_pagamento ? f.data_pagamento.substring(0,10) : '—';
     const dataFatt = f.data_fattura ? f.data_fattura.substring(0,10) : '—';
-    const gg = f.tot_giorni!=null ? f.tot_giorni : '—';
-    const turni = f.tot_turni!=null ? f.tot_turni : '—';
-    const righeT = f.tot_righe!=null ? f.tot_righe : '—';
-    return '<tr style="cursor:pointer;" id="frow-'+f.rec_nbr+'">'+
-      '<td>'+n+'</td>'+
-      '<td>'+( f.rif_nbr||'—')+'</td>'+
-      '<td>'+(f.nominativo||'—')+'</td>'+
-      '<td>'+(f.azienda_rag||'—')+'</td>'+
-      '<td>'+(f.tipo_fatt||'—')+'</td>'+
-      '<td>'+dataFatt+'</td>'+
-      '<td style="text-align:center;">'+(f.anzianita||'—')+'</td>'+
-      '<td style="text-align:center;">'+gg+'</td>'+
-      '<td style="text-align:center;">'+turni+'</td>'+
-      '<td style="text-align:center;">'+righeT+'</td>'+
-      '<td style="text-align:right;">'+imp+'</td>'+
-      '<td style="text-align:right;">'+netto+'</td>'+
-      '<td>'+dataPag+'</td>'+
-      '<td><div style="display:flex;gap:4px;">'+
-        '<button class="btn btn-sm" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);" onclick="toggleDettaglioFattura('+f.rec_nbr+')" title="Dettaglio righe">▶</button>'+
-        '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',\''+(f.data_pagamento||'').substring(0,10)+'\')" title="Modifica data pagamento">✏</button>'+
-        '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',\''+(f.nominativo||'').replace(/\'/g,"\\'")+'\')">🗑</button>'+
-      '</div></td>'+
-    '</tr>'+
-    '<tr id="fdet-'+f.rec_nbr+'" style="display:none;"><td colspan="14" style="padding:0;"></td></tr>';
+    return '<tr><td>'+n+'</td><td>'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td><td>'+dataFatt+'</td><td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td><td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',\''+( f.data_pagamento||'').substring(0,10)+'\')" title="Modifica data pagamento">✏</button><button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',\''+( f.nominativo||'').replace(/\'/g,"\\'")+'\')">🗑</button></div></td></tr>';
   }).join('');
-}
-
-async function toggleDettaglioFattura(rec_nbr){
-  const detRow = document.getElementById('fdet-'+rec_nbr);
-  const btn = document.querySelector('#frow-'+rec_nbr+' button');
-  if(detRow.style.display !== 'none'){
-    detRow.style.display='none';
-    if(btn) btn.textContent='▶';
-    return;
-  }
-  // Carica dettaglio completo
-  detRow.querySelector('td').innerHTML = '<div style="padding:8px;color:#94a3b8;font-size:12px;">⏳ Caricamento...</div>';
-  detRow.style.display='';
-  if(btn) btn.textContent='▼';
-  const f = await api('/fatture/'+rec_nbr);
-  if(!f){ detRow.querySelector('td').innerHTML='<div style="padding:8px;color:#fca5a5;">Errore caricamento</div>'; return; }
-  // Costruisci righe dettaglio
-  let html = '<div style="padding:8px 16px;background:#0f172a;border-top:1px solid #334155;">';
-  html += '<table class="tbl" style="font-size:11px;margin-bottom:8px;"><thead><tr>'+
-    '<th>Riga</th><th>Attività / Tipo Lav.</th><th>Data Lavoro</th>'+
-    '<th style="text-align:center;">GG</th><th style="text-align:center;">Turni</th>'+
-    '<th style="text-align:center;">Righe</th><th style="text-align:right;">Imponibile</th>'+
-    '<th>Titolo</th></tr></thead><tbody>';
-  let totGGSet=new Set(), totTurni=0, totRighe=0, totImp=0;
-  for(let i=1;i<=31;i++){
-    const n=`r${String(i).padStart(2,'0')}_`;
-    const att=f[n+'attivita'];
-    if(!att) continue;
-    const dl=f[n+'data_lav']||'';
-    const gg=f[n+'giorni']||0;
-    const tu=f[n+'turni']||0;
-    const ri=f[n+'righe']||0;
-    const im=f[n+'imponibile']||0;
-    const tit=f[n+'titolo']||'';
-    const tl=f[n+'tipo_lav']||'';
-    if(dl) totGGSet.add(dl);
-    totTurni+=tu; totRighe+=ri; totImp+=im;
-    html+='<tr>'+
-      '<td style="text-align:center;">'+i+'</td>'+
-      '<td>'+att+(tl?' / '+tl:'')+'</td>'+
-      '<td>'+(dl?dl.substring(0,10):'—')+'</td>'+
-      '<td style="text-align:center;">'+gg+'</td>'+
-      '<td style="text-align:center;">'+tu+'</td>'+
-      '<td style="text-align:center;">'+ri+'</td>'+
-      '<td style="text-align:right;">'+parseFloat(im).toFixed(2)+' €</td>'+
-      '<td>'+tit+'</td>'+
-    '</tr>';
-  }
-  // Riga totale
-  html+='<tr style="font-weight:700;background:rgba(37,99,235,0.15);">'+
-    '<td colspan="3" style="text-align:right;">TOTALE</td>'+
-    '<td style="text-align:center;">'+totGGSet.size+'</td>'+
-    '<td style="text-align:center;">'+totTurni+'</td>'+
-    '<td style="text-align:center;">'+totRighe+'</td>'+
-    '<td style="text-align:right;">'+(f.tot_imponibile!=null?parseFloat(f.tot_imponibile).toFixed(2)+' €':totImp.toFixed(2)+' €')+'</td>'+
-    '<td style="text-align:right;color:#86efac;">Netto: '+(f.tot_netto!=null?parseFloat(f.tot_netto).toFixed(2)+' €':'—')+'</td>'+
-  '</tr>';
-  html+='</tbody></table></div>';
-  detRow.querySelector('td').innerHTML=html;
 }
 
 function modificaDataPagamento(rec_nbr, dataPag){
