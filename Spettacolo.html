@@ -2441,7 +2441,23 @@ async function salvaFatturaSuDB(){
   rec.tot_enpals_dat    = gV("t-totdat");
   rec.tot_versamenti_inps= gV("t-totinps");
 
-  // Salva SOLO sul database
+  // Totali aggregati per gestione fatture (GG=date distinte, Turni e Righe=somma)
+  var _dateSet = new Set();
+  var _totTurni = 0, _totRighe = 0;
+  for(var _i=1;_i<=31;_i++){
+    var _chk=document.getElementById("chk_"+_i);
+    if(_chk&&_chk.checked){
+      var _dl=document.getElementById("dl_"+_i);
+      if(_dl&&_dl.value) _dateSet.add(_dl.value);
+      var _tu=document.getElementById("tu_"+_i);
+      var _ri=document.getElementById("ri_"+_i);
+      _totTurni += parseInt((_tu&&_tu.value)||0)||0;
+      _totRighe += parseInt((_ri&&_ri.value)||0)||0;
+    }
+  }
+  rec.tot_giorni = _dateSet.size;
+  rec.tot_turni  = _totTurni;
+  rec.tot_righe  = _totRighe;
   try{
     const r=await authFetch("/fatture",{
       method:"POST",
