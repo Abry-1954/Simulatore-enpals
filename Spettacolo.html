@@ -655,6 +655,9 @@ self.addEventListener('fetch',e=>{
     var masterList = ['alberita','abramelek'];
     var btnUsers = document.getElementById('btn-users');
     if(btnUsers && masterList.indexOf(user) >= 0) btnUsers.style.display='';
+    // Nasconde Azzera per utenti normali
+    var btnAzzera = document.querySelector('.btn-reset-all');
+    if(btnAzzera) btnAzzera.style.display = (ruolo === 'utente') ? 'none' : '';
     // Pulsante Salva HTML visibile solo agli admin
     if(ruolo === 'admin'){
       var btnSalvaHtml = document.getElementById('btn-salva-html');
