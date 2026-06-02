@@ -670,6 +670,9 @@ self.addEventListener('fetch',e=>{
         var el = document.querySelector('.'+cls);
         if(el) el.style.display='none';
       });
+      // Mostra "Le mie fatture" agli utenti
+      var btnMF = document.getElementById('btn-mie-fatture');
+      if(btnMF) btnMF.style.display='';
       // Salva e Carica: visibili online (le loro fatture su Supabase), nascosti in locale
       if(!window._spOnline){
         ['btn-salva','btn-carica'].forEach(function(cls){
@@ -887,6 +890,7 @@ function toggleMain(){
   <button class="btn-stampa" onclick="stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
   <button class="btn-salva" onclick="richiedeServer('Salva su DB Fatture', salvaFatturaSuDB);" title="Salva fattura su database">💾 Salva Fatture su DB</button>
   <button class="btn-carica" onclick="richiedeServer('Carica Fattura', apriModaleFatture);" title="Carica fattura da database">📂 Carica Fattura da DB</button>
+  <button id="btn-mie-fatture" onclick="apriMieFatture();" style="display:none;background:#7c3aed;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza le tue fatture">📋 Le mie fatture</button>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
   <span id="server-status" style="font-size:11px;color:#93c5fd;margin-left:.5rem;">🔵 Modalità standard</span>
 </div>
@@ -1829,6 +1833,10 @@ setInterval(checkServer, 30000);
 
 function apriGestione(){
   window.open('gestione.html','_blank');
+}
+function apriMieFatture(){
+  var user = window._userName || sessionStorage.getItem('enpals_cu') || '';
+  window.open('gestione.html?modo=fatture&utente='+encodeURIComponent(user.toUpperCase()),'_blank');
 }
 
 async function salvaHTML(){

@@ -532,8 +532,30 @@ function toggleModoG(){
 document.addEventListener('DOMContentLoaded', function(){
   var btn = document.getElementById('toggle-modo-g');
   if(btn){ btn.textContent = _gOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _gOnline ? '#1e3a8a' : '#374151'; }
-  // Carica tutti i dati all'avvio
-  setTimeout(function(){ caricaPersone(); caricaAziende(); caricaVariabili(); caricaFatture(); }, 300);
+  // Parametri URL
+  var _urlParams = new URLSearchParams(window.location.search);
+  var _modoFatture = _urlParams.get('modo') === 'fatture';
+  var _utenteFilter = _urlParams.get('utente') || '';
+
+  if(_modoFatture && _utenteFilter){
+    // Modalità utente: mostra solo tab Fatture
+    setTimeout(function(){
+      // Nascondi tab Persone, Aziende, Variabili
+      document.querySelectorAll('.tab').forEach(function(t,i){
+        if(i < 3) t.style.display='none';
+      });
+      // Attiva tab Fatture
+      showTab('fatture');
+      // Imposta filtro nominativo
+      var cercaNom = document.getElementById('fatture-cerca-nom');
+      if(cercaNom){ cercaNom.value = _utenteFilter; cercaNom.readOnly = true; cercaNom.style.opacity='0.7'; }
+      // Nascondi bottoni elimina (sola lettura per utenti)
+      window._solaLettura = true;
+    }, 300);
+  } else {
+    // Modalità admin: carica tutto
+    setTimeout(function(){ caricaPersone(); caricaAziende(); caricaVariabili(); caricaFatture(); }, 300);
+  }
 });
 let DATA = {persone:[], aziende:[], tariffe:[], inps:[], fasce:[], massimali:[], tasse:[]};
 
@@ -977,6 +999,17 @@ function renderFatture(){
     }
   });
   tbody.innerHTML = html;
+}
+
+async function eliminaFattura(rec_nbr, nome){
+  if(!confirm('⚠️ Eliminare la fattura di "'+nome+'"?\n\nQuesta operazione NON è recuperabile.')) return;
+  const r = await api('/fatture?id='+rec_nbr,'DELETE');
+  if(r && r.ok!==false){
+    showAlert('fatture','Fattura eliminata');
+    caricaFatture();
+  } else {
+    showAlert('fatture','Errore eliminazione: '+(r&&r.error||'sconosciuto'), false);
+  }
 }
 
 function toggleFatturaDetail(rec_nbr){
