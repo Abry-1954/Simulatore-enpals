@@ -958,8 +958,9 @@ function renderFatture(){
     html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td>';
     html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
     html += '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">';
-    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',\'+(f.data_pagamento||'').substring(0,10)+'\')" title="Modifica data pagamento">✏</button>';
-    html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',\''+nomSafe+'\')">&#128465;</button>';
+    const dp = (f.data_pagamento||'').substring(0,10);
+    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;)" title="Modifica data pagamento">&#9999;</button>';
+    html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',&quot;'+nomSafe+'&quot;)">&#128465;</button>';
     html += '</div></td></tr>';
     if(exp){
       html += '<tr><td colspan="12" style="padding:0;background:#f8fafc;">';
@@ -1019,3 +1020,7 @@ function buildFatturaDetail(f){
   return html;
 }
 
+
+</script>
+</body>
+</html>
