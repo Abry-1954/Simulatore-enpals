@@ -248,8 +248,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
   </div>
   <div class="tbl-wrap">
     <table class="tbl"><thead><tr>
-      <th>#</th><th>Rif.</th><th>Nominativo</th><th>Azienda</th>
-      <th>Data Fattura</th><th>Imponibile</th><th>Netto</th>
+      <th style="width:28px;"></th><th>#</th><th>Rif.</th><th>Nominativo</th><th>Azienda</th>
+      <th>Data Fattura</th><th>GG</th><th>Turni</th><th>Imponibile</th><th>Netto</th>
       <th>Data Pagamento</th><th>Azioni</th>
     </tr></thead>
     <tbody id="fatture-tbody"></tbody></table>
@@ -927,6 +927,8 @@ async function caricaFatture(){
   renderFatture();
 }
 
+var _fattureExpanded = new Set();
+
 function renderFatture(){
   const cerca = (document.getElementById('fatture-cerca-nom').value||'').toLowerCase();
   const anno = document.getElementById('fatture-anno').value;
@@ -937,45 +939,83 @@ function renderFatture(){
   });
   document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
   const tbody = document.getElementById('fatture-tbody');
-  if(!righe.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
-  let n=0;
-  tbody.innerHTML = righe.map(f=>{
+  if(!righe.length){ tbody.innerHTML='<tr><td colspan="12" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
+  let n=0, html='';
+  righe.forEach(f=>{
     n++;
-    const imp = f.tot_imponibile!=null ? parseFloat(f.tot_imponibile).toFixed(2)+' €' : '—';
-    const netto = f.tot_netto!=null ? parseFloat(f.tot_netto).toFixed(2)+' €' : '—';
-    const dataPag = f.data_pagamento ? f.data_pagamento.substring(0,10) : '—';
-    const dataFatt = f.data_fattura ? f.data_fattura.substring(0,10) : '—';
-    return '<tr><td>'+n+'</td><td>'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td><td>'+dataFatt+'</td><td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td><td><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',\''+( f.data_pagamento||'').substring(0,10)+'\')" title="Modifica data pagamento">✏</button><button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',\''+( f.nominativo||'').replace(/\'/g,"\\'")+'\')">🗑</button></div></td></tr>';
-  }).join('');
-}
-
-function modificaDataPagamento(rec_nbr, dataPag){
-  const nuova = prompt('Data pagamento (AAAA-MM-GG):', dataPag||'');
-  if(nuova === null) return;
-  api('/fatture', 'POST', {rec_nbr: rec_nbr, data_pagamento: nuova||null}).then(r=>{
-    if(r && r.error===undefined){ showAlert('fatture','Data pagamento aggiornata'); caricaFatture(); }
-    else showAlert('fatture','Errore: '+(r&&r.error||'sconosciuto'),false);
+    const imp   = f.tot_imponibile!=null ? parseFloat(f.tot_imponibile).toFixed(2)+' €' : '—';
+    const netto = f.tot_netto!=null      ? parseFloat(f.tot_netto).toFixed(2)+' €'      : '—';
+    const dataPag  = f.data_pagamento ? f.data_pagamento.substring(0,10) : '—';
+    const dataFatt = f.data_fattura   ? f.data_fattura.substring(0,10)   : '—';
+    const gg    = f.tot_giorni!=null ? f.tot_giorni : '—';
+    const turni = f.tot_turni!=null  ? f.tot_turni  : '—';
+    const exp   = _fattureExpanded.has(f.rec_nbr);
+    const arrow = exp ? '▼' : '▶';
+    const nomSafe = (f.nominativo||'').replace(/'/g,"\\'");
+    html += '<tr style="cursor:pointer;" onclick="toggleFatturaDetail('+f.rec_nbr+')">';
+    html += '<td style="text-align:center;color:#64748b;font-size:11px;">'+arrow+'</td>';
+    html += '<td>'+n+'</td><td>'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
+    html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td>';
+    html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
+    html += '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">';
+    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',\'+(f.data_pagamento||'').substring(0,10)+'\')" title="Modifica data pagamento">✏</button>';
+    html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',\''+nomSafe+'\')">&#128465;</button>';
+    html += '</div></td></tr>';
+    if(exp){
+      html += '<tr><td colspan="12" style="padding:0;background:#f8fafc;">';
+      html += buildFatturaDetail(f);
+      html += '</td></tr>';
+    }
   });
+  tbody.innerHTML = html;
 }
 
-async function eliminaFattura(rec_nbr, nome){
-  confermaElimina('Elimina fattura di "'+nome+'"?', async()=>{
-    const r = await api('/fatture?id='+rec_nbr,'DELETE');
-    if(r && r.ok!==false){ logDB('Eliminata fattura',nome+' rec='+rec_nbr); caricaFatture(); showAlert('fatture','Fattura eliminata'); }
-    else showAlert('fatture','Errore eliminazione',false);
-  });
+function toggleFatturaDetail(rec_nbr){
+  if(_fattureExpanded.has(rec_nbr)) _fattureExpanded.delete(rec_nbr);
+  else _fattureExpanded.add(rec_nbr);
+  renderFatture();
 }
 
-async function init(){
-  try{
-    setStatus('Connessione in corso...');
-    await Promise.all([caricaPersone(), caricaAziende(), caricaVariabili()]);
-    setStatus('✓ Connesso — dati caricati');
-  }catch(e){
-    setStatus('✗ Server non raggiungibile — avvia server.py',false);
+function buildFatturaDetail(f){
+  let html = '<div style="padding:12px 24px 16px;border-top:2px solid #e2e8f0;">';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 24px;margin-bottom:12px;font-size:12px;color:#475569;">';
+  html += '<span><b>Tipo:</b> '+(f.tipo_fatt||'—')+'</span>';
+  html += '<span><b>Anzianità:</b> '+(f.anzianita||'—')+'</span>';
+  html += '<span><b>GG lavorati:</b> '+(f.tot_giorni!=null?f.tot_giorni:'—')+'</span>';
+  html += '<span><b>Turni:</b> '+(f.tot_turni!=null?f.tot_turni:'—')+'</span>';
+  html += '<span><b>Righe:</b> '+(f.tot_righe!=null?f.tot_righe:'—')+'</span>';
+  html += '</div>';
+  let righeHtml='', nRiga=0;
+  for(let i=1;i<=31;i++){
+    const p='r'+(i<10?'0':'')+i+'_';
+    const titolo=f[p+'titolo'];
+    if(!titolo) continue;
+    nRiga++;
+    const dataLav  = f[p+'data_lav']    ? f[p+'data_lav'].substring(0,10)             : '—';
+    const imp      = f[p+'imponibile']  != null ? parseFloat(f[p+'imponibile']).toFixed(2)+' €' : '—';
+    const enpLav   = f[p+'enpals_lav'] != null ? parseFloat(f[p+'enpals_lav']).toFixed(2)+' €'  : '—';
+    righeHtml += '<tr style="font-size:12px;">';
+    righeHtml += '<td style="padding:4px 8px;color:#64748b;">'+nRiga+'</td>';
+    righeHtml += '<td style="padding:4px 8px;font-weight:500;">'+titolo+'</td>';
+    righeHtml += '<td style="padding:4px 8px;">'+(f[p+'attivita']||'—')+'</td>';
+    righeHtml += '<td style="padding:4px 8px;">'+dataLav+'</td>';
+    righeHtml += '<td style="padding:4px 8px;text-align:center;">'+(f[p+'giorni']||'—')+'</td>';
+    righeHtml += '<td style="padding:4px 8px;text-align:center;">'+(f[p+'turni']||'—')+'</td>';
+    righeHtml += '<td style="padding:4px 8px;text-align:right;">'+imp+'</td>';
+    righeHtml += '<td style="padding:4px 8px;text-align:right;">'+enpLav+'</td>';
+    righeHtml += '</tr>';
   }
+  if(righeHtml){
+    html += '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;">';
+    html += '<thead><tr style="background:#e2e8f0;font-size:11px;text-transform:uppercase;color:#64748b;">';
+    html += '<th style="padding:4px 8px;">#</th><th style="padding:4px 8px;">Titolo/Spettacolo</th><th style="padding:4px 8px;">Attività</th>';
+    html += '<th style="padding:4px 8px;">Data</th><th style="padding:4px 8px;">GG</th><th style="padding:4px 8px;">Turni</th>';
+    html += '<th style="padding:4px 8px;text-align:right;">Imponibile</th><th style="padding:4px 8px;text-align:right;">ENPALS lav.</th>';
+    html += '</tr></thead><tbody>'+righeHtml+'</tbody></table>';
+  } else {
+    html += '<p style="color:#94a3b8;font-size:12px;margin:0;">Nessuna riga disponibile (fattura salvata senza dettaglio righe)</p>';
+  }
+  html += '</div>';
+  return html;
 }
-init();
-</script>
-</body>
-</html>
+
