@@ -249,7 +249,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
   <div class="tbl-wrap">
     <table class="tbl"><thead><tr>
       <th style="width:28px;"></th><th>#</th><th>Rif.</th><th>Nominativo</th><th>Azienda</th>
-      <th>Data Fattura</th><th>GG</th><th>Turni</th><th>Imponibile</th><th>Netto</th>
+      <th>Data Fattura</th><th>GG</th><th>Turni</th><th>Righe</th><th>Imponibile</th><th>Netto</th>
       <th>Data Pagamento</th><th>Azioni</th>
     </tr></thead>
     <tbody id="fatture-tbody"></tbody></table>
@@ -975,7 +975,7 @@ function renderFatture(){
   });
   document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
   const tbody = document.getElementById('fatture-tbody');
-  if(!righe.length){ tbody.innerHTML='<tr><td colspan="12" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
+  if(!righe.length){ tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
   let n=0, html='';
   righe.forEach(f=>{
     n++;
@@ -988,10 +988,11 @@ function renderFatture(){
     const exp   = _fattureExpanded.has(f.rec_nbr);
     const arrow = exp ? '▼' : '▶';
     const nomSafe = (f.nominativo||'').replace(/'/g,"\\'");
-    html += '<tr style="cursor:pointer;" onclick="toggleFatturaDetail('+f.rec_nbr+')">';
+    html += '<tr style="cursor:pointer;border-top:2px solid #cbd5e1;" onclick="toggleFatturaDetail('+f.rec_nbr+')">';
     html += '<td style="text-align:center;color:#64748b;font-size:11px;">'+arrow+'</td>';
     html += '<td>'+n+'</td><td>'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
-    html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td>';
+    const righe_tot = f.tot_righe!=null ? f.tot_righe : '—';
+    html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td><td style="text-align:center;">'+righe_tot+'</td>';
     html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
     html += '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">';
     const dp = (f.data_pagamento||'').substring(0,10);
@@ -999,7 +1000,7 @@ function renderFatture(){
     html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',&quot;'+nomSafe+'&quot;)">&#128465;</button>';
     html += '</div></td></tr>';
     if(exp){
-      html += '<tr><td colspan="12" style="padding:0;background:#f8fafc;">';
+      html += '<tr><td colspan="13" style="padding:0;background:#f8fafc;">';
       html += buildFatturaDetail(f);
       html += '</td></tr>';
     }
@@ -1053,7 +1054,6 @@ function buildFatturaDetail(f){
     righeHtml += '<td style="padding:5px 10px;text-align:center;font-weight:600;">'+(f[p+'turni']||'—')+'</td>';
     righeHtml += '<td style="padding:5px 10px;text-align:center;font-weight:600;">'+righe_r+'</td>';
     righeHtml += '<td style="padding:5px 10px;text-align:right;color:#0f9960;font-weight:600;">'+imp+'</td>';
-    righeHtml += '<td style="padding:5px 10px;text-align:right;">'+enpLav+'</td>';
     righeHtml += '</tr>';
   }
   if(righeHtml){
@@ -1061,7 +1061,7 @@ function buildFatturaDetail(f){
     html += '<thead><tr style="background:#1e3a8a;font-size:11px;text-transform:uppercase;color:#bfdbfe;letter-spacing:.05em;">';
     html += '<th style="padding:6px 10px;">#</th><th style="padding:6px 10px;">Titolo/Spettacolo</th><th style="padding:6px 10px;">Attività</th>';
     html += '<th style="padding:6px 10px;">Data</th><th style="padding:6px 10px;text-align:center;">GG</th><th style="padding:6px 10px;text-align:center;">Turni</th><th style="padding:6px 10px;text-align:center;">Righe</th>';
-    html += '<th style="padding:6px 10px;text-align:right;">Imponibile</th><th style="padding:6px 10px;text-align:right;">ENPALS lav.</th>';
+    html += '<th style="padding:6px 10px;text-align:right;">Imponibile</th>';
     html += '</tr></thead><tbody>'+righeHtml+'</tbody></table>';
   } else {
     html += '<p style="color:#94a3b8;font-size:12px;margin:0;">Nessuna riga disponibile (fattura salvata senza dettaglio righe)</p>';
