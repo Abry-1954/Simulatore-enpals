@@ -1025,7 +1025,7 @@ function toggleFatturaDetail(rec_nbr){
 }
 
 function buildFatturaDetail(f){
-  let html = '<div style="padding:12px 24px 16px;border-top:2px solid #e2e8f0;">';
+  let html = '<div style="padding:16px 24px 20px;border-top:3px solid #3b82f6;background:linear-gradient(180deg,#eff6ff 0%,#fff 40%);">';
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 24px;margin-bottom:12px;font-size:12px;color:#475569;">';
   html += '<span><b>Tipo:</b> '+(f.tipo_fatt||'—')+'</span>';
   html += '<span><b>Anzianità:</b> '+(f.anzianita||'—')+'</span>';
@@ -1042,23 +1042,26 @@ function buildFatturaDetail(f){
     const dataLav  = f[p+'data_lav']    ? f[p+'data_lav'].substring(0,10)             : '—';
     const imp      = f[p+'imponibile']  != null ? parseFloat(f[p+'imponibile']).toFixed(2)+' €' : '—';
     const enpLav   = f[p+'enpals_lav'] != null ? parseFloat(f[p+'enpals_lav']).toFixed(2)+' €'  : '—';
-    righeHtml += '<tr style="font-size:12px;">';
-    righeHtml += '<td style="padding:4px 8px;color:#64748b;">'+nRiga+'</td>';
-    righeHtml += '<td style="padding:4px 8px;font-weight:500;">'+titolo+'</td>';
-    righeHtml += '<td style="padding:4px 8px;">'+(f[p+'attivita']||'—')+'</td>';
-    righeHtml += '<td style="padding:4px 8px;">'+dataLav+'</td>';
-    righeHtml += '<td style="padding:4px 8px;text-align:center;">'+(f[p+'giorni']||'—')+'</td>';
-    righeHtml += '<td style="padding:4px 8px;text-align:center;">'+(f[p+'turni']||'—')+'</td>';
-    righeHtml += '<td style="padding:4px 8px;text-align:right;">'+imp+'</td>';
-    righeHtml += '<td style="padding:4px 8px;text-align:right;">'+enpLav+'</td>';
+    const righe_r = f[p+'righe'] != null ? f[p+'righe'] : '—';
+    const zebra = nRiga % 2 === 0 ? 'background:#eff6ff;' : 'background:#fff;';
+    righeHtml += '<tr style="font-size:12px;'+zebra+'border-bottom:1px solid #e2e8f0;">';
+    righeHtml += '<td style="padding:5px 10px;color:#64748b;font-weight:600;">'+nRiga+'</td>';
+    righeHtml += '<td style="padding:5px 10px;font-weight:600;color:#1e3a8a;">'+titolo+'</td>';
+    righeHtml += '<td style="padding:5px 10px;">'+(f[p+'attivita']||'—')+'</td>';
+    righeHtml += '<td style="padding:5px 10px;">'+dataLav+'</td>';
+    righeHtml += '<td style="padding:5px 10px;text-align:center;font-weight:600;">'+(f[p+'giorni']||'—')+'</td>';
+    righeHtml += '<td style="padding:5px 10px;text-align:center;font-weight:600;">'+(f[p+'turni']||'—')+'</td>';
+    righeHtml += '<td style="padding:5px 10px;text-align:center;font-weight:600;">'+righe_r+'</td>';
+    righeHtml += '<td style="padding:5px 10px;text-align:right;color:#0f9960;font-weight:600;">'+imp+'</td>';
+    righeHtml += '<td style="padding:5px 10px;text-align:right;">'+enpLav+'</td>';
     righeHtml += '</tr>';
   }
   if(righeHtml){
-    html += '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;">';
-    html += '<thead><tr style="background:#e2e8f0;font-size:11px;text-transform:uppercase;color:#64748b;">';
-    html += '<th style="padding:4px 8px;">#</th><th style="padding:4px 8px;">Titolo/Spettacolo</th><th style="padding:4px 8px;">Attività</th>';
-    html += '<th style="padding:4px 8px;">Data</th><th style="padding:4px 8px;">GG</th><th style="padding:4px 8px;">Turni</th>';
-    html += '<th style="padding:4px 8px;text-align:right;">Imponibile</th><th style="padding:4px 8px;text-align:right;">ENPALS lav.</th>';
+    html += '<table style="width:100%;border-collapse:collapse;border:2px solid #3b82f6;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(59,130,246,0.10);">';
+    html += '<thead><tr style="background:#1e3a8a;font-size:11px;text-transform:uppercase;color:#bfdbfe;letter-spacing:.05em;">';
+    html += '<th style="padding:6px 10px;">#</th><th style="padding:6px 10px;">Titolo/Spettacolo</th><th style="padding:6px 10px;">Attività</th>';
+    html += '<th style="padding:6px 10px;">Data</th><th style="padding:6px 10px;text-align:center;">GG</th><th style="padding:6px 10px;text-align:center;">Turni</th><th style="padding:6px 10px;text-align:center;">Righe</th>';
+    html += '<th style="padding:6px 10px;text-align:right;">Imponibile</th><th style="padding:6px 10px;text-align:right;">ENPALS lav.</th>';
     html += '</tr></thead><tbody>'+righeHtml+'</tbody></table>';
   } else {
     html += '<p style="color:#94a3b8;font-size:12px;margin:0;">Nessuna riga disponibile (fattura salvata senza dettaglio righe)</p>';
