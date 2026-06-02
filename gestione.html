@@ -518,6 +518,9 @@ var _gOnline = sessionStorage.getItem('enpals_modo_g') === 'online'
             || (!sessionStorage.getItem('enpals_modo_g') && sessionStorage.getItem('enpals_modo_mgmt') === 'online')
             || (!sessionStorage.getItem('enpals_modo_g') && sessionStorage.getItem('enpals_modo_sp') === 'online');
 function _getAPI(){ return _gOnline ? 'https://enpals-server.onrender.com' : 'http://localhost:8765'; }
+function aggiornaTutti(){
+  caricaPersone(); caricaAziende(); caricaVariabili(); caricaFatture();
+}
 function toggleModoG(){
   _gOnline = !_gOnline;
   sessionStorage.setItem('enpals_modo_g', _gOnline ? 'online' : 'locale');
@@ -584,7 +587,10 @@ function confermaElimina(msg, fn){ if(confirm('⚠ '+msg+'\n\nSei sicuro?')) fn(
 // ── TABS ──────────────────────────────────────────
 function showTab(name){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['persone','aziende','variabili','fatture'][i]===name));
-  if(name==='fatture') caricaFatture();
+  if(name==='persone')   caricaPersone();
+  if(name==='aziende')   caricaAziende();
+  if(name==='variabili') caricaVariabili();
+  if(name==='fatture')   caricaFatture();
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
 }
