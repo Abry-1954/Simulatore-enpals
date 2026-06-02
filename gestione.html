@@ -532,6 +532,8 @@ function toggleModoG(){
 document.addEventListener('DOMContentLoaded', function(){
   var btn = document.getElementById('toggle-modo-g');
   if(btn){ btn.textContent = _gOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _gOnline ? '#1e3a8a' : '#374151'; }
+  // Carica tutti i dati all'avvio
+  setTimeout(function(){ caricaPersone(); caricaAziende(); caricaVariabili(); caricaFatture(); }, 300);
 });
 let DATA = {persone:[], aziende:[], tariffe:[], inps:[], fasce:[], massimali:[], tasse:[]};
 
