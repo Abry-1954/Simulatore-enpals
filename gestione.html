@@ -541,6 +541,9 @@ document.addEventListener('DOMContentLoaded', function(){
   var _utenteFilter = _urlParams.get('utente') || '';
 
   if(_modoFatture && _utenteFilter){
+    // Forza modalità online per utenti
+    _gOnline = true;
+    sessionStorage.setItem('enpals_modo_g', 'online');
     // Modalità utente: mostra solo tab Fatture
     setTimeout(function(){
       // Nascondi tab Persone, Aziende, Variabili
