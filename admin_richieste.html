@@ -76,6 +76,12 @@ tr:hover td{background:rgba(255,255,255,.02);}
 .btn-reject:hover{background:rgba(239,68,68,.2);}
 .btn-upload{background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.25);}
 .btn-upload:hover{background:rgba(6,182,212,.25);}
+.btn-del-req{background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2);}
+.btn-del-req:hover{background:rgba(239,68,68,.18);}
+.btn-del-per{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+.btn-del-per:hover{background:rgba(239,68,68,.28);}
+.btn-close-win{background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.2);}
+.btn-close-win:hover{background:rgba(148,163,184,.2);color:#e2e8f0;}
 
 /* MODAL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;}
@@ -116,6 +122,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
   <div class="hdr-sep"></div>
   <span class="badge-cnt" id="cnt-attesa" style="display:none">0</span>
   <div class="hdr-status" id="hdr-status">Non connesso</div>
+  <button onclick="window.close()" style="margin-left:1rem;background:rgba(148,163,184,.15);color:#94a3b8;border:1px solid rgba(148,163,184,.2);border-radius:6px;padding:4px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Mono',monospace;">✕ Chiudi</button>
 </div>
 
 <!-- LOGIN -->
@@ -260,10 +267,13 @@ function renderTabella(){
           <button class="btn btn-view" onclick="apriDettaglio(${r.id})">👁 Dettaglio</button>
           <button class="btn btn-approve" onclick="approvaRapido(${r.id})">✓</button>
           <button class="btn btn-reject" onclick="rifiutaRapido(${r.id})">✗</button>
+          <button class="btn btn-del-req" onclick="eliminaRichiesta(${r.id},'${(r.nominativo||'').replace(/'/g,"\\'")}')">🗑 Richiesta</button>
         </div>`
       :`<div class="btn-row">
           <button class="btn btn-view" onclick="apriDettaglio(${r.id})">👁 Dettaglio</button>
           ${r.stato==='approvato'?`<button class="btn btn-upload" onclick="uploadPersona(${r.id})">☁ Upload</button>`:''}
+          <button class="btn btn-del-req" onclick="eliminaRichiesta(${r.id},'${(r.nominativo||'').replace(/'/g,"\\'")}')">🗑 Richiesta</button>
+          <button class="btn btn-del-per" onclick="eliminaPersona('${(r.nominativo||'').replace(/'/g,"\\'")}')">🗑 Persone</button>
         </div>`;
     return `<tr>
       <td style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">${r.id}</td>
@@ -384,6 +394,34 @@ async function uploadPersona(id){
       showToast('Errore upload: '+(err.message||res.status), false);
     }
   } catch(e){ showToast('Errore: '+e.message,false); }
+}
+
+async function eliminaRichiesta(id, nome){
+  if(!confirm('⚠️ Eliminare la richiesta di "'+nome+'" da richieste_utenti?\n\nQuesta operazione NON è recuperabile.')) return;
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?id=eq.'+id, {
+      method: 'DELETE',
+      headers: {'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Prefer':'return=minimal'}
+    });
+    if(r.ok){
+      _richieste = _richieste.filter(x=>x.id!==id);
+      renderStats(); renderTabella();
+      showToast('🗑 Richiesta #'+id+' "'+nome+'" eliminata', true);
+    } else { showToast('Errore eliminazione richiesta', false); }
+  } catch(e){ showToast('Errore: '+e.message, false); }
+}
+
+async function eliminaPersona(nominativo){
+  if(!confirm('⚠️ Eliminare "'+nominativo+'" dalla tabella PERSONE su Supabase?\n\nQuesta operazione eliminerà definitivamente l\'anagrafica dal database. NON è recuperabile.')) return;
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/persone?nominativo=eq.'+encodeURIComponent(nominativo), {
+      method: 'DELETE',
+      headers: {'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Prefer':'return=minimal'}
+    });
+    if(r.ok){
+      showToast('🗑 "'+nominativo+'" eliminato da persone', true);
+    } else { showToast('Errore eliminazione da persone', false); }
+  } catch(e){ showToast('Errore: '+e.message, false); }
 }
 
 function showToast(msg, ok=true){
