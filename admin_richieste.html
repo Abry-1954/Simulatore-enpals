@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENPALS — Gestione Richieste Iscrizione</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117; --bg2:#1a1d27; --bg3:#22263a; --bg4:#2d3350;
+  --border:#2e3352; --text:#e8eaf6; --text2:#9ca3af; --text3:#6b7280;
+  --blue:#3b82f6; --blue2:#1d4ed8; --green:#10b981; --red:#ef4444;
+  --amber:#f59e0b; --cyan:#06b6d4;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+/* HEADER */
+.hdr{background:#1e3a8a;border-bottom:1px solid #1d4ed8;padding:0 1.5rem;display:flex;align-items:center;gap:.75rem;height:52px;position:sticky;top:0;z-index:300;}
+.hdr-logo{font-family:"DM Mono",monospace;font-size:11px;color:#93c5fd;letter-spacing:.1em;}
+.hdr-title{font-size:14px;font-weight:600;color:#fff;}
+.hdr-sep{flex:1;}
+.hdr-status{font-size:11px;color:#93c5fd;}
+.badge-cnt{background:var(--amber);color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:"DM Mono",monospace;}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px);}
+.login-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:2.5rem;width:320px;}
+.login-title{font-size:1.1rem;font-weight:600;text-align:center;margin-bottom:1.5rem;}
+.login-group{margin-bottom:1rem;}
+.login-group label{display:block;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.login-group input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:"DM Sans",sans-serif;font-size:14px;outline:none;transition:border-color .15s;}
+.login-group input:focus{border-color:var(--blue);}
+.login-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:7px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:.5rem;transition:background .15s;}
+.login-btn:hover{background:var(--blue2);}
+.login-err{color:var(--red);font-size:12px;text-align:center;margin-top:.75rem;}
+
+/* MAIN */
+.main{display:none;padding:1.5rem;}
+
+/* FILTERS */
+.filters{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem;}
+.filter-btn{font-size:12px;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .15s;font-family:"DM Mono",monospace;}
+.filter-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.08);}
+.filter-sep{flex:1;}
+.search-input{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:6px 12px;color:var(--text);font-size:13px;outline:none;width:220px;}
+.search-input:focus{border-color:var(--blue);}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.stat-val{font-family:"DM Mono",monospace;font-size:1.5rem;font-weight:600;margin-bottom:2px;}
+.stat-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--bg3);color:var(--text2);font-family:"DM Mono",monospace;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,.02);}
+
+/* STATUS TAGS */
+.tag{font-family:"DM Mono",monospace;font-size:10px;padding:3px 9px;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:4px;}
+.tag-attesa{color:var(--amber);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);}
+.tag-approvato{color:var(--green);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);}
+.tag-rifiutato{color:var(--red);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);}
+
+/* ACTION BUTTONS */
+.btn-row{display:flex;gap:4px;}
+.btn{font-size:11px;padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-weight:600;transition:all .15s;}
+.btn-view{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.25);}
+.btn-view:hover{background:rgba(59,130,246,.25);}
+.btn-approve{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.25);}
+.btn-approve:hover{background:rgba(16,185,129,.25);}
+.btn-reject{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+.btn-reject:hover{background:rgba(239,68,68,.2);}
+.btn-upload{background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.25);}
+.btn-upload:hover{background:rgba(6,182,212,.25);}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;}
+.overlay.show{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:2rem;max-width:640px;width:100%;margin:auto;}
+.modal-title{font-size:1.1rem;font-weight:600;margin-bottom:1.5rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem;}
+.detail-item{background:var(--bg3);border-radius:6px;padding:.75rem;}
+.detail-label{font-size:10px;font-family:"DM Mono",monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.detail-val{font-size:13px;color:var(--text);font-weight:500;}
+.modal-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;}
+.modal-btn{font-size:13px;padding:8px 20px;border-radius:7px;border:none;cursor:pointer;font-weight:600;}
+.modal-btn-close{background:var(--bg3);color:var(--text2);}
+.modal-btn-approve{background:var(--green);color:#fff;}
+.modal-btn-reject{background:var(--red);color:#fff;}
+.modal-btn-upload{background:var(--cyan);color:#000;}
+.note-area{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-family:"DM Sans",sans-serif;font-size:13px;resize:vertical;min-height:80px;margin-top:.75rem;}
+
+/* LOADING */
+.loading{text-align:center;padding:3rem;color:var(--text2);}
+.spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;padding:.75rem 1.25rem;border-radius:8px;font-size:13px;font-weight:500;z-index:1000;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast-ok{background:#065f46;color:#d1fae5;border:1px solid #10b981;}
+.toast-err{background:#7f1d1d;color:#fee2e2;border:1px solid #ef4444;}
+
+@media(max-width:640px){.detail-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">ENPALS / ADMIN</div>
+  <div class="hdr-title">Gestione Richieste Iscrizione</div>
+  <div class="hdr-sep"></div>
+  <span class="badge-cnt" id="cnt-attesa" style="display:none">0</span>
+  <div class="hdr-status" id="hdr-status">Non connesso</div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-title">🔑 Accesso Amministratore</div>
+    <div class="login-group">
+      <label>Chiave API Supabase (Service Role)</label>
+      <input type="password" id="api-key" placeholder="eyJhbGciOiJIUzI1NiIs...">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Accedi</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div class="main" id="main-panel">
+
+  <div class="stats" id="stats-row"></div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFiltro('tutti',this)">Tutti</button>
+    <button class="filter-btn" onclick="setFiltro('in_attesa',this)">⏳ In attesa</button>
+    <button class="filter-btn" onclick="setFiltro('approvato',this)">✓ Approvati</button>
+    <button class="filter-btn" onclick="setFiltro('rifiutato',this)">✗ Rifiutati</button>
+    <div class="filter-sep"></div>
+    <input class="search-input" id="search" placeholder="🔍 Cerca nominativo..." oninput="renderTabella()">
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nominativo</th>
+          <th>Email</th>
+          <th>Attività</th>
+          <th>Data</th>
+          <th>Stato</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="loading" id="loading" style="display:none;"><div class="spinner"></div></div>
+</div>
+
+<!-- MODAL DETTAGLIO -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Dettaglio Richiesta</div>
+    <div class="detail-grid" id="detail-grid"></div>
+    <div>
+      <label style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;">Note amministratore</label>
+      <textarea class="note-area" id="note-admin" placeholder="Aggiungi note opzionali..."></textarea>
+    </div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://ugwhijpmcejxcsubopga.supabase.co';
+let _apiKey = '';
+let _richieste = [];
+let _filtro = 'tutti';
+let _currentId = null;
+
+async function doLogin(){
+  const key = document.getElementById('api-key').value.trim();
+  if(!key){ document.getElementById('login-err').textContent='Inserisci la chiave API'; return; }
+  // Test connessione
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?limit=1', {
+      headers:{'apikey':key,'Authorization':'Bearer '+key}
+    });
+    if(!r.ok){ document.getElementById('login-err').textContent='Chiave non valida ('+r.status+')'; return; }
+    _apiKey = key;
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('main-panel').style.display='block';
+    document.getElementById('hdr-status').textContent='● Connesso';
+    caricaRichieste();
+  } catch(e){
+    document.getElementById('login-err').textContent='Errore di rete: '+e.message;
+  }
+}
+
+document.getElementById('api-key').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+async function caricaRichieste(){
+  document.getElementById('loading').style.display='block';
+  document.getElementById('tbody').innerHTML='';
+  try {
+    const r = await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?order=id.desc&select=*', {
+      headers:{'apikey':_apiKey,'Authorization':'Bearer '+_apiKey}
+    });
+    _richieste = await r.json();
+    renderStats();
+    renderTabella();
+  } catch(e){ showToast('Errore caricamento: '+e.message, false); }
+  document.getElementById('loading').style.display='none';
+}
+
+function renderStats(){
+  const tutti=_richieste.length;
+  const attesa=_richieste.filter(r=>r.stato==='in_attesa').length;
+  const approv=_richieste.filter(r=>r.stato==='approvato').length;
+  const rifiut=_richieste.filter(r=>r.stato==='rifiutato').length;
+  document.getElementById('stats-row').innerHTML=`
+    <div class="stat"><div class="stat-val">${tutti}</div><div class="stat-lbl">Totale richieste</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--amber)">${attesa}</div><div class="stat-lbl">In attesa</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--green)">${approv}</div><div class="stat-lbl">Approvati</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--red)">${rifiut}</div><div class="stat-lbl">Rifiutati</div></div>
+  `;
+  const cnt=document.getElementById('cnt-attesa');
+  cnt.textContent=attesa; cnt.style.display=attesa>0?'':'none';
+}
+
+function renderTabella(){
+  const cerca=(document.getElementById('search').value||'').toLowerCase();
+  let righe=_richieste.filter(r=>{
+    const filtroOk=_filtro==='tutti'||r.stato===_filtro;
+    const cercaOk=!cerca||(r.nominativo||'').toLowerCase().includes(cerca)||(r.email||'').toLowerCase().includes(cerca);
+    return filtroOk && cercaOk;
+  });
+  const tbody=document.getElementById('tbody');
+  if(!righe.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:2rem;">Nessuna richiesta trovata</td></tr>';
+    return;
+  }
+  tbody.innerHTML=righe.map((r,i)=>{
+    const data=r.data_compilazione||'—';
+    const statoTag=r.stato==='in_attesa'
+      ?'<span class="tag tag-attesa">⏳ In attesa</span>'
+      :r.stato==='approvato'
+        ?'<span class="tag tag-approvato">✓ Approvato</span>'
+        :'<span class="tag tag-rifiutato">✗ Rifiutato</span>';
+    const azioni=r.stato==='in_attesa'
+      ?`<div class="btn-row">
+          <button class="btn btn-view" onclick="apriDettaglio(${r.id})">👁 Dettaglio</button>
+          <button class="btn btn-approve" onclick="approvaRapido(${r.id})">✓</button>
+          <button class="btn btn-reject" onclick="rifiutaRapido(${r.id})">✗</button>
+        </div>`
+      :`<div class="btn-row">
+          <button class="btn btn-view" onclick="apriDettaglio(${r.id})">👁 Dettaglio</button>
+          ${r.stato==='approvato'?`<button class="btn btn-upload" onclick="uploadPersona(${r.id})">☁ Upload</button>`:''}
+        </div>`;
+    return `<tr>
+      <td style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">${r.id}</td>
+      <td style="font-weight:600;">${r.nominativo||'—'}</td>
+      <td style="color:var(--text2);">${r.email||'—'}</td>
+      <td style="color:var(--text2);">${r.attivita_dopp_adat||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);">${data}</td>
+      <td>${statoTag}</td>
+      <td>${azioni}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setFiltro(f,btn){
+  _filtro=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTabella();
+}
+
+function apriDettaglio(id){
+  const r=_richieste.find(x=>x.id===id);
+  if(!r) return;
+  _currentId=id;
+  document.getElementById('modal-title').textContent='Richiesta #'+id+' — '+r.nominativo;
+  const campi=[
+    ['Nominativo',r.nominativo],['Codice Fiscale',r.codfisc],
+    ['Data di Nascita',r.data_di_nascita],['Luogo di Nascita',r.luogo_di_nascita],
+    ['Email',r.email],['Telefono',r.telefono||'—'],
+    ['Indirizzo',r.residenza_via],['Comune',r.residenza_comune],
+    ['CAP',r.cap],['P.IVA',r.piva||'—'],
+    ['IBAN',r.iban],['Matricola ENPALS',r.matricola_enpals||'—'],
+    ['Attività',r.attivita_dopp_adat],['Anzianità',r.anzianita_sy_sc||'—'],
+    ['Tipo Fattura',r.tipo_fatt||'—'],['Privacy',r.privacy_accettata?'✓ Accettata':'✗ Non accettata'],
+    ['Data compilazione',r.data_compilazione],['Stato',r.stato],
+  ];
+  document.getElementById('detail-grid').innerHTML=campi.map(([l,v])=>`
+    <div class="detail-item"><div class="detail-label">${l}</div><div class="detail-val">${v||'—'}</div></div>
+  `).join('');
+  document.getElementById('note-admin').value=r.note_admin||'';
+
+  let azioni='<button class="modal-btn modal-btn-close" onclick="chiudiModal()">Chiudi</button>';
+  if(r.stato==='in_attesa'){
+    azioni+=`<button class="modal-btn modal-btn-reject" onclick="azioneStato('rifiutato')">✗ Rifiuta</button>`;
+    azioni+=`<button class="modal-btn modal-btn-approve" onclick="azioneStato('approvato')">✓ Approva</button>`;
+  } else if(r.stato==='approvato'){
+    azioni+=`<button class="modal-btn modal-btn-upload" onclick="uploadPersona(${id});chiudiModal()">☁ Upload su Persone</button>`;
+  }
+  document.getElementById('modal-actions').innerHTML=azioni;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function chiudiModal(){ document.getElementById('overlay').classList.remove('show'); }
+
+async function azioneStato(stato){
+  const note=document.getElementById('note-admin').value.trim();
+  await aggiornaStato(_currentId, stato, note);
+  chiudiModal();
+}
+
+async function approvaRapido(id){ await aggiornaStato(id,'approvato',''); }
+async function rifiutaRapido(id){ if(!confirm('Rifiutare questa richiesta?')) return; await aggiornaStato(id,'rifiutato',''); }
+
+async function aggiornaStato(id, stato, note){
+  const body={stato, data_gestione:new Date().toISOString()};
+  if(note) body.note_admin=note;
+  try {
+    const r=await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?id=eq.'+id,{
+      method:'PATCH',
+      headers:{'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify(body)
+    });
+    if(r.ok){
+      const idx=_richieste.findIndex(x=>x.id===id);
+      if(idx>=0){ _richieste[idx].stato=stato; _richieste[idx].note_admin=note; _richieste[idx].data_gestione=body.data_gestione; }
+      renderStats(); renderTabella();
+      showToast(stato==='approvato'?'✓ Richiesta approvata':'✗ Richiesta rifiutata', stato==='approvato');
+    } else { showToast('Errore aggiornamento', false); }
+  } catch(e){ showToast('Errore: '+e.message,false); }
+}
+
+async function uploadPersona(id){
+  const r=_richieste.find(x=>x.id===id);
+  if(!r){ showToast('Richiesta non trovata',false); return; }
+  if(!confirm('Caricare "'+r.nominativo+'" su persone (Supabase)?\n\nQuesta operazione aggiungerà il record nella tabella persone.')) return;
+
+  const persona={
+    nominativo:       r.nominativo,
+    codfisc:          r.codfisc,
+    anzianita_sy_sc:  r.anzianita_sy_sc,
+    tipo_fatt:        r.tipo_fatt,
+    iban:             r.iban,
+    attivita_dopp_adat:r.attivita_dopp_adat,
+    residenza_via:    r.residenza_via,
+    residenza_comune: r.residenza_comune,
+    cap:              r.cap,
+    piva:             r.piva,
+    email:            r.email,
+    luogo_di_nascita: r.luogo_di_nascita,
+    data_di_nascita:  r.data_di_nascita,
+    matricola_enpals: r.matricola_enpals,
+  };
+  // Rimuovi campi null/undefined
+  Object.keys(persona).forEach(k=>{ if(!persona[k]) delete persona[k]; });
+
+  try {
+    const res=await fetch(SUPABASE_URL+'/rest/v1/persone',{
+      method:'POST',
+      headers:{'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify(persona)
+    });
+    if(res.ok||res.status===201){
+      showToast('✓ "'+r.nominativo+'" caricato su persone!', true);
+      // Aggiorna nota
+      await aggiornaStato(id,'approvato','Caricato su persone il '+new Date().toLocaleDateString('it-IT'));
+    } else {
+      const err=await res.json().catch(()=>({}));
+      showToast('Errore upload: '+(err.message||res.status), false);
+    }
+  } catch(e){ showToast('Errore: '+e.message,false); }
+}
+
+function showToast(msg, ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(ok?'toast-ok':'toast-err')+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Chiudi modal cliccando fuori
+document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) chiudiModal(); });
+</script>
+</body>
+</html>

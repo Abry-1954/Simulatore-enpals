@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENPALS — Modulo di Iscrizione</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f3ef;
+  --bg2: #ffffff;
+  --bg3: #f0ede8;
+  --border: #d6d0c8;
+  --border2: #c4bdb3;
+  --text: #1c1917;
+  --text2: #57534e;
+  --text3: #a8a29e;
+  --accent: #1e3a8a;
+  --accent2: #1d4ed8;
+  --green: #065f46;
+  --green-bg: #d1fae5;
+  --red: #991b1b;
+  --red-bg: #fee2e2;
+  --gold: #92400e;
+  --gold-bg: #fef3c7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Source Sans 3", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 2rem 1rem 4rem;
+}
+
+/* HEADER */
+.header {
+  max-width: 680px;
+  margin: 0 auto 2rem;
+  text-align: center;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid var(--border);
+}
+.header-logo {
+  font-family: "Lora", serif;
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 1rem;
+}
+.header-title {
+  font-family: "Lora", serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: .5rem;
+  line-height: 1.2;
+}
+.header-sub {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* FORM CARD */
+.form-card {
+  max-width: 680px;
+  margin: 0 auto;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+}
+.form-section {
+  padding: 1.75rem 2rem;
+  border-bottom: 1px solid var(--bg3);
+}
+.form-section:last-child { border-bottom: none; }
+.section-title {
+  font-family: "Lora", serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* GRID */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+.span2 { grid-column: span 2; }
+.span3 { grid-column: span 3; }
+
+/* FIELDS */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.field label .req { color: #dc2626; margin-left: 2px; }
+.field input, .field select {
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+  width: 100%;
+}
+.field input:focus, .field select:focus {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 3px rgba(29,78,216,.08);
+  background: #fff;
+}
+.field input.error { border-color: #dc2626; }
+.field .hint { font-size: 11px; color: var(--text3); }
+
+/* PRIVACY */
+.privacy-box {
+  background: var(--bg3);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.privacy-text {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.privacy-text strong { color: var(--text); }
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  cursor: pointer;
+}
+.check-row input[type=checkbox] {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.check-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+/* DATE ROW */
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--gold-bg);
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+}
+.date-row-icon { font-size: 1.25rem; }
+.date-row-text { font-size: 13px; color: var(--gold); }
+.date-row-date { font-weight: 600; font-size: 14px; color: var(--gold); margin-left: auto; font-family: "Lora", serif; }
+
+/* BUTTONS */
+.btn-row {
+  display: flex;
+  gap: .75rem;
+  justify-content: flex-end;
+  padding: 1.5rem 2rem;
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+}
+.btn {
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 28px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-cancel {
+  background: transparent;
+  color: var(--text2);
+  border: 1.5px solid var(--border2);
+}
+.btn-cancel:hover { background: var(--bg3); color: var(--text); }
+.btn-submit {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-submit:hover { background: var(--accent2); }
+.btn-submit:disabled { background: var(--text3); cursor: not-allowed; }
+
+/* OVERLAY */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.overlay.show { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2.5rem;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.modal-icon { font-size: 3rem; margin-bottom: 1rem; }
+.modal-title { font-family: "Lora", serif; font-size: 1.3rem; font-weight: 600; margin-bottom: .5rem; }
+.modal-desc { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 1.5rem; }
+.modal-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 32px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+/* LOADING */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media(max-width:560px){
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .span2, .span3 { grid-column: span 1; }
+  .form-section { padding: 1.25rem 1rem; }
+  .btn-row { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">ENPALS · Fatturazione Spettacolo</div>
+  <h1 class="header-title">Modulo di Iscrizione</h1>
+  <p class="header-sub">Compila il modulo con i tuoi dati anagrafici e professionali. I tuoi dati verranno verificati dall'amministratore prima dell'attivazione.</p>
+</div>
+
+<form id="modulo" class="form-card" onsubmit="inviaModulo(event)">
+
+  <!-- DATI ANAGRAFICI -->
+  <div class="form-section">
+    <div class="section-title">📋 Dati Anagrafici</div>
+    <div class="grid2">
+      <div class="field span2">
+        <label>Nominativo (Cognome e Nome) <span class="req">*</span></label>
+        <input type="text" id="nominativo" placeholder="es. ROSSI MARIO" required>
+      </div>
+      <div class="field">
+        <label>Codice Fiscale <span class="req">*</span></label>
+        <input type="text" id="codfisc" placeholder="RSSMRA80A01H501Z" maxlength="16" style="text-transform:uppercase;" required>
+      </div>
+      <div class="field">
+        <label>Data di Nascita <span class="req">*</span></label>
+        <input type="date" id="data_di_nascita" required>
+      </div>
+      <div class="field">
+        <label>Luogo di Nascita</label>
+        <input type="text" id="luogo_di_nascita" placeholder="es. Roma">
+      </div>
+      <div class="field">
+        <label>Email <span class="req">*</span></label>
+        <input type="email" id="email" placeholder="mario.rossi@email.it" required>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESIDENZA -->
+  <div class="form-section">
+    <div class="section-title">🏠 Residenza</div>
+    <div class="grid2">
+      <div class="field span2">
+        <label>Via / Indirizzo</label>
+        <input type="text" id="residenza_via" placeholder="es. Via Roma 12">
+      </div>
+      <div class="field">
+        <label>Comune</label>
+        <input type="text" id="residenza_comune" placeholder="es. Milano">
+      </div>
+      <div class="field">
+        <label>CAP</label>
+        <input type="text" id="cap" placeholder="es. 20100" maxlength="5">
+      </div>
+    </div>
+  </div>
+
+  <!-- DATI PROFESSIONALI -->
+  <div class="form-section">
+    <div class="section-title">🎭 Dati Professionali</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Attività principale <span class="req">*</span></label>
+        <select id="attivita_dopp_adat" required>
+          <option value="">— Seleziona —</option>
+          <option>DOPPIATORE</option>
+          <option>ADATTATORE</option>
+          <option>DIRETTORE DEL DOPPIAGGIO</option>
+          <option>ASSISTENTE AL DOPPIAGGIO</option>
+          <option>TECNICO DEL SUONO</option>
+          <option>ALTRO</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Anzianità ENPALS</label>
+        <select id="anzianita_sy_sc">
+          <option value="">— Seleziona —</option>
+          <option value="SY">SY — fino a 5 anni</option>
+          <option value="SC">SC — da 5 a 10 anni</option>
+          <option value="SA">SA — oltre 10 anni</option>
+        </select>
+        <span class="hint">Anni di iscrizione ENPALS/INPS Spettacolo</span>
+      </div>
+      <div class="field">
+        <label>Tipo Fattura preferito</label>
+        <select id="tipo_fatt">
+          <option value="">— Seleziona —</option>
+          <option value="FATTURA REGIME AGEVOLATO">Regime Agevolato (forfettario)</option>
+          <option value="FATTURA REGIME ORDINARIO">Regime Ordinario (con IVA)</option>
+          <option value="RICEVUTA">Ricevuta</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Matricola ENPALS / INPS</label>
+        <input type="text" id="matricola_enpals" placeholder="es. 12345678">
+      </div>
+    </div>
+  </div>
+
+  <!-- DATI FISCALI -->
+  <div class="form-section">
+    <div class="section-title">💳 Dati Fiscali e Bancari</div>
+    <div class="grid2">
+      <div class="field span2">
+        <label>IBAN <span class="req">*</span></label>
+        <input type="text" id="iban" placeholder="IT60 X054 2811 1010 0000 0123 456" style="font-family:monospace;letter-spacing:.05em;" required>
+        <span class="hint">Inserisci l'IBAN completo senza spazi o con spazi — verrà normalizzato</span>
+      </div>
+      <div class="field">
+        <label>Partita IVA</label>
+        <input type="text" id="piva" placeholder="es. 12345678901" maxlength="11">
+        <span class="hint">Solo per regime ordinario/forfettario</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIVACY E CONSENSO -->
+  <div class="form-section">
+    <div class="section-title">🔒 Privacy e Consenso</div>
+
+    <div class="date-row">
+      <div class="date-row-icon">📅</div>
+      <div class="date-row-text">Data compilazione modulo</div>
+      <div class="date-row-date" id="data-display">—</div>
+      <input type="hidden" id="data_compilazione">
+    </div>
+
+    <div class="privacy-box">
+      <div class="privacy-text">
+        <strong>Informativa sul trattamento dei dati personali</strong> ai sensi dell'art. 13 del Regolamento UE 2016/679 (GDPR).<br><br>
+        I dati personali raccolti tramite il presente modulo saranno trattati da <strong>ENPALS Fatturazione Spettacolo</strong> in qualità di titolare del trattamento, esclusivamente per le seguenti finalità:<br><br>
+        <strong>a)</strong> Registrazione e gestione anagrafica del lavoratore nel sistema di fatturazione;<br>
+        <strong>b)</strong> Calcolo e generazione delle fatture e dei relativi contributi previdenziali;<br>
+        <strong>c)</strong> Adempimento di obblighi fiscali, previdenziali e contabili.<br><br>
+        Il trattamento avverrà con strumenti informatici. I dati saranno conservati per il tempo necessario all'esecuzione del contratto e comunque non oltre i termini previsti dalla normativa fiscale (10 anni). I dati non saranno ceduti a terzi salvo obblighi di legge. L'interessato ha diritto di accesso, rettifica, cancellazione, limitazione e portabilità dei propri dati.
+      </div>
+      <label class="check-row">
+        <input type="checkbox" id="privacy_accettata" required>
+        <span class="check-label">Ho letto e compreso l'informativa sul trattamento dei dati personali e acconsento al trattamento dei miei dati per le finalità indicate. <strong>(obbligatorio)</strong></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="btn-row">
+    <button type="button" class="btn btn-cancel" onclick="annulla()">✕ Annulla</button>
+    <button type="submit" class="btn btn-submit" id="btn-submit">✓ Invia Richiesta</button>
+  </div>
+
+</form>
+
+<!-- MODAL SUCCESSO -->
+<div class="overlay" id="overlay-ok">
+  <div class="modal">
+    <div class="modal-icon">✅</div>
+    <div class="modal-title">Richiesta inviata!</div>
+    <div class="modal-desc">I tuoi dati sono stati inviati correttamente. L'amministratore li verificherà e riceverai conferma di attivazione a breve.</div>
+    <button class="modal-btn" onclick="document.getElementById('overlay-ok').classList.remove('show')">Chiudi</button>
+  </div>
+</div>
+
+<!-- MODAL ERRORE -->
+<div class="overlay" id="overlay-err">
+  <div class="modal">
+    <div class="modal-icon">❌</div>
+    <div class="modal-title">Errore nell'invio</div>
+    <div class="modal-desc" id="err-msg">Si è verificato un errore. Riprova più tardi.</div>
+    <button class="modal-btn" style="background:#dc2626;" onclick="document.getElementById('overlay-err').classList.remove('show')">Chiudi</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ugwhijpmcejxcsubopga.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd2hpanBtY2VqeGNzdWJvcGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjczNDksImV4cCI6MjA5NTU0MzM0OX0.yA_VevVZGRY4gA7nQp_K0sWa8NSezUuvzTkJx5NbK8k';
+
+// Data compilazione
+function oggi(){
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+document.getElementById('data_compilazione').value = oggi();
+document.getElementById('data-display').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'});
+
+// Normalizza IBAN
+document.getElementById('iban').addEventListener('blur', function(){
+  this.value = this.value.replace(/\s/g,'').toUpperCase();
+});
+// Maiuscolo CF
+document.getElementById('codfisc').addEventListener('input', function(){
+  this.value = this.value.toUpperCase();
+});
+// Maiuscolo nominativo
+document.getElementById('nominativo').addEventListener('blur', function(){
+  this.value = this.value.toUpperCase();
+});
+
+async function inviaModulo(e){
+  e.preventDefault();
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Invio in corso...';
+
+  const record = {
+    nominativo:        document.getElementById('nominativo').value.trim().toUpperCase(),
+    codfisc:           document.getElementById('codfisc').value.trim().toUpperCase(),
+    data_di_nascita:   document.getElementById('data_di_nascita').value,
+    luogo_di_nascita:  document.getElementById('luogo_di_nascita').value.trim(),
+    email:             document.getElementById('email').value.trim().toLowerCase(),
+    residenza_via:     document.getElementById('residenza_via').value.trim(),
+    residenza_comune:  document.getElementById('residenza_comune').value.trim(),
+    cap:               document.getElementById('cap').value.trim(),
+    attivita_dopp_adat:document.getElementById('attivita_dopp_adat').value,
+    anzianita_sy_sc:   document.getElementById('anzianita_sy_sc').value,
+    tipo_fatt:         document.getElementById('tipo_fatt').value,
+    matricola_enpals:  document.getElementById('matricola_enpals').value.trim(),
+    iban:              document.getElementById('iban').value.replace(/\s/g,'').toUpperCase(),
+    piva:              document.getElementById('piva').value.trim(),
+    privacy_accettata: true,
+    data_compilazione: document.getElementById('data_compilazione').value,
+    stato:             'in_attesa'
+  };
+
+  // Rimuovi campi vuoti
+  Object.keys(record).forEach(k => { if(record[k] === '') delete record[k]; });
+
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/richieste_utenti', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(record)
+    });
+    if(res.ok || res.status === 201){
+      document.getElementById('modulo').reset();
+      document.getElementById('data_compilazione').value = oggi();
+      document.getElementById('data-display').textContent = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+      document.getElementById('overlay-ok').classList.add('show');
+    } else {
+      const err = await res.json().catch(()=>({}));
+      document.getElementById('err-msg').textContent = 'Errore ' + res.status + ': ' + (err.message || 'Riprova più tardi.');
+      document.getElementById('overlay-err').classList.add('show');
+    }
+  } catch(ex){
+    document.getElementById('err-msg').textContent = 'Errore di rete: ' + ex.message;
+    document.getElementById('overlay-err').classList.add('show');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✓ Invia Richiesta';
+}
+
+function annulla(){
+  if(confirm('Vuoi annullare la compilazione? I dati inseriti andranno persi.'))
+    document.getElementById('modulo').reset();
+}
+</script>
+</body>
+</html>
