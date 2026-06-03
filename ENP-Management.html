@@ -3014,7 +3014,7 @@ function applicaFiltriAvanzati(){
 
   var dati = _logData.filter(function(r){
     // Filtro azione
-    if(_filtroAzione !== 'tutti' && (!r.azione || r.azione.indexOf(_filtroAzione) < 0)) return false;
+    if(_filtroAzione !== 'tutti' && r.azione !== _filtroAzione) return false;
     // Filtro utente
     if(utente && (!r.utente || r.utente.toLowerCase().indexOf(utente) < 0)) return false;
     // Filtro lavoratore/azienda/importo (dal campo dettaglio)
@@ -3129,7 +3129,7 @@ function chiudiPannelloLog(){
 }
 
 function filtraLog(filtro){
-  var dati = filtro==='tutti' ? _logData : _logData.filter(function(r){ return r.azione && r.azione.indexOf(filtro)>=0; });
+  var dati = filtro==='tutti' ? _logData : _logData.filter(function(r){ return r.azione === filtro; });
   mostraLog(dati);
 }
 
