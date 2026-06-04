@@ -653,8 +653,7 @@ self.addEventListener('fetch',e=>{
     }
     // Pulsante utenti visibile solo ai master e solo in modalità locale
     var masterList = ['alberita','abramelek'];
-    var btnUsers = document.getElementById('btn-users');
-    if(btnUsers && masterList.indexOf(user) >= 0) btnUsers.style.display='';
+    // btn-users ora nel menu admin dropdown
     // Pulsante Salva HTML visibile solo agli admin
     if(ruolo === 'admin'){
       var btnSalvaHtml = document.getElementById('btn-salva-html');
@@ -709,13 +708,8 @@ self.addEventListener('fetch',e=>{
         }
       }
     } else {
-      var btnLog = document.getElementById('btn-log-admin');
-      if(btnLog) btnLog.style.display='inline-block';
-      var btnRich=document.getElementById('btn-richieste');
-      if(btnRich) btnRich.style.display='inline-block';
-      ['btn-export-fatt','btn-import-fatt','btn-reset-fatt'].forEach(function(id){
-        var el=document.getElementById(id); if(el) el.style.display='inline-block';
-      });
+      var adminWrap=document.getElementById('btn-admin-wrap');
+      if(adminWrap) adminWrap.style.display='inline-block';
     }
   }
   function ripristinaRuolo(){
@@ -901,15 +895,22 @@ function toggleMain(){
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button onclick="avviaWalkthrough()" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Guida rapida">❓ Guida</button>
   <button id="btn-fullscreen" onclick="toggleFullscreen()" style="background:rgba(30,58,138,0.3);color:#93c5fd;border:1px solid rgba(37,99,235,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Schermo intero (ESC per uscire)">⛶ Schermo intero</button>
-  <button onclick="window.open('admin_richieste.html','_blank')" style="display:none;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" id="btn-richieste" title="Gestione richieste iscrizione">📋 Richieste</button>
-  <button id="btn-export-fatt" onclick="esportaFatture()" style="display:none;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Esporta fatture in JSON">📤 Esporta</button>
-  <button id="btn-import-fatt" onclick="document.getElementById('input-import-fatt').click()" style="display:none;background:rgba(59,130,246,0.2);color:#93c5fd;border:1px solid rgba(59,130,246,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Importa fatture da JSON">📥 Importa</button>
   <input type="file" id="input-import-fatt" accept=".json" multiple style="display:none;" onchange="importaFatture(this)">
-  <button id="btn-reset-fatt" onclick="resetFatture()" style="display:none;background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Reset completo tabella fatture">🗑 Reset DB</button>
-  <button id="btn-log-admin" onclick="apriPannelloLog()" style="display:none;background:rgba(255,200,0,0.2);color:#fcd34d;border:1px solid rgba(255,200,0,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza log accessi">📋 Log</button>
-  <button id="btn-users" onclick="apriPannelloUtenti()" style="display:none;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Gestione utenti">👥 Utenti</button>
-  <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 3 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
-  <button class="btn-gestione" onclick="richiedeServer('Gestisci i 3 DB', apriGestione);" title="Apri gestione database">🗄 Gestisci i 3 DB</button>
+  <div id="btn-admin-wrap" style="display:none;position:relative;display:none;">
+    <button id="btn-admin-menu" onclick="toggleAdminMenu()" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">⚙ Admin ▼</button>
+    <div id="admin-dropdown" style="display:none;position:absolute;top:100%;right:0;background:#1e293b;border:1px solid rgba(99,102,241,0.4);border-radius:8px;padding:6px;z-index:9999;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,0.5);margin-top:4px;">
+      <button onclick="window.open('admin_richieste.html','_blank');toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#34d399;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📋 Richieste</button>
+      <button onclick="esportaFatture();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#34d399;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📤 Esporta</button>
+      <button onclick="document.getElementById('input-import-fatt').click();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#93c5fd;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📥 Importa</button>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
+      <button onclick="resetFatture();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#f87171;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🗑 Reset DB</button>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
+      <button onclick="apriPannelloLog();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#fcd34d;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📋 Log</button>
+      <button onclick="apriPannelloUtenti();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#a5b4fc;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">👥 Utenti</button>
+    </div>
+  </div>
+  <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 4 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 4 DB</button>
+  <button class="btn-gestione" onclick="richiedeServer('Gestisci i 4 DB', apriGestione);" title="Apri gestione database">🗄 Gestisci i 4 DB</button>
   <button class="btn-fetch" id="btn-salva-html" onclick="salvaHTML();" title="Scarica Spettacolo.html con DB aggiornati embedded" style="display:none;">💾 Salva HTML</button>
   <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;cursor:pointer;margin-right:4px;" title="Aggiunge filigrana PROFORMA al documento">
     <input type="checkbox" id="chk-proforma" style="cursor:pointer;accent-color:#f87171;">
@@ -2585,6 +2586,19 @@ function renderFatture(fatture){
       "</tbody></table>";
 }
 
+
+function toggleAdminMenu(){
+  var dd = document.getElementById('admin-dropdown');
+  if(dd) dd.style.display = dd.style.display==='none' ? 'block' : 'none';
+}
+// Chiudi dropdown cliccando fuori
+document.addEventListener('click', function(e){
+  var wrap = document.getElementById('btn-admin-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    var dd = document.getElementById('admin-dropdown');
+    if(dd) dd.style.display='none';
+  }
+});
 
 async function esportaFatture(){
   if(!confirm('📤 Esportare tutte le fatture in un file JSON?')) return;
