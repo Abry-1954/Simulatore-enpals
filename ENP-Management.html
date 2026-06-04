@@ -713,6 +713,9 @@ self.addEventListener('fetch',e=>{
       if(btnLog) btnLog.style.display='inline-block';
       var btnRich=document.getElementById('btn-richieste');
       if(btnRich) btnRich.style.display='inline-block';
+      ['btn-export-fatt','btn-import-fatt','btn-reset-fatt'].forEach(function(id){
+        var el=document.getElementById(id); if(el) el.style.display='inline-block';
+      });
     }
   }
   function ripristinaRuolo(){
@@ -899,6 +902,10 @@ function toggleMain(){
   <button onclick="avviaWalkthrough()" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Guida rapida">❓ Guida</button>
   <button id="btn-fullscreen" onclick="toggleFullscreen()" style="background:rgba(30,58,138,0.3);color:#93c5fd;border:1px solid rgba(37,99,235,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Schermo intero (ESC per uscire)">⛶ Schermo intero</button>
   <button onclick="window.open('admin_richieste.html','_blank')" style="display:none;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" id="btn-richieste" title="Gestione richieste iscrizione">📋 Richieste</button>
+  <button id="btn-export-fatt" onclick="esportaFatture()" style="display:none;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Esporta fatture in JSON">📤 Esporta</button>
+  <button id="btn-import-fatt" onclick="document.getElementById('input-import-fatt').click()" style="display:none;background:rgba(59,130,246,0.2);color:#93c5fd;border:1px solid rgba(59,130,246,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Importa fatture da JSON">📥 Importa</button>
+  <input type="file" id="input-import-fatt" accept=".json" multiple style="display:none;" onchange="importaFatture(this)">
+  <button id="btn-reset-fatt" onclick="resetFatture()" style="display:none;background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Reset completo tabella fatture">🗑 Reset DB</button>
   <button id="btn-log-admin" onclick="apriPannelloLog()" style="display:none;background:rgba(255,200,0,0.2);color:#fcd34d;border:1px solid rgba(255,200,0,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza log accessi">📋 Log</button>
   <button id="btn-users" onclick="apriPannelloUtenti()" style="display:none;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Gestione utenti">👥 Utenti</button>
   <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 3 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
@@ -2563,6 +2570,61 @@ function renderFatture(fatture){
       </tr>`).join("")+
       "</tbody></table>";
 }
+
+
+async function esportaFatture(){
+  if(!confirm('📤 Esportare tutte le fatture in un file JSON?')) return;
+  try {
+    const r = await authFetch('/fatture-export');
+    const data = await r.json();
+    if(!data.ok){ alert('Errore: '+(data.error||'sconosciuto')); return; }
+    const blob = new Blob([JSON.stringify(data.records, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const oggi = new Date().toISOString().slice(0,10);
+    a.href=url; a.download='fatture_backup_'+oggi+'.json'; a.click();
+    URL.revokeObjectURL(url);
+    alert('✅ Esportate '+data.count+' fatture in fatture_backup_'+oggi+'.json');
+  } catch(e){ alert('Errore: '+e.message); }
+}
+
+async function importaFatture(input){
+  const files = Array.from(input.files);
+  if(!files.length) return;
+  if(!confirm('📥 Importare '+files.length+' file JSON?\n\nI duplicati (stesso rif_nbr) verranno saltati automaticamente.')) return;
+  let totImportati=0, totSaltati=0;
+  for(const file of files){
+    try {
+      const text = await file.text();
+      const records = JSON.parse(text);
+      if(!Array.isArray(records)){ alert('File non valido: '+file.name); continue; }
+      const r = await authFetch('/fatture-import', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({records})
+      });
+      const data = await r.json();
+      if(data.ok){ totImportati+=data.importati; totSaltati+=data.saltati; }
+      else { alert('Errore su '+file.name+': '+(data.error||'sconosciuto')); }
+    } catch(e){ alert('Errore lettura '+file.name+': '+e.message); }
+  }
+  input.value='';
+  alert('✅ Importazione completata!\n\nImportati: '+totImportati+'\nSaltati (duplicati): '+totSaltati);
+}
+
+async function resetFatture(){
+  const n1 = confirm('⚠️ ATTENZIONE!\n\nStai per eliminare TUTTE le fatture da Supabase.\n\nQuesta operazione è IRREVERSIBILE.\n\nContinuare?');
+  if(!n1) return;
+  const conf = prompt('⚠️ ULTIMA CONFERMA\n\nVerranno cancellate TUTTE le fatture e la sequenza rec_nbr verrà azzerata.\n\nScrivi RESET per confermare:');
+  if(conf !== 'RESET'){ alert('Operazione annullata.'); return; }
+  try {
+    const r = await authFetch('/fatture-reset', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})});
+    const data = await r.json();
+    if(data.ok){ alert('✅ Reset completato!\n\nTabella fatture svuotata e sequenza azzerata.'); }
+    else { alert('Errore: '+(data.error||'sconosciuto')); }
+  } catch(e){ alert('Errore: '+e.message); }
+}
+
 
 function filtraFatture(){
   var qNom=(document.getElementById("f-nominativo")||{value:""}).value.toLowerCase().trim();
