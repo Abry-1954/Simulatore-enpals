@@ -2459,6 +2459,20 @@ async function salvaFatturaSuDB(){
   rec.tot_fattura       = gV("t-totfatt");
   rec.tot_ritenuta      = gV("t-ra");
   rec.tot_netto         = gV("t-netto");
+  // Calcola totali giorni/turni/righe dalle righe attive
+  let _dateSet=new Set(), _totTurni=0, _totRighe=0;
+  for(let i=1;i<=31;i++){
+    const chk=document.getElementById("chk_"+i);
+    if(chk&&chk.checked){
+      const dl=document.getElementById("dl_"+i);
+      if(dl&&dl.value) _dateSet.add(dl.value);
+      _totTurni += parseInt(document.getElementById("tu_"+i)?.value||0)||0;
+      _totRighe += parseInt(document.getElementById("ri_"+i)?.value||0)||0;
+    }
+  }
+  rec.tot_giorni = _dateSet.size;
+  rec.tot_turni  = _totTurni;
+  rec.tot_righe  = _totRighe;
   rec.tot_919_ivs_lav   = gV("t-e919");
   rec.tot_1_add_lav     = gV("t-e1");
   rec.tot_25_consol_lav = gV("t-e25");
