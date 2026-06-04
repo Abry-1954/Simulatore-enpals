@@ -711,6 +711,8 @@ self.addEventListener('fetch',e=>{
     } else {
       var btnLog = document.getElementById('btn-log-admin');
       if(btnLog) btnLog.style.display='inline-block';
+      var btnRich=document.getElementById('btn-richieste');
+      if(btnRich) btnRich.style.display='inline-block';
     }
   }
   function ripristinaRuolo(){
@@ -896,6 +898,7 @@ function toggleMain(){
   <button class="btn-reset-all" onclick="resetTutto()">✕ Azzera</button>
   <button onclick="avviaWalkthrough()" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Guida rapida">❓ Guida</button>
   <button id="btn-fullscreen" onclick="toggleFullscreen()" style="background:rgba(30,58,138,0.3);color:#93c5fd;border:1px solid rgba(37,99,235,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Schermo intero (ESC per uscire)">⛶ Schermo intero</button>
+  <button onclick="window.open('admin_richieste.html','_blank')" style="display:none;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" id="btn-richieste" title="Gestione richieste iscrizione">📋 Richieste</button>
   <button id="btn-log-admin" onclick="apriPannelloLog()" style="display:none;background:rgba(255,200,0,0.2);color:#fcd34d;border:1px solid rgba(255,200,0,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza log accessi">📋 Log</button>
   <button id="btn-users" onclick="apriPannelloUtenti()" style="display:none;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Gestione utenti">👥 Utenti</button>
   <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 3 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 3 DB</button>
