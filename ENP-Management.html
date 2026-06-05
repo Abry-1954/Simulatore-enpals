@@ -406,7 +406,9 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
   .metric-val { font-size: 12px; }
 }
 
-#badge-richieste{position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;animation:pulse-badge 1.5s infinite;pointer-events:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.login-spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;}
+#badge-richieste{position:absolute;bottom:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;animation:pulse-badge 1.5s infinite;pointer-events:none;}
 @keyframes pulse-badge{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,0.7);}50%{transform:scale(1.15);box-shadow:0 0 0 6px rgba(239,68,68,0);}}
 #toast-richieste{position:fixed;bottom:24px;right:24px;background:#1e293b;border:1px solid #ef4444;color:#f87171;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;z-index:99999;display:none;box-shadow:0 4px 20px rgba(239,68,68,0.3);cursor:pointer;}
 </style>
@@ -519,7 +521,7 @@ self.addEventListener('fetch',e=>{
     var errEl=document.getElementById("login-err");
     var btn=document.querySelector(".login-btn");
     errEl.style.display="none";
-    btn.textContent="Accesso..."; btn.disabled=true;
+    btn.innerHTML='<span class="login-spinner"></span>Connessione...'; btn.disabled=true;
     if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
 
     // 1. Prova login sul server Render — con retry automatico se addormentato
@@ -588,7 +590,7 @@ self.addEventListener('fetch',e=>{
         logAzione('LOGIN KO CREDENZIALI ERRATE', '');
         errEl.textContent="Credenziali non valide.";
         errEl.style.display="block";
-        btn.textContent="Entra"; btn.disabled=false;
+        btn.innerHTML='Entra'; btn.disabled=false;
         return;
       }
     } catch(e) {
@@ -857,7 +859,7 @@ function toggleMain(){
       <button id="mgmt-btn-online" onclick="mgmtSetModo('online')" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;">☁ Online</button>
       <button id="mgmt-btn-locale" onclick="mgmtSetModo('locale')" style="flex:1;padding:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;">💾 Locale</button>
     </div>
-    <button class="login-btn" onclick="doLogin()">Entra</button>
+    <button class="login-btn" id="btn-entra" onclick="doLogin()">Entra</button>
     <div class="login-err" id="login-err">Utente o password errati.</div>
     <script>
     function mgmtSetModo(modo){
@@ -2633,7 +2635,7 @@ async function checkRichiestePendenti(){
     if(n>0){
       if(badge){badge.textContent=n;badge.style.display='flex';}
       if(countEl) countEl.textContent=n;
-      if(toast){toast.style.display='block';setTimeout(function(){toast.style.display='none';},6000);}
+      if(toast){toast.style.display='block';setTimeout(function(){toast.style.display='none';},30000);}
     } else {
       if(badge) badge.style.display='none';
       if(toast) toast.style.display='none';
