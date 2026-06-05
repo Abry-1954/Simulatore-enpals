@@ -3119,7 +3119,7 @@ async function apriPannelloLog(){
   // 1. Prova server locale
   var localOk = false;
   try {
-    var r = await authFetch('/log');
+    var r = await authFetch('/log?_t='+Date.now());
     if(r && r.ok){
       var dati = await r.json();
       if(dati && dati.length){
