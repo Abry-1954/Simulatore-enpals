@@ -3311,6 +3311,7 @@ function _parseDettaglio(det){
   return {lav:lav, data:data, tl:tl, tit:tit, az:az, netto:netto, riga:riga, nRicalcoli:nRicalcoli};
 }
 function mostraLog(dati){
+  dati = dati.filter(function(r){ return r.azione !== 'AGGIORNA_DB'; });
   var tbody = document.getElementById('log-body');
   var empty = document.getElementById('log-empty');
   var summary = document.getElementById('log-summary');
