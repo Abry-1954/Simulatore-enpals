@@ -189,10 +189,11 @@ tr:hover td{background:rgba(255,255,255,.02);}
 <script>
 const SUPABASE_URL = 'https://ugwhijpmcejxcsubopga.supabase.co';
 const SERVER_URL = 'https://enpals-server.onrender.com';
+const _urlToken = new URLSearchParams(window.location.search).get('token') || '';
 
 async function logAzione(azione, dettaglio){
   try {
-    const token = sessionStorage.getItem('enpals_auth_admin') || '';
+    const token = _urlToken || sessionStorage.getItem('enpals_auth_admin') || '';
     await fetch(SERVER_URL+'/log-action', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
