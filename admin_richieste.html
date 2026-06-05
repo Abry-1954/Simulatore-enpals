@@ -188,6 +188,18 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
 <script>
 const SUPABASE_URL = 'https://ugwhijpmcejxcsubopga.supabase.co';
+const SERVER_URL = 'https://enpals-server.onrender.com';
+
+async function logAzione(azione, dettaglio){
+  try {
+    const token = sessionStorage.getItem('enpals_auth_admin') || '';
+    await fetch(SERVER_URL+'/log-action', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({azione, dettaglio})
+    });
+  } catch(e){} // silenzioso
+}
 let _apiKey = '';
 let _richieste = [];
 let _filtro = 'tutti';
@@ -203,6 +215,7 @@ async function doLogin(){
     });
     if(!r.ok){ document.getElementById('login-err').textContent='Chiave non valida ('+r.status+')'; return; }
     _apiKey = key;
+    sessionStorage.setItem('enpals_auth_admin', key);
     document.getElementById('login-wrap').style.display='none';
     document.getElementById('main-panel').style.display='block';
     document.getElementById('hdr-status').textContent='● Connesso';
@@ -351,6 +364,8 @@ async function aggiornaStato(id, stato, note){
       if(idx>=0){ _richieste[idx].stato=stato; _richieste[idx].note_admin=note; _richieste[idx].data_gestione=body.data_gestione; }
       renderStats(); renderTabella();
       showToast(stato==='approvato'?'✓ Richiesta approvata':'✗ Richiesta rifiutata', stato==='approvato');
+      const nom = (_richieste.find(x=>x.id===id)||{}).nominativo||'#'+id;
+      logAzione(stato==='approvato'?'RICHIESTA_APPROVATA':'RICHIESTA_RIFIUTATA', nom+(note?' — '+note:''));
     } else { showToast('Errore aggiornamento', false); }
   } catch(e){ showToast('Errore: '+e.message,false); }
 }
@@ -387,6 +402,7 @@ async function uploadPersona(id){
     });
     if(res.ok||res.status===201){
       showToast('✓ "'+r.nominativo+'" caricato su persone!', true);
+      logAzione('UTENTE_CREATO', r.nominativo);
       // Aggiorna nota
       await aggiornaStato(id,'approvato','Caricato su persone il '+new Date().toLocaleDateString('it-IT'));
     } else {
@@ -407,6 +423,7 @@ async function eliminaRichiesta(id, nome){
       _richieste = _richieste.filter(x=>x.id!==id);
       renderStats(); renderTabella();
       showToast('🗑 Richiesta #'+id+' "'+nome+'" eliminata', true);
+      logAzione('RICHIESTA_ELIMINATA', nome);
     } else { showToast('Errore eliminazione richiesta', false); }
   } catch(e){ showToast('Errore: '+e.message, false); }
 }

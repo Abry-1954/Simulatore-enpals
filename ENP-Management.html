@@ -2835,6 +2835,13 @@ async function eliminaFattura(rec_nbr, rif){
       <button onclick="filtraLog('LOGIN OK')" class="log-filter-btn" style="background:#374151;color:#86efac;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✅ Login OK</button>
       <button onclick="filtraLog('LOGIN KO CREDENZIALI ERRATE')" class="log-filter-btn" style="background:#374151;color:#fca5a5;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">❌ Login KO</button>
       <button onclick="filtraLog('SALVA_FATTURA')" class="log-filter-btn" style="background:#374151;color:#34d399;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">💾 Salva su DB</button>
+      <button onclick="filtraLog('RICHIESTA_APPROVATA')" class="log-filter-btn" style="background:#374151;color:#34d399;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✓ Approvate</button>
+      <button onclick="filtraLog('RICHIESTA_RIFIUTATA')" class="log-filter-btn" style="background:#374151;color:#f87171;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✗ Rifiutate</button>
+      <button onclick="filtraLog('RICHIESTA_ELIMINATA')" class="log-filter-btn" style="background:#374151;color:#fb923c;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🗑 Elim.Rich.</button>
+      <button onclick="filtraLog('UTENTE_CREATO')" class="log-filter-btn" style="background:#374151;color:#60a5fa;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">👤 Utenti Creati</button>
+      <button onclick="filtraLog('RESET_FATTURE')" class="log-filter-btn" style="background:#374151;color:#ef4444;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🔄 Reset DB</button>
+      <button onclick="filtraLog('EXPORT_FATTURE')" class="log-filter-btn" style="background:#374151;color:#86efac;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">📤 Export</button>
+      <button onclick="filtraLog('IMPORT_FATTURE')" class="log-filter-btn" style="background:#374151;color:#93c5fd;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">📥 Import</button>
       <button onclick="filtraLog('SALVA')" class="log-filter-btn" style="background:#374151;color:#a78bfa;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🖨 Salva PDF</button>
       <button onclick="filtraLog('SIMULAZIONE')" class="log-filter-btn" style="background:#374151;color:#93c5fd;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">📊 Simulazioni</button>
       <button onclick="filtraLog('STAMPA')" class="log-filter-btn" style="background:#374151;color:#fcd34d;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🖨 Stampe</button>
@@ -3305,7 +3312,7 @@ function mostraLog(dati){
   var summary = document.getElementById('log-summary');
 
   // Riepilogo
-  var login=0,simul=0,stampe=0,fail=0,salvaSuDb=0,salvaPdf=0;
+  var login=0,simul=0,stampe=0,fail=0,salvaSuDb=0,salvaPdf=0,richAppr=0,richRif=0,richElim=0,utenteCr=0,resetFatt=0,exportFatt=0,importFatt=0;
   var lavSet = {};
   dati.forEach(function(r){
     if(r.azione==='LOGIN OK') login++;
@@ -3313,6 +3320,13 @@ function mostraLog(dati){
     if(r.azione==='STAMPA') stampe++;
     if(r.azione==='SALVA_FATTURA') salvaSuDb++;
     if(r.azione==='SALVA') salvaPdf++;
+    if(r.azione==='RICHIESTA_APPROVATA') richAppr++;
+    if(r.azione==='RICHIESTA_RIFIUTATA') richRif++;
+    if(r.azione==='RICHIESTA_ELIMINATA') richElim++;
+    if(r.azione==='UTENTE_CREATO') utenteCr++;
+    if(r.azione==='RESET_FATTURE') resetFatt++;
+    if(r.azione==='EXPORT_FATTURE') exportFatt++;
+    if(r.azione==='IMPORT_FATTURE') importFatt++;
     if(r.azione==='LOGIN KO CREDENZIALI ERRATE') fail++;
     if(r.azione==='STAMPA'||r.azione==='SIMULAZIONE'||r.azione==='SALVA'){
       var d = _parseDettaglio(r.dettaglio||'');
@@ -3327,7 +3341,14 @@ function mostraLog(dati){
     ['⚠ Login falliti', fail, '#fca5a5'],
     ['🎭 Lavoratori', lavUnici, '#fb923c'],
     ['💾 Salva su DB', salvaSuDb, '#34d399'],
-    ['🖨 Salva PDF', salvaPdf, '#a78bfa']
+    ['🖨 Salva PDF', salvaPdf, '#a78bfa'],
+    ['✓ Approvate', richAppr, '#34d399'],
+    ['✗ Rifiutate', richRif, '#f87171'],
+    ['🗑 Elim.Rich.', richElim, '#fb923c'],
+    ['👤 Utenti Creati', utenteCr, '#60a5fa'],
+    ['🔄 Reset DB', resetFatt, '#ef4444'],
+    ['📤 Export', exportFatt, '#86efac'],
+    ['📥 Import', importFatt, '#93c5fd']
   ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:8px;text-align:center;"><div style="font-size:10px;color:#9ca3af;">'+x[0]+'</div><div style="font-size:22px;font-weight:700;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
 
   if(!dati.length){
