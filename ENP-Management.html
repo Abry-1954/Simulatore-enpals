@@ -3679,9 +3679,26 @@ async function apriPannelloRichiesteAziende(){
       html += '<span style="color:'+statoColor+';font-size:11px;font-weight:700;white-space:nowrap;">'+escHtml(r.stato)+'</span>';
       html += '</div>';
       if(isBadge){
-        html += '<div style="display:flex;gap:8px;margin-top:10px;">';
+        html += '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">';
         html += '<button onclick="approvaAzienda('+r.id+',this)" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.4);border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">✓ Aggiungi</button>';
+        html += '<button onclick="modificaAzienda('+r.id+')" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.4);border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;">✎ Modifica</button>';
         html += '<button onclick="rifiutaAzienda('+r.id+',this)" style="background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;">✗ Rifiuta</button>';
+        html += '</div>';
+        // Form modifica (nascosto di default)
+        html += '<div id="mod-form-'+r.id+'" style="display:none;margin-top:12px;background:#0f172a;border:1px solid #1e40af;border-radius:8px;padding:14px;">';
+        html += '<div style="font-size:12px;color:#93c5fd;font-weight:700;margin-bottom:10px;">✎ Modifica dati azienda</div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+        html += '<div><label style="font-size:11px;color:#64748b;">RAGIONE SOCIALE</label><input id="mod-rag-'+r.id+'" value="'+escHtml(r.ragione_sociale||'')+'" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:5px 8px;color:#e2e8f0;font-size:12px;box-sizing:border-box;"></div>';
+        html += '<div><label style="font-size:11px;color:#64748b;">INDIRIZZO</label><input id="mod-ind-'+r.id+'" value="'+escHtml(r.via||'')+'" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:5px 8px;color:#e2e8f0;font-size:12px;box-sizing:border-box;"></div>';
+        html += '<div><label style="font-size:11px;color:#64748b;">CAP</label><input id="mod-cap-'+r.id+'" value="'+escHtml(r.cap||'')+'" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:5px 8px;color:#e2e8f0;font-size:12px;box-sizing:border-box;"></div>';
+        html += '<div><label style="font-size:11px;color:#64748b;">CITTÀ</label><input id="mod-cit-'+r.id+'" value="'+escHtml(r.comune||'')+'" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:5px 8px;color:#e2e8f0;font-size:12px;box-sizing:border-box;"></div>';
+        html += '<div><label style="font-size:11px;color:#64748b;">P.IVA / C.F.</label><input id="mod-fisc-'+r.id+'" value="'+escHtml(r.piva_cf||'')+'" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:5px 8px;color:#e2e8f0;font-size:12px;box-sizing:border-box;"></div>';
+        html += '<div><label style="font-size:11px;color:#64748b;">COD. DESTINATARIO</label><input id="mod-cod-'+r.id+'" value="'+escHtml(r.cod_destinatario||'')+'" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:4px;padding:5px 8px;color:#e2e8f0;font-size:12px;box-sizing:border-box;"></div>';
+        html += '</div>';
+        html += '<div style="display:flex;gap:8px;margin-top:10px;">';
+        html += '<button onclick="salvaModificaAzienda('+r.id+')" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.4);border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">✓ Salva e Aggiungi</button>';
+        html += '<button onclick="modificaAzienda('+r.id+')" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;">✕ Annulla</button>';
+        html += '</div>';
         html += '</div>';
       }
       html += '</div>';
@@ -3689,6 +3706,58 @@ async function apriPannelloRichiesteAziende(){
     document.getElementById('rich-az-body').innerHTML = html;
   } catch(e) {
     document.getElementById('rich-az-body').innerHTML = '<div style="color:#f87171;padding:20px;">Errore: '+e.message+'</div>';
+  }
+}
+
+function modificaAzienda(id){
+  const form = document.getElementById('mod-form-'+id);
+  if(form) form.style.display = form.style.display==='none' ? 'block' : 'none';
+}
+
+async function salvaModificaAzienda(id){
+  const rag  = (document.getElementById('mod-rag-'+id)||{}).value||'';
+  const ind  = (document.getElementById('mod-ind-'+id)||{}).value||'';
+  const cap  = (document.getElementById('mod-cap-'+id)||{}).value||'';
+  const cit  = (document.getElementById('mod-cit-'+id)||{}).value||'';
+  const fisc = (document.getElementById('mod-fisc-'+id)||{}).value||'';
+  const cod  = (document.getElementById('mod-cod-'+id)||{}).value||'';
+
+  if(!rag.trim()){ alert('La Ragione Sociale è obbligatoria'); return; }
+
+  const btn = document.querySelector('#mod-form-'+id+' button');
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+
+  try {
+    // 1. Inserisci in tabella aziende con dati modificati
+    const sede = (cap && cit) ? cap+' - '+cit : (cap||cit);
+    const insRes = await fetch(_SUPA_URL_AZ+'/rest/v1/aziende', {
+      method: 'POST',
+      headers: {
+        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ rag: rag, ind: ind, sede: sede, fisc: fisc, coddest: cod })
+    });
+    if(!insRes.ok && insRes.status !== 201) throw new Error('Errore inserimento azienda: '+insRes.status);
+
+    // 2. Aggiorna stato richiesta → approvata
+    await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
+      method: 'PATCH',
+      headers: {
+        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ stato: 'approvata' })
+    });
+
+    // 3. Log
+    logAzione('APPROVA_AZIENDA', rag + ' (dati modificati, approvata da admin)');
+
+    // 4. Ricarica pannello
+    apriPannelloRichiesteAziende();
+  } catch(e) {
+    alert('Errore: '+e.message);
+    if(btn){ btn.disabled=false; btn.textContent='✓ Salva e Aggiungi'; }
   }
 }
 
@@ -3714,12 +3783,11 @@ async function approvaAzienda(id, btn){
         'Content-Type': 'application/json', 'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
-        ragione_sociale: r.ragione_sociale,
-        via: r.via || '',
-        cap: r.cap || '',
-        comune: r.comune || '',
-        piva_cf: r.piva_cf || '',
-        cod_destinatario: r.cod_destinatario || ''
+        rag: r.ragione_sociale,
+        ind: r.via || '',
+        sede: ((r.cap||'') + (r.cap && r.comune ? ' - ' : '') + (r.comune||'')).trim(),
+        fisc: r.piva_cf || '',
+        coddest: r.cod_destinatario || ''
       })
     });
     if(!insRes.ok && insRes.status !== 201) throw new Error('Errore inserimento azienda: '+insRes.status);
