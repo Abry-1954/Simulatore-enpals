@@ -3405,7 +3405,7 @@ function mostraLog(dati){
     ['🗑 Reset Log', resetLog, '#f87171'],
     ['🚪 Logout', logout, '#fda4af'],
     ['📊 TOT.Records', dati.length, '#ffffff']
-  ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:8px;text-align:center;"><div style="font-size:10px;color:#9ca3af;">'+x[0]+'</div><div style="font-size:22px;font-weight:700;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
+  ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:4px 6px;text-align:center;min-width:70px;"><div style="font-size:9px;color:#cbd5e1;font-weight:600;letter-spacing:.03em;white-space:nowrap;">'+x[0]+'</div><div style="font-size:28px;font-weight:800;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
 
   if(!dati.length){
     tbody.innerHTML=''; empty.style.display='block'; return;
