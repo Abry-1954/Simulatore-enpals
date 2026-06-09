@@ -411,6 +411,8 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:po
 #badge-richieste{position:absolute;bottom:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;animation:pulse-badge 1.5s infinite;pointer-events:none;}
 @keyframes pulse-badge{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,0.7);}50%{transform:scale(1.15);box-shadow:0 0 0 6px rgba(239,68,68,0);}}
 #toast-richieste{position:fixed;bottom:24px;right:24px;background:#1e293b;border:1px solid #ef4444;color:#f87171;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;z-index:99999;display:none;box-shadow:0 4px 20px rgba(239,68,68,0.3);cursor:pointer;}
+#badge-aziende{position:absolute;bottom:-6px;left:-6px;background:#f59e0b;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;animation:pulse-badge 1.5s infinite;pointer-events:none;}
+#toast-aziende{position:fixed;bottom:70px;right:24px;background:#1e293b;border:1px solid #f59e0b;color:#fcd34d;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;z-index:99999;display:none;box-shadow:0 4px 20px rgba(245,158,11,0.3);cursor:pointer;}
 </style>
 <style id="login-style">
 #login-overlay{position:fixed;inset:0;background:#1e3a8a;z-index:9999;display:flex;align-items:center;justify-content:center;}
@@ -717,6 +719,7 @@ self.addEventListener('fetch',e=>{
       var adminWrap=document.getElementById('btn-admin-wrap');
       if(adminWrap) adminWrap.style.display='inline-block';
       setTimeout(checkRichiestePendenti, 800);
+      setTimeout(checkAziendePendenti, 1200);
     }
   }
   function ripristinaRuolo(){
@@ -905,9 +908,11 @@ function toggleMain(){
   <input type="file" id="input-import-fatt" accept=".json" multiple style="display:none;" onchange="importaFatture(this)">
   <div id="btn-admin-wrap" style="display:none;position:relative;">
     <span id="badge-richieste" style="display:none;">0</span>
+    <span id="badge-aziende" style="display:none;">0</span>
     <button id="btn-admin-menu" onclick="toggleAdminMenu()" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">⚙ Admin ▼</button>
     <div id="admin-dropdown" style="display:none;position:absolute;top:100%;right:0;background:#1e293b;border:1px solid rgba(99,102,241,0.4);border-radius:8px;padding:6px;z-index:9999;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,0.5);margin-top:4px;">
       <button onclick="var _tok=window._authToken||'';window.open('admin_richieste.html?token='+encodeURIComponent(_tok),'_blank');toggleAdminMenu();var b=document.getElementById('badge-richieste');if(b)b.style.display='none';" style="display:block;width:100%;text-align:left;background:none;color:#34d399;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📋 Richieste Nuovi Utenti</button>
+      <button onclick="apriPannelloRichiesteAziende();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#34d399;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🏢 Richieste Nuove Aziende</button>
       <button onclick="esportaFatture();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#34d399;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📤 Esporta Fatture su Json</button>
       <button onclick="document.getElementById('input-import-fatt').click();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#93c5fd;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📥 Importa Fatture da Json</button>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
@@ -2643,6 +2648,25 @@ async function checkRichiestePendenti(){
   }catch(e){}
 }
 
+async function checkAziendePendenti(){
+  try{
+    const res=await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?stato=eq.in_attesa&select=id',{
+      headers:{'apikey':_SUPA_KEY_AZ,'Authorization':'Bearer '+_SUPA_KEY_AZ}
+    });
+    const rows=await res.json();
+    const n=Array.isArray(rows)?rows.length:0;
+    const badge=document.getElementById('badge-aziende');
+    const toast=document.getElementById('toast-aziende');
+    if(n>0){
+      if(badge){badge.textContent=n;badge.style.display='flex';}
+      if(toast){toast.innerHTML='🏢 '+n+' nuova azienda in attesa di approvazione — clicca per gestire';toast.style.display='block';setTimeout(function(){toast.style.display='none';},30000);}
+    } else {
+      if(badge) badge.style.display='none';
+      if(toast) toast.style.display='none';
+    }
+  }catch(e){}
+}
+
 async function esportaFatture(){
   if(!confirm('📤 Esportare tutte le fatture in un file JSON?')) return;
   try {
@@ -3471,6 +3495,20 @@ function sortLog(col){
 </script>
 
 <!-- ══ PANNELLO GESTIONE UTENTI ══ -->
+
+<!-- ══ PANNELLO RICHIESTE NUOVE AZIENDE ══ -->
+<div id="pannello-rich-az" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;overflow-y:auto;">
+  <div style="max-width:700px;margin:40px auto;background:#0f172a;border:1px solid #1e3a8a;border-radius:12px;padding:28px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:700;color:#93c5fd;">🏢 Richieste Nuove Aziende</div>
+      <button onclick="chiudiPannelloRichiesteAziende()" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;padding:4px 12px;cursor:pointer;">✕ Chiudi</button>
+    </div>
+    <div id="rich-az-body">
+      <div style="text-align:center;padding:30px;color:#6b7280;">⏳ Caricamento...</div>
+    </div>
+  </div>
+</div>
+
 <div id="pannello-utenti" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;overflow-y:auto;">
   <div style="max-width:600px;margin:40px auto;background:#0f172a;border:1px solid #1e3a8a;border-radius:12px;padding:28px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
@@ -3606,6 +3644,132 @@ async function scaricaUsersGitHub(){
     }
   } catch(e){ alert('Errore: '+e.message); }
 }
+
+// ════════════════════════════════════════════
+// RICHIESTE NUOVE AZIENDE (da DIVA Mobile)
+// ════════════════════════════════════════════
+const _SUPA_URL_AZ = 'https://ugwhijpmcejxcsubopga.supabase.co';
+const _SUPA_KEY_AZ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd2hpanBtY2VqeGNzdWJvcGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjczNDksImV4cCI6MjA5NTU0MzM0OX0.yA_VevVZGRY4gA7nQp_K0sWa8NSezUuvzTkJx5NbK8k';
+
+async function apriPannelloRichiesteAziende(){
+  document.getElementById('pannello-rich-az').style.display = 'block';
+  document.getElementById('rich-az-body').innerHTML = '<div style="text-align:center;padding:30px;color:#6b7280;">⏳ Caricamento...</div>';
+  try {
+    const res = await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?order=created_at.desc', {
+      headers: { 'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ }
+    });
+    const rows = await res.json();
+    if(!rows || !rows.length){
+      document.getElementById('rich-az-body').innerHTML = '<div style="text-align:center;padding:30px;color:#6b7280;">Nessuna richiesta presente.</div>';
+      return;
+    }
+    let html = '';
+    rows.forEach(function(r){
+      const statoColor = r.stato==='in_attesa' ? '#fcd34d' : r.stato==='approvata' ? '#34d399' : '#f87171';
+      const isBadge = r.stato==='in_attesa';
+      html += '<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px;margin-bottom:10px;">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">';
+      html += '<div>';
+      html += '<div style="font-weight:700;color:#e2e8f0;font-size:14px;">'+escHtml(r.ragione_sociale)+'</div>';
+      if(r.via)    html += '<div style="color:#94a3b8;font-size:12px;margin-top:2px;">'+escHtml(r.via)+(r.cap?' — '+escHtml(r.cap):'')+(r.comune?' '+escHtml(r.comune):'')+'</div>';
+      if(r.piva_cf) html += '<div style="color:#94a3b8;font-size:12px;">P.IVA/CF: '+escHtml(r.piva_cf)+'</div>';
+      if(r.cod_destinatario) html += '<div style="color:#94a3b8;font-size:12px;">Cod. dest.: '+escHtml(r.cod_destinatario)+'</div>';
+      html += '<div style="color:#64748b;font-size:11px;margin-top:4px;">Richiesto da: <b style="color:#93c5fd;">'+escHtml(r.richiesto_da||'—')+'</b> · '+new Date(r.created_at).toLocaleString('it-IT')+'</div>';
+      html += '</div>';
+      html += '<span style="color:'+statoColor+';font-size:11px;font-weight:700;white-space:nowrap;">'+escHtml(r.stato)+'</span>';
+      html += '</div>';
+      if(isBadge){
+        html += '<div style="display:flex;gap:8px;margin-top:10px;">';
+        html += '<button onclick="approvaAzienda('+r.id+',this)" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.4);border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;">✓ Aggiungi</button>';
+        html += '<button onclick="rifiutaAzienda('+r.id+',this)" style="background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;">✗ Rifiuta</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    document.getElementById('rich-az-body').innerHTML = html;
+  } catch(e) {
+    document.getElementById('rich-az-body').innerHTML = '<div style="color:#f87171;padding:20px;">Errore: '+e.message+'</div>';
+  }
+}
+
+function chiudiPannelloRichiesteAziende(){
+  document.getElementById('pannello-rich-az').style.display = 'none';
+}
+
+async function approvaAzienda(id, btn){
+  if(!confirm('Aggiungere questa azienda al database?')) return;
+  btn.disabled = true; btn.textContent = '⏳';
+  try {
+    const res = await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
+      headers: { 'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ }
+    });
+    const rows = await res.json();
+    if(!rows || !rows.length) throw new Error('Richiesta non trovata');
+    const r = rows[0];
+
+    const insRes = await fetch(_SUPA_URL_AZ+'/rest/v1/aziende', {
+      method: 'POST',
+      headers: {
+        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        ragione_sociale: r.ragione_sociale,
+        via: r.via || '',
+        cap: r.cap || '',
+        comune: r.comune || '',
+        piva_cf: r.piva_cf || '',
+        cod_destinatario: r.cod_destinatario || ''
+      })
+    });
+    if(!insRes.ok && insRes.status !== 201) throw new Error('Errore inserimento azienda: '+insRes.status);
+
+    await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
+      method: 'PATCH',
+      headers: {
+        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ stato: 'approvata' })
+    });
+
+    logAzione('APPROVA_AZIENDA', r.ragione_sociale + ' (richiesta da ' + (r.richiesto_da||'?') + ')');
+    apriPannelloRichiesteAziende();
+  } catch(e) {
+    alert('Errore: '+e.message);
+    btn.disabled = false; btn.textContent = '✓ Aggiungi';
+  }
+}
+
+async function rifiutaAzienda(id, btn){
+  if(!confirm('Rifiutare questa richiesta?')) return;
+  btn.disabled = true; btn.textContent = '⏳';
+  try {
+    const res = await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
+      headers: { 'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ }
+    });
+    const rows = await res.json();
+    const r = rows && rows[0] ? rows[0] : { ragione_sociale: '?', richiesto_da: '?' };
+
+    await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
+      method: 'PATCH',
+      headers: {
+        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ stato: 'rifiutata' })
+    });
+
+    logAzione('RIFIUTA_AZIENDA', r.ragione_sociale + ' (richiesta da ' + (r.richiesto_da||'?') + ')');
+    apriPannelloRichiesteAziende();
+  } catch(e) {
+    alert('Errore: '+e.message);
+    btn.disabled = false; btn.textContent = '✗ Rifiuta';
+  }
+}
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 
 function apriPannelloUtenti(){
   document.getElementById('pannello-utenti').style.display='block';
@@ -4180,6 +4344,7 @@ function toggleModoSP(){
 </script>
 
 
+<div id="toast-aziende" onclick="this.style.display='none';apriPannelloRichiesteAziende()">🏢 <span id="toast-az-count">0</span> nuova azienda in attesa — clicca per gestire</div>
 <div id="toast-richieste" onclick="this.style.display='none';window.open('admin_richieste.html','_blank')">🔔 <span id="toast-count">0</span> nuove richieste in attesa — clicca per gestirle</div>
 </body>
 </html>
