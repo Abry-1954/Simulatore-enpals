@@ -2860,8 +2860,10 @@ async function eliminaFattura(rec_nbr, rif){
       <button onclick="filtraLog('LOGIN KO CREDENZIALI ERRATE')" class="log-filter-btn" style="background:#374151;color:#fca5a5;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">❌ Login KO</button>
       <button onclick="filtraLog('LOGOUT')" class="log-filter-btn" style="background:#374151;color:#fda4af;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🚪 Logout</button>
       <button onclick="filtraLog('SALVA_FATTURA')" class="log-filter-btn" style="background:#374151;color:#34d399;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">💾 Salva su DB</button>
-      <button onclick="filtraLog('RICHIESTA_APPROVATA')" class="log-filter-btn" style="background:#374151;color:#34d399;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✓ Approvate</button>
-      <button onclick="filtraLog('RICHIESTA_RIFIUTATA')" class="log-filter-btn" style="background:#374151;color:#f87171;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✗ Rifiutate</button>
+      <button onclick="filtraLog('RICHIESTA_APPROVATA')" class="log-filter-btn" style="background:#374151;color:#34d399;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✓ Appr.Utenti</button>
+      <button onclick="filtraLog('RICHIESTA_RIFIUTATA')" class="log-filter-btn" style="background:#374151;color:#f87171;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✗ Rif.Utenti</button>
+      <button onclick="filtraLog('APPROVA_AZIENDA')" class="log-filter-btn" style="background:#374151;color:#34d399;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🏢 Appr.Aziende</button>
+      <button onclick="filtraLog('RIFIUTA_AZIENDA')" class="log-filter-btn" style="background:#374151;color:#f87171;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🏢 Rif.Aziende</button>
       <button onclick="filtraLog('RICHIESTA_ELIMINATA')" class="log-filter-btn" style="background:#374151;color:#fb923c;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🗑 Elim.Rich.</button>
       <button onclick="filtraLog('UTENTE_CREATO')" class="log-filter-btn" style="background:#374151;color:#60a5fa;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">👤 Utenti Creati</button>
       <button onclick="filtraLog('RESET_FATTURE')" class="log-filter-btn" style="background:#374151;color:#ef4444;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">🔄 Reset DB</button>
@@ -3351,7 +3353,7 @@ function mostraLog(dati){
   var summary = document.getElementById('log-summary');
 
   // Riepilogo
-  var login=0,logout=0,simul=0,stampe=0,fail=0,salvaSuDb=0,salvaPdf=0,richAppr=0,richRif=0,richElim=0,utenteCr=0,resetFatt=0,exportFatt=0,importFatt=0,scaricaGh=0,importPers=0,gestUtenti=0,resetLog=0;
+  var login=0,logout=0,simul=0,stampe=0,fail=0,salvaSuDb=0,salvaPdf=0,richAppr=0,richRif=0,richElim=0,utenteCr=0,resetFatt=0,exportFatt=0,importFatt=0,scaricaGh=0,importPers=0,gestUtenti=0,resetLog=0,apprAz=0,rifAz=0;
   var lavSet = {};
   dati.forEach(function(r){
     if(r.azione==='LOGIN OK') login++;
@@ -3372,6 +3374,8 @@ function mostraLog(dati){
     if(r.azione==='RESET_LOG') resetLog++;
     if(r.azione==='LOGIN KO CREDENZIALI ERRATE') fail++;
     if(r.azione==='LOGOUT') logout++;
+    if(r.azione==='APPROVA_AZIENDA') apprAz++;
+    if(r.azione==='RIFIUTA_AZIENDA') rifAz++;
     if(r.azione==='STAMPA'||r.azione==='SIMULAZIONE'||r.azione==='SALVA'){
       var d = _parseDettaglio(r.dettaglio||'');
       if(d.lav) lavSet[d.lav.trim().toUpperCase()] = 1;
@@ -3386,8 +3390,10 @@ function mostraLog(dati){
     ['🎭 Lavoratori', lavUnici, '#fb923c'],
     ['💾 Salva su DB', salvaSuDb, '#34d399'],
     ['🖨 Salva PDF', salvaPdf, '#a78bfa'],
-    ['✓ Approvate', richAppr, '#34d399'],
-    ['✗ Rifiutate', richRif, '#f87171'],
+    ['✓ Appr.Utenti', richAppr, '#34d399'],
+    ['✗ Rif.Utenti', richRif, '#f87171'],
+    ['🏢 Appr.Aziende', apprAz, '#34d399'],
+    ['🏢 Rif.Aziende', rifAz, '#f87171'],
     ['🗑 Elim.Rich.', richElim, '#fb923c'],
     ['👤 Utenti Creati', utenteCr, '#60a5fa'],
     ['🔄 Reset DB', resetFatt, '#ef4444'],
