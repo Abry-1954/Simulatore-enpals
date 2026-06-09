@@ -3737,11 +3737,11 @@ async function salvaModificaAzienda(id){
       method: 'POST',
       headers: {
         'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
-        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=ignore-duplicates'
       },
       body: JSON.stringify({ rag: rag, ind: ind, sede: sede, fisc: fisc, coddest: cod })
     });
-    if(!insRes.ok && insRes.status !== 201) throw new Error('Errore inserimento azienda: '+insRes.status);
+    if(!insRes.ok) throw new Error('Errore inserimento azienda: '+insRes.status);
 
     // 2. Aggiorna stato richiesta → approvata
     await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
@@ -3783,7 +3783,7 @@ async function approvaAzienda(id, btn){
       method: 'POST',
       headers: {
         'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
-        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=ignore-duplicates'
       },
       body: JSON.stringify({
         rag: r.ragione_sociale,
@@ -3793,7 +3793,7 @@ async function approvaAzienda(id, btn){
         coddest: r.cod_destinatario || ''
       })
     });
-    if(!insRes.ok && insRes.status !== 201) throw new Error('Errore inserimento azienda: '+insRes.status);
+    if(!insRes.ok) throw new Error('Errore inserimento azienda: '+insRes.status);
 
     await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
       method: 'PATCH',
