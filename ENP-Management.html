@@ -2887,7 +2887,7 @@ async function eliminaFattura(rec_nbr, rif){
       <input id="log-filter-a" type="date" oninput="applicaFiltriAvanzati()" style="background:#1e293b;border:1px solid #334155;border-radius:4px;padding:4px 8px;color:#e2e8f0;font-size:11px;">
       <button onclick="resetFiltriAvanzati()" style="background:#374151;color:#9ca3af;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:11px;">✕ Reset</button>
     </div>
-    <div id="log-summary" style="background:#111827;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;"></div>
+    <div id="log-summary" style="background:#111827;border-radius:8px;padding:8px;margin-bottom:12px;font-size:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;"></div>
     <div style="overflow-x:auto;overflow-y:auto;max-height:65vh;scrollbar-width:thin;scrollbar-color:#3b82f6 #1e293b;">
       <table id="log-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px;">
         <thead>
@@ -3405,7 +3405,7 @@ function mostraLog(dati){
     ['🗑 Reset Log', resetLog, '#f87171'],
     ['🚪 Logout', logout, '#fda4af'],
     ['📊 TOT.Records', dati.length, '#ffffff']
-  ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:5px 8px;text-align:center;min-width:70px;"><div style="font-size:11px;color:#cbd5e1;font-weight:600;letter-spacing:.02em;white-space:nowrap;margin-bottom:2px;">'+x[0]+'</div><div style="font-size:16px;font-weight:800;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
+  ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:3px 6px;text-align:center;min-width:60px;"><div style="font-size:11px;color:#cbd5e1;font-weight:600;letter-spacing:.02em;white-space:nowrap;">'+x[0]+'</div><div style="font-size:16px;font-weight:800;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
 
   if(!dati.length){
     tbody.innerHTML=''; empty.style.display='block'; return;
