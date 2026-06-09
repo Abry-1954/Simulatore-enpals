@@ -2640,7 +2640,7 @@ async function checkRichiestePendenti(){
     if(n>0){
       if(badge){badge.textContent=n;badge.style.display='flex';}
       if(countEl) countEl.textContent=n;
-      if(toast){toast.style.display='block';setTimeout(function(){toast.style.display='none';},30000);}
+      if(toast){toast.innerHTML='👤 '+n+(n===1?' nuovo utente in attesa':' nuovi utenti in attesa')+' di approvazione — clicca per gestire';toast.style.display='block';setTimeout(function(){toast.style.display='none';},30000);}
     } else {
       if(badge) badge.style.display='none';
       if(toast) toast.style.display='none';
@@ -2659,7 +2659,7 @@ async function checkAziendePendenti(){
     const toast=document.getElementById('toast-aziende');
     if(n>0){
       if(badge){badge.textContent=n;badge.style.display='flex';}
-      if(toast){toast.innerHTML='🏢 '+n+' nuova azienda in attesa di approvazione — clicca per gestire';toast.style.display='block';setTimeout(function(){toast.style.display='none';},30000);}
+      if(toast){toast.innerHTML='🏢 '+n+(n===1?' nuova azienda in attesa':' nuove aziende in attesa')+' di approvazione — clicca per gestire';toast.style.display='block';setTimeout(function(){toast.style.display='none';},30000);}
     } else {
       if(badge) badge.style.display='none';
       if(toast) toast.style.display='none';
@@ -3405,7 +3405,7 @@ function mostraLog(dati){
     ['🗑 Reset Log', resetLog, '#f87171'],
     ['🚪 Logout', logout, '#fda4af'],
     ['📊 TOT.Records', dati.length, '#ffffff']
-  ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:4px 6px;text-align:center;min-width:70px;"><div style="font-size:9px;color:#cbd5e1;font-weight:600;letter-spacing:.03em;white-space:nowrap;">'+x[0]+'</div><div style="font-size:28px;font-weight:800;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
+  ].map(function(x){ return '<div style="background:#1e293b;border-radius:6px;padding:5px 8px;text-align:center;min-width:70px;"><div style="font-size:11px;color:#cbd5e1;font-weight:600;letter-spacing:.02em;white-space:nowrap;margin-bottom:2px;">'+x[0]+'</div><div style="font-size:16px;font-weight:800;color:'+x[2]+';">'+x[1]+'</div></div>'; }).join('');
 
   if(!dati.length){
     tbody.innerHTML=''; empty.style.display='block'; return;
@@ -4421,7 +4421,7 @@ function toggleModoSP(){
 </script>
 
 
-<div id="toast-aziende" onclick="this.style.display='none';apriPannelloRichiesteAziende()">🏢 <span id="toast-az-count">0</span> nuova azienda in attesa — clicca per gestire</div>
-<div id="toast-richieste" onclick="this.style.display='none';window.open('admin_richieste.html','_blank')">🔔 <span id="toast-count">0</span> nuove richieste in attesa — clicca per gestirle</div>
+<div id="toast-aziende" onclick="this.style.display='none';apriPannelloRichiesteAziende()">🏢 <span id="toast-az-count">0</span> nuova/e azienda/e in attesa — clicca per gestire</div>
+<div id="toast-richieste" onclick="this.style.display='none';window.open('admin_richieste.html','_blank')">👤 <span id="toast-count">0</span> nuov* utente/i in attesa di approvazione — clicca per gestire</div>
 </body>
 </html>
