@@ -106,7 +106,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 </head>
 <body>
 <script>
-// Auto-login da parametri URL (passati da Wizard/Spettacolo) — eseguito subito
+// Auto-login e forzatura online da parametri URL — eseguito subito prima di tutto
 (function(){
   var p = new URLSearchParams(window.location.search);
   var tk = p.get('_tk'), cu = p.get('_cu'), cp = p.get('_cp');
@@ -114,6 +114,11 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
   if(cu){ sessionStorage.setItem('enpals_cu', cu); }
   if(cp){ sessionStorage.setItem('enpals_cp', cp); }
   if(tk && tk.startsWith('tok:')){ window._authToken = tk.slice(4); }
+  // Se aperto in modalità fatture utente → forza sempre online
+  if(p.get('modo') === 'fatture'){
+    sessionStorage.setItem('enpals_modo_g', 'online');
+    sessionStorage.setItem('enpals_modo_mgmt', 'online');
+  }
 })();
 </script>
 
