@@ -466,16 +466,35 @@ function logDB(azione, dettaglio){
     errEl.style.display = "none";
     btn.textContent = "Accesso..."; btn.disabled = true;
 
-    // 1. Prova login sul server Render
+    // 1. Prova login sul server Render — con retry automatico se addormentato
     var SERVER_URL = "https://enpals-server.onrender.com";
     var serverOk = false;
+    var MAX_TENTATIVI = 5;
+    var tentativo = 0;
+    var res = null;
+    while(!serverOk && tentativo < MAX_TENTATIVI){
+      tentativo++;
+      try {
+        if(tentativo > 1){
+          btn.textContent = "⏳ Server in avvio... (" + tentativo + "/" + MAX_TENTATIVI + ")";
+          await new Promise(function(r){ setTimeout(r, 8000); });
+        }
+        var fetchOpts = {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({username:u, password:p})
+        };
+        try{ fetchOpts.signal = AbortSignal.timeout(15000); }catch(ex){}
+        res = await fetch(SERVER_URL+"/login", fetchOpts);
+        break;
+      } catch(e) {
+        console.log("Tentativo "+tentativo+" fallito:", e.message);
+        if(tentativo >= MAX_TENTATIVI){ res = null; }
+        continue;
+      }
+    }
     try {
-      var res = await fetch(SERVER_URL+"/login", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({username:u, password:p}),
-        signal: AbortSignal.timeout(30000)
-      });
+      if(!res) throw new Error("Server non raggiungibile");
       var data = await res.json();
       if(data.ok && data.token){
         window._authToken = data.token;
@@ -484,6 +503,10 @@ function logDB(azione, dettaglio){
         sessionStorage.setItem('enpals_cp', p);
         document.getElementById("login-overlay").style.display = "none";
         serverOk = true;
+        // Se siamo in modalità fatture utente, carica subito le fatture dopo il login
+        if(new URLSearchParams(window.location.search).get('modo') === 'fatture'){
+          caricaFatture();
+        }
       } else {
         errEl.style.display = "block";
         btn.textContent = "Entra"; btn.disabled = false;
@@ -583,8 +606,25 @@ document.addEventListener('DOMContentLoaded', function(){
       if(cercaNom){ cercaNom.value = _utenteFilter; cercaNom.readOnly = true; cercaNom.style.opacity='0.7'; }
       // Nascondi bottoni elimina (sola lettura per utenti)
       window._solaLettura = true;
-      // Carica fatture filtrate per l'utente
-      caricaFatture();
+      // Auto-login su Render se abbiamo le credenziali, poi carica fatture
+      var _cu2 = sessionStorage.getItem('enpals_cu') || '';
+      var _cp2 = sessionStorage.getItem('enpals_cp') || '';
+      if(_cu2 && _cp2 && !window._authToken){
+        // Fai login automatico prima di caricare le fatture
+        fetch('https://enpals-server.onrender.com/login', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username:_cu2, password:_cp2})
+        }).then(function(r){ return r.json(); }).then(function(data){
+          if(data.ok && data.token){
+            window._authToken = data.token;
+            sessionStorage.setItem('enpals_auth', 'tok:'+data.token);
+          }
+          caricaFatture();
+        }).catch(function(){ caricaFatture(); });
+      } else {
+        caricaFatture();
+      }
     }, 300);
   } else {
     // Modalità admin: carica tutto
