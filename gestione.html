@@ -105,6 +105,17 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 </div>
 </head>
 <body>
+<script>
+// Auto-login da parametri URL (passati da Wizard/Spettacolo) — eseguito subito
+(function(){
+  var p = new URLSearchParams(window.location.search);
+  var tk = p.get('_tk'), cu = p.get('_cu'), cp = p.get('_cp');
+  if(tk){ sessionStorage.setItem('enpals_auth', tk); }
+  if(cu){ sessionStorage.setItem('enpals_cu', cu); }
+  if(cp){ sessionStorage.setItem('enpals_cp', cp); }
+  if(tk && tk.startsWith('tok:')){ window._authToken = tk.slice(4); }
+})();
+</script>
 
 <div class="hdr">
   <span class="hdr-logo">ENPALS/DB</span>
@@ -547,6 +558,13 @@ document.addEventListener('DOMContentLoaded', function(){
     // Forza modalità online per utenti
     _gOnline = true;
     sessionStorage.setItem('enpals_modo_g', 'online');
+    // Auto-login se le credenziali arrivano dall'URL (da Wizard o Spettacolo)
+    var _cu = _urlParams.get('_cu') || '';
+    var _cp = _urlParams.get('_cp') || '';
+    var _tk = _urlParams.get('_tk') || '';
+    if(_tk){ sessionStorage.setItem('enpals_auth', _tk); window._authToken = _tk.startsWith('tok:') ? _tk.slice(4) : _tk; }
+    if(_cu){ sessionStorage.setItem('enpals_cu', _cu); }
+    if(_cp){ sessionStorage.setItem('enpals_cp', _cp); }
     // Modalità utente: mostra solo tab Fatture
     setTimeout(function(){
       // Nascondi tab Persone, Aziende, Variabili
