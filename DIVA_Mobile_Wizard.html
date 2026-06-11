@@ -2292,8 +2292,10 @@ async function salvaSuDB(){
     const sd = await sr.json();
     if(sd.ok){
       salvOk = true;
+      console.log('Server response:', JSON.stringify(sd));
       // Usa il rif_nbr definitivo restituito dal server (con _ID-NNN reale)
       if(sd.rif_nbr) rif_nbr = sd.rif_nbr;
+      else console.warn('sd.rif_nbr assente! rif_nbr rimane:', rif_nbr);
     } else {
       alert('❌ Errore salvataggio: '+(sd.error||sd.msg||sr.status));
       return;
