@@ -723,6 +723,7 @@ tr:nth-child(even) td{background:#f5f7ff;}
 
 <!-- ALTRO RECORD? -->
 <div id="s-altrariga" class="screen">
+  <div class="nav-row no-print"><button class="btn-back" onclick="showScreen('s-dettaglio')"><i class="fa-solid fa-arrow-left"></i></button></div>
   <div id="altra-saved" class="alert"></div>
   <div class="question">Vuoi aggiungere<br>un altro record?</div>
   <div id="altra-counter" style="font-size:14px;color:var(--text2);margin-bottom:1.25rem;"></div>
@@ -2044,21 +2045,14 @@ function buildNomeFile(progressivo){
   const tipo=safeFilePart(r0.tipoOperaLabel||'');
   const titolo=safeFilePart(r0.titolo||'');
   const soc=safeFilePart(S.soc.ragione_sociale||'');
-  // imponibile totale formattato: € 2014,45
+  // imponibile totale formattato: € 473,00
   const imp=r2(S.righi.reduce((a,r)=>a+r.imp,0));
   const impStr='€ '+imp.toFixed(2).replace('.',',');
-  // ID: usa progressivo da Render se disponibile, altrimenti ANNO_ID-HHMM
-  let idPart;
-  if(progressivo){
-    idPart = progressivo; // es. "2026-046"
-  } else {
-    const anno=data?data.substring(0,4):String(new Date().getFullYear());
-    const now=new Date();
-    const idTmp=String(now.getHours()).padStart(2,'0')+
-      String(now.getMinutes()).padStart(2,'0');
-    idPart = anno+'_ID-'+idTmp;
-  }
-  // Formato: NOME_DATA_TIPO_TITOLO_AZIENDA_€IMPORTO_PROGRESSIVO
+  // Progressivo da Render (es. "2026-049") — stesso formato di Spettacolo.html
+  // Fallback: ANNO-001 se Render non risponde
+  const anno=data?data.substring(0,4):String(new Date().getFullYear());
+  const idPart = progressivo || (anno+'-001');
+  // Formato identico a Spettacolo: NOME_DATA_TIPO_TITOLO_AZIENDA_€IMPORTO_RIFNBR
   return [nom,data,tipo,titolo,soc,impStr,idPart].filter(Boolean).join('_');
 }
 
@@ -2104,10 +2098,7 @@ function goStampa(autoPrint, onReady){
   const notaTesto=NOTE[tf.cod]||'';
 
   const fatHtml=`<div class="page">
-<div class="no-print">
-  <button onclick="window.print()" style="background:#1e3a8a;color:#fff;border:none;border-radius:5px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">&#128424; Stampa / Salva PDF</button>
-  <button onclick="window.close()" style="background:#888;color:#fff;border:none;border-radius:5px;padding:7px 12px;font-size:12px;cursor:pointer;">&#10005; Chiudi</button>
-</div>
+
 <div class="doc-title"><h1>ENPALS &mdash; FATTURAZIONE</h1><h2>${esc(tf.labelLong)}</h2></div>
 <div class="fat-header-row">
   <div class="fat-col"><div class="fat-col-title">Lavoratore</div>
@@ -2224,6 +2215,7 @@ async function salvaSuDB(){
 
   // Nome completo: NOMINATIVO_DATA_TIPO_TITOLO_AZIENDA_€IMPORTO_PROGRESSIVO
   // Stesso formato di Spettacolo.html
+  // Nome file identico a Spettacolo: usa progressivo da Render come ultimo elemento
   const nomeFile = buildNomeFile(progressivo);
   const rif_nbr = nomeFile;
 
@@ -2309,14 +2301,15 @@ async function salvaSuDB(){
     return;
   }
 
+  // nomeFile è già il rif_nbr completo con formato corretto (es. CUGINI ANNA_..._2026_ID-49)
   // Aggiorna document.title con il nome definitivo (uguale a quello nel DB)
-  document.title = rif_nbr;
+  document.title = nomeFile;
   // Nascondi pulsante Salva su DB
   const btnFatSalva = document.getElementById('btn-fat-salva');
   if(btnFatSalva) btnFatSalva.style.display='none';
   // Rimani sulla schermata fattura e mostra dialog di conferma
   showScreen('s-fattura');
-  mostraDialogDopoSalvataggio(rif_nbr);
+  mostraDialogDopoSalvataggio(nomeFile);
 }
 function mostraDialogDopoSalvataggio(rif_nbr){
   const d = document.getElementById('salva-dialog');
