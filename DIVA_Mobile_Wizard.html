@@ -783,6 +783,28 @@ tr:nth-child(even) td{background:#f5f7ff;}
 </div>
 
 
+<!-- ══ DIALOG DOPO SALVATAGGIO ══ -->
+<div id="salva-dialog" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.65);z-index:9999;display:none;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+    <div style="font-size:28px;margin-bottom:8px;">✅</div>
+    <div style="font-weight:700;font-size:16px;color:#1e3a8a;margin-bottom:6px;">Fattura salvata su DB!</div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Il file è stato salvato con il nome:</div>
+    <div id="salva-dialog-rif" style="font-size:11px;color:#1e40af;font-weight:600;margin-bottom:16px;word-break:break-all;background:#eff6ff;border-radius:6px;padding:6px 8px;"></div>
+    <div style="font-size:14px;color:#374151;margin-bottom:20px;">Vuoi salvare/stampare questo documento anche su questo dispositivo?</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="dialogStampa()" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">
+        🖨 Sì, stampa / salva PDF
+      </button>
+      <button onclick="dialogNuovaFattura()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">
+        ➕ No, nuova fattura
+      </button>
+      <button onclick="dialogEsci()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:6px;">
+        ⏻ Esci
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ COUNTDOWN EMAIL ══ -->
 <div id="email-countdown">
   <div class="cd-card">
@@ -2041,21 +2063,7 @@ function buildNomeFile(progressivo){
 }
 
 function goFattura(){
-  // Precalcola per il summary
-  const tf=S.tipoFatt;
-  const impTot=r2(S.righi.reduce((a,r)=>a+r.imp,0));
-  const enp=calcEnpalsFattura(S.righi,S.anzianita);
-  const iva=r2(impTot*(tf.iva||0));
-  const totFatt=r2(impTot+iva);
-  let ra=0;
-  if(tf.cod==='FO'||tf.cod==='RS') ra=r2(impTot*0.20);
-  else if(tf.cod==='RA') ra=r2(impTot*0.20*(S.anzianita==='SY'?0.75:0.60));
-  const netto=r2(totFatt-ra-enp.totLav);
-  document.getElementById('azioni-summary').innerHTML=
-    `<b>${tf.labelLong}</b><br>`
-    +`Records: <b>${S.righi.length}</b> &nbsp;·&nbsp; Giornate: <b>${enp.giorniContributivi}</b><br>`
-    +`Imponibile: <b>${fe(impTot)}</b> &nbsp;·&nbsp; Netto da pagare: <b>${fe(netto)}</b>`;
-  showScreen('s-azioni');
+  goStampa(false);
 }
 
 function goStampa(autoPrint, onReady){
@@ -2163,28 +2171,16 @@ ${notaTesto?'<div class="nota"><strong>Note:</strong><br>'+notaTesto+'</div>':''
   const btnBack=document.createElement('button');
   btnBack.className='btn-ind';
   btnBack.innerHTML='<i class="fa-solid fa-arrow-left"></i> Indietro';
-  btnBack.addEventListener('click',()=>showScreen('s-azioni'));
-
-  const btnPrt=document.createElement('button');
-  btnPrt.className='btn-prt';
-  btnPrt.innerHTML='<i class="fa-solid fa-print"></i> Stampa / Salva in PDF';
-  btnPrt.addEventListener('click',()=>window.print());
+  btnBack.addEventListener('click',()=>showScreen('s-altrariga'));
 
   const btnSav=document.createElement('button');
   btnSav.className='btn-sav';
-  btnSav.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salva su Database';
+  btnSav.id='btn-fat-salva';
+  btnSav.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salva su DB';
   btnSav.addEventListener('click',()=>salvaSuDB());
 
-  const btnEsci=document.createElement('button');
-  btnEsci.className='btn-ind';
-  btnEsci.style.background='rgba(220,38,38,.7)';
-  btnEsci.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Esci';
-  btnEsci.addEventListener('click',()=>usciFattura());
-
   toolbar.appendChild(btnBack);
-  toolbar.appendChild(btnPrt);
   toolbar.appendChild(btnSav);
-  toolbar.appendChild(btnEsci);
 
   const body=document.createElement('div');
   body.className='fat-body';
@@ -2313,22 +2309,37 @@ async function salvaSuDB(){
     return;
   }
 
-  // Mostra schermata OK
-  document.getElementById('ok-det').innerHTML=`
-    <div style="font-size:13px;line-height:2">
-      <b>✅ Fattura salvata su DB!</b><br>
-      <b>Rif.:</b> ${rif_nbr}<br>
-      <b>Utente:</b> ${lav.nominativo||S.user}<br>
-      <b>Tipo:</b> ${tf.labelLong||''}<br>
-      <b>Records:</b> ${S.righi.length}<br>
-      <b>Giornate contrib.:</b> ${enp.giorniContributivi}<br>
-      <b>Imponibile:</b> ${fe(imp)}<br>
-      <b>Netto:</b> ${fe(netto)}
-    </div>`;
   // Aggiorna document.title con il nome definitivo (uguale a quello nel DB)
   document.title = rif_nbr;
-  showScreen('s-ok');
+  // Nascondi pulsante Salva su DB
+  const btnFatSalva = document.getElementById('btn-fat-salva');
+  if(btnFatSalva) btnFatSalva.style.display='none';
+  // Rimani sulla schermata fattura e mostra dialog di conferma
+  showScreen('s-fattura');
+  mostraDialogDopoSalvataggio(rif_nbr);
 }
+function mostraDialogDopoSalvataggio(rif_nbr){
+  const d = document.getElementById('salva-dialog');
+  const r = document.getElementById('salva-dialog-rif');
+  if(r) r.textContent = rif_nbr;
+  if(d){ d.style.display='flex'; }
+}
+
+function dialogStampa(){
+  document.getElementById('salva-dialog').style.display='none';
+  window.print();
+}
+
+function dialogNuovaFattura(){
+  document.getElementById('salva-dialog').style.display='none';
+  nuovaFattura();
+}
+
+function dialogEsci(){
+  document.getElementById('salva-dialog').style.display='none';
+  doLogout();
+}
+
 function inviaEmail(){
   // Prepara mailto
   const tf=S.tipoFatt;
