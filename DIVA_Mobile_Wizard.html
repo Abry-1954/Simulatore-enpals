@@ -2217,7 +2217,7 @@ async function salvaSuDB(){
   // Stesso formato di Spettacolo.html
   // Nome file identico a Spettacolo: usa progressivo da Render come ultimo elemento
   const nomeFile = buildNomeFile(progressivo);
-  const rif_nbr = nomeFile;
+  let rif_nbr = nomeFile;
 
   // Costruisci record fattura (stesso formato di Spettacolo.html)
   const lav = S.lav||{};
