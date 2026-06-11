@@ -2327,6 +2327,11 @@ function mostraDialogDopoSalvataggio(rif_nbr){
 
 function dialogStampa(){
   document.getElementById('salva-dialog').style.display='none';
+  // Torna alla home dopo che l'utente ha chiuso il dialogo stampa
+  window.addEventListener('afterprint', function onAfterPrint(){
+    window.removeEventListener('afterprint', onAfterPrint);
+    showScreen('s-home');
+  });
   window.print();
 }
 
