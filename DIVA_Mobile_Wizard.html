@@ -2303,15 +2303,14 @@ async function salvaSuDB(){
     return;
   }
 
-  // nomeFile è già il rif_nbr completo con formato corretto (es. CUGINI ANNA_..._2026_ID-49)
-  // Aggiorna document.title con il nome definitivo (uguale a quello nel DB)
-  document.title = nomeFile;
+  // Usa rif_nbr definitivo (aggiornato dal server con _ID-NNN reale)
+  document.title = rif_nbr;
   // Nascondi pulsante Salva su DB
   const btnFatSalva = document.getElementById('btn-fat-salva');
   if(btnFatSalva) btnFatSalva.style.display='none';
   // Rimani sulla schermata fattura e mostra dialog di conferma
   showScreen('s-fattura');
-  mostraDialogDopoSalvataggio(nomeFile);
+  mostraDialogDopoSalvataggio(rif_nbr);
 }
 function mostraDialogDopoSalvataggio(rif_nbr){
   const d = document.getElementById('salva-dialog');
