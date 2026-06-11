@@ -2014,7 +2014,7 @@ function formatDataFile(d){
   if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   return s.replace(/[^\dA-Za-z-]/g,'-');
 }
-function buildNomeFile(){
+function buildNomeFile(progressivo){
   const nom=safeFilePart(S.lav.nominativo);
   // primo record: data, tipo opera, titolo
   const r0=S.righi[0]||{};
@@ -2025,14 +2025,19 @@ function buildNomeFile(){
   // imponibile totale formattato: € 2014,45
   const imp=r2(S.righi.reduce((a,r)=>a+r.imp,0));
   const impStr='€ '+imp.toFixed(2).replace('.',',');
-  // Anno estratto dalla data
-  const anno=data?data.substring(0,4):String(new Date().getFullYear());
-  // ID temporaneo: solo ora (HHMM)
-  const now=new Date();
-  const idTmp=String(now.getHours()).padStart(2,'0')+
-    String(now.getMinutes()).padStart(2,'0');
-  // Formato: NOME_DATA_TIPO_TITOLO_AZIENDA_€IMPORTO_ANNO_ID-xxx
-  return [nom,data,tipo,titolo,soc,impStr,anno,'ID-'+idTmp].filter(Boolean).join('_');
+  // ID: usa progressivo da Render se disponibile, altrimenti ANNO_ID-HHMM
+  let idPart;
+  if(progressivo){
+    idPart = progressivo; // es. "2026-046"
+  } else {
+    const anno=data?data.substring(0,4):String(new Date().getFullYear());
+    const now=new Date();
+    const idTmp=String(now.getHours()).padStart(2,'0')+
+      String(now.getMinutes()).padStart(2,'0');
+    idPart = anno+'_ID-'+idTmp;
+  }
+  // Formato: NOME_DATA_TIPO_TITOLO_AZIENDA_€IMPORTO_PROGRESSIVO
+  return [nom,data,tipo,titolo,soc,impStr,idPart].filter(Boolean).join('_');
 }
 
 function goFattura(){
@@ -2207,21 +2212,24 @@ async function salvaSuDB(){
   const netto = r2(totF-ra-enp.totLav);
 
   // Nome file / riferimento
-  const nomeFile = buildNomeFile();
-
-  // Recupera rif_nbr progressivo dal server
+  // Recupera progressivo dal server
   const SERVER = 'https://enpals-server.onrender.com';
   const tok = sessionStorage.getItem('enpals_auth')||'';
   const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
   const anno = S.righi[0]?.datalav ? S.righi[0].datalav.substring(0,4) : String(new Date().getFullYear());
-  let rif_nbr = nomeFile;
+  let progressivo = null;
   try{
     const rr = await fetch(SERVER+'/fatture_next/'+anno,{
       headers:{'Authorization': 'Bearer ' + authH}
     });
     const rd = await rr.json();
-    if(rd.rif_nbr) rif_nbr = rd.rif_nbr;
+    if(rd.rif_nbr) progressivo = rd.rif_nbr; // es. "2026-046"
   }catch(e){ console.warn('rif_nbr fallback:', e.message); }
+
+  // Nome completo: NOMINATIVO_DATA_TIPO_TITOLO_AZIENDA_€IMPORTO_PROGRESSIVO
+  // Stesso formato di Spettacolo.html
+  const nomeFile = buildNomeFile(progressivo);
+  const rif_nbr = nomeFile;
 
   // Costruisci record fattura (stesso formato di Spettacolo.html)
   const lav = S.lav||{};

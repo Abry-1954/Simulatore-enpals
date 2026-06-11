@@ -606,6 +606,13 @@ document.addEventListener('DOMContentLoaded', function(){
       if(cercaNom){ cercaNom.value = _utenteFilter; cercaNom.readOnly = true; cercaNom.style.opacity='0.7'; }
       // Nascondi bottoni elimina (sola lettura per utenti)
       window._solaLettura = true;
+      // Nascondi pulsanti Simulatore e Online — utente vede solo fatture
+      document.querySelectorAll('.btn-sim').forEach(function(b){ b.style.display='none'; });
+      var btnModo = document.getElementById('toggle-modo-g');
+      if(btnModo) btnModo.style.display='none';
+      // Sposta status "Connesso" più a sinistra vicino a Chiudi
+      var hdrStatus = document.getElementById('hdr-status');
+      if(hdrStatus){ hdrStatus.style.marginLeft='auto'; hdrStatus.style.marginRight='8px'; }
       // Auto-login su Render se abbiamo le credenziali, poi carica fatture
       var _cu2 = sessionStorage.getItem('enpals_cu') || '';
       var _cp2 = sessionStorage.getItem('enpals_cp') || '';
