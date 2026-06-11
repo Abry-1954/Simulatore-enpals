@@ -2292,10 +2292,14 @@ async function salvaSuDB(){
     const sd = await sr.json();
     if(sd.ok){
       salvOk = true;
-      console.log('Server response:', JSON.stringify(sd));
-      // Usa il rif_nbr definitivo restituito dal server (con _ID-NNN reale)
-      if(sd.rif_nbr) rif_nbr = sd.rif_nbr;
-      else console.warn('sd.rif_nbr assente! rif_nbr rimane:', rif_nbr);
+      // Estrae il rif_nbr definitivo dal msg del server
+      // msg formato: "Fattura NOME_COMPLETO_2026_ID-053 salvata (ID 53)"
+      if(sd.rif_nbr){
+        rif_nbr = sd.rif_nbr;
+      } else if(sd.msg && sd.msg.includes(' salvata ')){
+        const extracted = sd.msg.replace('Fattura ','').split(' salvata ')[0];
+        if(extracted) rif_nbr = extracted;
+      }
     } else {
       alert('❌ Errore salvataggio: '+(sd.error||sd.msg||sr.status));
       return;
