@@ -612,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function(){
       if(btnModo) btnModo.style.display='none';
       // Sposta status "Connesso" più a sinistra vicino a Chiudi
       var hdrStatus = document.getElementById('hdr-status');
-      if(hdrStatus){ hdrStatus.style.marginLeft='auto'; hdrStatus.style.marginRight='8px'; }
+      if(hdrStatus){ hdrStatus.style.display='none'; }
       // Auto-login su Render se abbiamo le credenziali, poi carica fatture
       var _cu2 = sessionStorage.getItem('enpals_cu') || '';
       var _cp2 = sessionStorage.getItem('enpals_cp') || '';

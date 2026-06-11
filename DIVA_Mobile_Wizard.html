@@ -1176,11 +1176,11 @@ const TOUR_STEPS=[
   // 1. LOGIN - username
   {screen:'s-login', target:'inp-user', arrow:'bottom',
    title:`Inserisci il tuo Nominativo`,
-   body:`Scrivi il tuo <b>Cognome e Nome</b> esattamente come sei registrato nel sistema DIVA (es. <b>ROSSI MARIO</b>). Non serve distinzione maiuscole/minuscole.`},
+   body:`Scrivi il tuo <b>Cognome e Nome</b> esattamente come sei registrato nel sistema DIVA (es. <b>ROSSI MARIO</b>). ⚠️ <b>Attenzione: username e password sono case sensitive</b> — rispetta maiuscole e minuscole esattamente come ti sono state assegnate.`},
   // 2. LOGIN - password
   {screen:'s-login', target:'inp-pass', arrow:'bottom',
    title:`Inserisci la Password`,
-   body:`La password ti è stata assegnata dall'amministratore. Se non la ricordi usa il pulsante <b>Richiedi credenziali</b> qui sotto.`},
+   body:`La password ti è stata assegnata dall'amministratore. ⚠️ <b>Case sensitive</b>: rispetta maiuscole e minuscole esattamente. Se non la ricordi usa il pulsante <b>Richiedi credenziali</b> qui sotto.`},
   // 3. LOGIN - accedi
   {screen:'s-login', target:null, targetQuery:'#s-login .btn-next', arrow:'top',
    title:`Pulsante Accedi`,
@@ -2325,6 +2325,8 @@ async function salvaSuDB(){
       <b>Imponibile:</b> ${fe(imp)}<br>
       <b>Netto:</b> ${fe(netto)}
     </div>`;
+  // Aggiorna document.title con il nome definitivo (uguale a quello nel DB)
+  document.title = rif_nbr;
   showScreen('s-ok');
 }
 function inviaEmail(){
