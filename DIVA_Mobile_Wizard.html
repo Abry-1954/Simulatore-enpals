@@ -1759,7 +1759,7 @@ async function doLogin(){
   let persone = [];
   try{
     const dbRes = await fetch(SERVER+'/db', {
-      headers:{ 'X-Auth-Token': loginData.token }
+      headers:{ 'Authorization': 'Bearer ' + loginData.token }
     });
     if(dbRes.ok){
       const dbData = await dbRes.json();
@@ -2217,7 +2217,7 @@ async function salvaSuDB(){
   let rif_nbr = nomeFile;
   try{
     const rr = await fetch(SERVER+'/fatture_next/'+anno,{
-      headers:{'X-Auth-Token': authH}
+      headers:{'Authorization': 'Bearer ' + authH}
     });
     const rd = await rr.json();
     if(rd.rif_nbr) rif_nbr = rd.rif_nbr;
@@ -2290,7 +2290,7 @@ async function salvaSuDB(){
   try{
     const sr = await fetch(SERVER+'/fatture',{
       method:'POST',
-      headers:{'Content-Type':'application/json','X-Auth-Token':authH},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+authH},
       body: JSON.stringify(rec)
     });
     const sd = await sr.json();
