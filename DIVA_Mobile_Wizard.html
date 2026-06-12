@@ -1052,6 +1052,15 @@ tr:nth-child(even) td{background:#f5f7ff;}
     <div class="wt-step-num" id="wt-num"></div>
     <div class="wt-title" id="wt-title"></div>
     <div class="wt-body" id="wt-body"></div>
+    <!-- Pulsanti voce -->
+    <div style="display:flex;gap:8px;margin-top:.75rem;">
+      <button id="wt-btn-speak" onclick="wtLeggi()" title="Leggi ad alta voce" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;color:#1d4ed8;display:flex;align-items:center;gap:5px;">
+        🔊 <span>Ascolta</span>
+      </button>
+      <button id="wt-btn-stop" onclick="wtStop()" title="Ferma lettura" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;color:#dc2626;display:none;align-items:center;gap:5px;">
+        ⏹ <span>Stop</span>
+      </button>
+    </div>
     <div class="wt-nav">
       <button class="wt-btn-prev" id="wt-prev" onclick="wtStep(-1)"><i class="fa-solid fa-arrow-left"></i> Indietro</button>
       <div class="wt-dots" id="wt-dots"></div>
@@ -1223,8 +1232,7 @@ Nella fattura stampata i Records dello stesso giorno vengono contrassegnati con 
     title:"Fattura Pronta — Azioni disponibili",
     body:`Quando tutti i Records sono inseriti puoi:<br><br>
 <b>📄 Visualizza fattura</b> — apre il documento completo con tutti i dati, calcoli ENPALS e riepilogo.<br><br>
-<b>🖨️ Stampa / Salva in PDF</b> — apre direttamente il dialogo di stampa del browser. Seleziona "Salva come PDF" per ottenere il file.<br><br>
-<b>💾 Salva su Database</b> — registra la fattura nel sistema DIVA (richiede connessione al server).<br><br>
+<b>💾 Salva su Database</b> — registra la fattura nel sistema DIVA con un ID progressivo univoco. Al termine ti verrà chiesto se vuoi <b>stampare</b> o <b>salvare in PDF</b>.<br><br>
 <b>✉️ Salva e invia per email</b> — apre il client email con il riepilogo della fattura nel corpo del messaggio.<br><br>
 <b>🚪 Esci</b> — torna all'inizio per una nuova fattura.`
   },
@@ -1355,8 +1363,11 @@ const TOUR_STEPS=[
    body:`Apre la fattura completa in <b>anteprima a schermo intero</b>. Puoi verificare tutti i dati prima di stamparla o inviarla.`},
   // 15. STAMPA
   {screen:'s-azioni', target:null, targetQuery:'#s-azioni .option-btn:nth-child(2)', arrow:'bottom',
-   title:`Stampa / Salva in PDF`,
-   body:`Apre direttamente il <b>dialogo di stampa</b>. Seleziona "Salva come PDF" per ottenere il file. Il nome del file è già compilato automaticamente con nominativo, opera, società e data.`},
+   title:`Dopo il Salvataggio — Stampa e PDF`,
+   body:`Una volta salvata la fattura su DB appare un pannello con due opzioni:<br><br>
+<b>🖨 Stampa</b> — apre il dialogo di stampa. Al termine ti chiede se vuoi anche salvare in PDF.<br><br>
+<b>📄 Salva PDF</b> — apre il dialogo di stampa in modalità "Salva come PDF". Al termine ti chiede se vuoi anche stampare su carta.<br><br>
+In entrambi i casi, al termine, torni automaticamente alla schermata iniziale.`},
   // 16. EMAIL
   {screen:'s-azioni', target:null, targetQuery:'#s-azioni .option-btn:nth-child(3)', arrow:'top',
    title:`Invia Riepilogo per Email`,
@@ -1587,10 +1598,44 @@ function wtOpen_old(){
   wtCurrent=0;wtRender();
   document.getElementById('wt-overlay').classList.add('open');
 }
-function wtClose(){document.getElementById('wt-overlay').classList.remove('open');}
+function wtClose(){
+  wtStop();
+  document.getElementById('wt-overlay').classList.remove('open');
+}
 function wtStep(d){
+  wtStop();
   wtCurrent=Math.max(0,Math.min(WT_STEPS.length-1,wtCurrent+d));
   wtRender();
+}
+
+// ── Web Speech API ──
+function wtLeggi(){
+  if(!window.speechSynthesis){ alert('Il tuo browser non supporta la lettura vocale.'); return; }
+  wtStop();
+  const s = WT_STEPS[wtCurrent];
+  // Rimuove i tag HTML dal testo
+  const tmp = document.createElement('div');
+  tmp.innerHTML = s.title + '. ' + s.body;
+  const testo = tmp.textContent || tmp.innerText || '';
+  const utt = new SpeechSynthesisUtterance(testo);
+  utt.lang = 'it-IT';
+  utt.rate = 0.95;
+  utt.onstart = () => {
+    document.getElementById('wt-btn-speak').style.display='none';
+    document.getElementById('wt-btn-stop').style.display='flex';
+  };
+  utt.onend = utt.onerror = () => {
+    document.getElementById('wt-btn-speak').style.display='flex';
+    document.getElementById('wt-btn-stop').style.display='none';
+  };
+  window.speechSynthesis.speak(utt);
+}
+function wtStop(){
+  if(window.speechSynthesis){ window.speechSynthesis.cancel(); }
+  const bs = document.getElementById('wt-btn-speak');
+  const bst = document.getElementById('wt-btn-stop');
+  if(bs) bs.style.display='flex';
+  if(bst) bst.style.display='none';
 }
 function wtRender(){
   const s=WT_STEPS[wtCurrent];
