@@ -1037,6 +1037,15 @@ tr:nth-child(even) td{background:#f5f7ff;}
     <div class="tb-title" id="tb-title"></div>
     <div class="tb-body" id="tb-body"></div>
     <div class="tb-dots" id="tb-dots"></div>
+    <!-- Pulsanti voce tour -->
+    <div style="display:flex;gap:8px;margin-bottom:.5rem;">
+      <button id="tb-btn-speak" onclick="tourLeggi()" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:#1d4ed8;display:flex;align-items:center;gap:4px;">
+        🔊 Ascolta
+      </button>
+      <button id="tb-btn-stop" onclick="tourStop()" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:#dc2626;align-items:center;gap:4px;">
+        ⏹ Stop
+      </button>
+    </div>
     <div class="tb-nav">
       <button class="tb-prev" id="tb-prev" onclick="tourStep(-1)">← Indietro</button>
       <button class="tb-next" id="tb-next" onclick="tourStep(1)">Avanti →</button>
@@ -1389,6 +1398,7 @@ function tourStart(){
 }
 
 function tourExit(){
+  tourStop();
   _tourActive=false;
   document.getElementById('tour-overlay').classList.remove('active');
   document.getElementById('tour-spotlight').style.display='none';
@@ -1397,6 +1407,7 @@ function tourExit(){
 }
 
 function tourStep(d){
+  tourStop();
   _tourIdx=Math.max(0,Math.min(TOUR_STEPS.length-1,_tourIdx+d));
   tourGo();
 }
@@ -1610,31 +1621,63 @@ function wtStep(d){
 
 // ── Web Speech API ──
 function wtLeggi(){
-  if(!window.speechSynthesis){ alert('Il tuo browser non supporta la lettura vocale.'); return; }
-  wtStop();
   const s = WT_STEPS[wtCurrent];
-  // Rimuove i tag HTML dal testo
-  const tmp = document.createElement('div');
-  tmp.innerHTML = s.title + '. ' + s.body;
-  const testo = tmp.textContent || tmp.innerText || '';
-  const utt = new SpeechSynthesisUtterance(testo);
-  utt.lang = 'it-IT';
-  utt.rate = 0.95;
-  utt.onstart = () => {
-    document.getElementById('wt-btn-speak').style.display='none';
-    document.getElementById('wt-btn-stop').style.display='flex';
-  };
-  utt.onend = utt.onerror = () => {
-    document.getElementById('wt-btn-speak').style.display='flex';
-    document.getElementById('wt-btn-stop').style.display='none';
-  };
-  window.speechSynthesis.speak(utt);
+  if(!s) return;
+  _ttsParla(
+    s.title, s.body,
+    document.getElementById('wt-btn-speak'),
+    document.getElementById('wt-btn-stop')
+  );
 }
 function wtStop(){
   if(window.speechSynthesis){ window.speechSynthesis.cancel(); }
   const bs = document.getElementById('wt-btn-speak');
   const bst = document.getElementById('wt-btn-stop');
   if(bs) bs.style.display='flex';
+  if(bst) bst.style.display='none';
+}
+
+// ── Web Speech API — Tour Spotlight ──
+function _ttsParla(titolo, corpo, btnSpeak, btnStop){
+  if(!window.speechSynthesis){ alert('Il tuo browser non supporta la lettura vocale.'); return; }
+  window.speechSynthesis.cancel();
+  const tmp = document.createElement('div');
+  tmp.innerHTML = titolo + '. ' + corpo;
+  const testo = tmp.textContent || tmp.innerText || '';
+  const utt = new SpeechSynthesisUtterance(testo);
+  utt.lang = 'it-IT';
+  utt.rate = 0.95;
+  // Cerca ElsaNeural, poi Elsa, poi prima voce italiana
+  const voci = window.speechSynthesis.getVoices();
+  const voce = voci.find(v => v.name.toLowerCase().includes('elsaneural'))
+            || voci.find(v => v.name.toLowerCase().includes('elsa'))
+            || voci.find(v => v.lang.startsWith('it'));
+  if(voce) utt.voice = voce;
+  utt.onstart = () => {
+    if(btnSpeak) btnSpeak.style.display='none';
+    if(btnStop)  btnStop.style.display='flex';
+  };
+  utt.onend = utt.onerror = () => {
+    if(btnSpeak) btnSpeak.style.display='flex';
+    if(btnStop)  btnStop.style.display='none';
+  };
+  window.speechSynthesis.speak(utt);
+}
+
+function tourLeggi(){
+  const step = TOUR_STEPS[_tourIdx];
+  if(!step) return;
+  _ttsParla(
+    step.title, step.body,
+    document.getElementById('tb-btn-speak'),
+    document.getElementById('tb-btn-stop')
+  );
+}
+function tourStop(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  const bs = document.getElementById('tb-btn-speak');
+  const bst = document.getElementById('tb-btn-stop');
+  if(bs)  bs.style.display='flex';
   if(bst) bst.style.display='none';
 }
 function wtRender(){
