@@ -799,45 +799,58 @@ tr:nth-child(even) td{background:#f5f7ff;}
     <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Riferimento:</div>
     <div id="salva-dialog-rif" style="font-size:11px;color:#1e40af;font-weight:600;margin-bottom:16px;word-break:break-all;background:#eff6ff;border-radius:6px;padding:6px 8px;"></div>
 
-    <!-- STEP 1: salva su dispositivo -->
+    <!-- STEP 1: scegli azione -->
     <div id="salva-step1" style="display:block;">
-      <div style="font-size:14px;color:#374151;margin-bottom:16px;">Vuoi salvare una copia su questo dispositivo?</div>
+      <div style="font-size:14px;color:#374151;margin-bottom:16px;">Cosa vuoi fare con questa fattura?</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button onclick="dialogSalvaFile()" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">
-          💾 Sì, salva file
+        <button onclick="dialogAvviaPercorso('stampa')" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">
+          🖨 Stampa
         </button>
-        <button onclick="dialogSaltaSalvataggio()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">
-          ➜ No, continua
+        <button onclick="dialogAvviaPercorso('pdf')" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">
+          📄 Salva PDF
+        </button>
+        <button onclick="dialogVaiHome()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:6px;">
+          ➜ Fatto, torna all'inizio
         </button>
       </div>
     </div>
 
-    <!-- STEP 2: conferma file salvato -->
-    <div id="salva-step2" style="display:none;">
-      <div style="font-size:22px;margin-bottom:8px;">📥</div>
-      <div style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:6px;">File salvato correttamente!</div>
-      <div style="font-size:13px;color:#374151;margin-bottom:16px;">Vuoi anche stamparlo?</div>
+    <!-- STEP 2a: dopo stampa → chiedi PDF -->
+    <div id="salva-step2a" style="display:none;">
+      <div style="font-size:22px;margin-bottom:8px;">🖨</div>
+      <div style="font-weight:700;font-size:15px;color:#1e3a8a;margin-bottom:6px;">Vuoi anche salvare in PDF?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        <button onclick="dialogStepPrint('pdf_dopo_stampa')" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">
+          📄 Sì, salva PDF
+        </button>
+        <button onclick="dialogVaiHome()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">
+          No, torna all'inizio
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2b: dopo PDF → chiedi stampa -->
+    <div id="salva-step2b" style="display:none;">
+      <div style="font-size:22px;margin-bottom:8px;">📄</div>
+      <div style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:6px;">PDF salvato ✅</div>
+      <div style="font-size:13px;color:#374151;margin-bottom:16px;">Vuoi anche stampare?</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button onclick="dialogStampa()" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">
+        <button onclick="dialogStepPrint('stampa_dopo_pdf')" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">
           🖨 Sì, stampa
         </button>
-        <button onclick="dialogChiediNuovaFattura()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">
-          No, grazie
+        <button onclick="dialogVaiHome()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">
+          No, torna all'inizio
         </button>
       </div>
     </div>
 
-    <!-- STEP 3: nuova fattura o esci -->
+    <!-- STEP 3: conferma finale -->
     <div id="salva-step3" style="display:none;">
-      <div style="font-size:14px;color:#374151;margin-bottom:16px;">Cosa vuoi fare adesso?</div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <button onclick="dialogNuovaFattura()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">
-          ➕ Nuova fattura
-        </button>
-        <button onclick="dialogEsci()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:6px;">
-          ⏻ Esci
-        </button>
-      </div>
+      <div style="font-size:22px;margin-bottom:8px;">✅</div>
+      <div id="salva-step3-msg" style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:20px;"></div>
+      <button onclick="dialogVaiHome()" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">
+        🏠 Torna all'inizio
+      </button>
     </div>
 
   </div>
@@ -2368,51 +2381,46 @@ function mostraDialogDopoSalvataggio(rif_nbr){
   const r = document.getElementById('salva-dialog-rif');
   if(r) r.textContent = rif_nbr;
   // Reset: mostra solo step1
+  ['salva-step1','salva-step2a','salva-step2b','salva-step3'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
   document.getElementById('salva-step1').style.display='block';
-  document.getElementById('salva-step2').style.display='none';
-  document.getElementById('salva-step3').style.display='none';
   if(d){ d.style.display='flex'; }
 }
 
-// Salva il file HTML della fattura sul dispositivo tramite blob
-function dialogSalvaFile(){
-  const nomeFile = (document.title||'fattura') + '.html';
-  // Cattura il contenuto della fattura renderizzata
-  const fatDiv = document.getElementById('s-fattura');
-  const fatBody = fatDiv ? fatDiv.querySelector('.fat-body') : null;
-  const contenuto = fatBody ? fatBody.innerHTML : '<p>Fattura non disponibile</p>';
-  // Costruisce un HTML standalone completo con i CSS inline
-  const stili = Array.from(document.styleSheets).reduce((acc, ss) => {
-    try { return acc + Array.from(ss.cssRules).map(r=>r.cssText).join('\n'); }
-    catch(e){ return acc; }
-  }, '');
-  const htmlBlob = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${document.title}</title>
-<style>${stili}</style>
-</head><body style="background:#f8f9fa;padding:1rem;">${contenuto}</body></html>`;
-  const blob = new Blob([htmlBlob], {type:'text/html;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = nomeFile;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
-  // Mostra step2: conferma + chiedi stampa
+function dialogAvviaPercorso(tipo){
+  // Nascondi step1
   document.getElementById('salva-step1').style.display='none';
-  document.getElementById('salva-step2').style.display='block';
+  // Apri dialog di stampa
+  window.print();
+  // Dopo la stampa mostra il passo successivo
+  if(tipo==='stampa'){
+    document.getElementById('salva-step2a').style.display='block';
+  } else {
+    // pdf
+    document.getElementById('salva-step2b').style.display='block';
+  }
 }
 
-// Salta il salvataggio file, vai direttamente a nuova fattura / esci
-function dialogSaltaSalvataggio(){
-  document.getElementById('salva-step1').style.display='none';
+function dialogStepPrint(fase){
+  // Nascondi step corrente
+  document.getElementById('salva-step2a').style.display='none';
+  document.getElementById('salva-step2b').style.display='none';
+  // Apri di nuovo il dialog di stampa
+  window.print();
+  // Mostra step3 con messaggio appropriato
+  const msg = document.getElementById('salva-step3-msg');
+  if(fase==='pdf_dopo_stampa'){
+    if(msg) msg.textContent='PDF salvato ✅';
+  } else {
+    if(msg) msg.textContent='Stampato ✅';
+  }
   document.getElementById('salva-step3').style.display='block';
 }
 
-function dialogChiediNuovaFattura(){
-  document.getElementById('salva-step2').style.display='none';
-  document.getElementById('salva-step3').style.display='block';
+function dialogVaiHome(){
+  document.getElementById('salva-dialog').style.display='none';
+  showScreen('s-home');
 }
 
 function dialogStampa(){
