@@ -1377,14 +1377,14 @@ const TOUR_STEPS=[
 <b>🖨 Stampa</b> — apre il dialogo di stampa. Al termine ti chiede se vuoi anche salvare in PDF.<br><br>
 <b>📄 Salva PDF</b> — apre il dialogo di stampa in modalità "Salva come PDF". Al termine ti chiede se vuoi anche stampare su carta.<br><br>
 In entrambi i casi, al termine, torni automaticamente alla schermata iniziale.`},
-  // 16. EMAIL
-  {screen:'s-azioni', target:null, targetQuery:'#s-azioni .option-btn:nth-child(3)', arrow:'top',
-   title:`Invia Riepilogo per Email`,
-   body:`Avvia un <b>countdown di 15 secondi</b> durante il quale puoi salvare il PDF, poi apre automaticamente il client email con il riepilogo della fattura nel corpo del messaggio.`},
-  // 17. SALVA DB
+  // 31. FINE PROCEDURA
   {screen:'s-azioni', target:null, targetQuery:'#s-azioni .option-btn:nth-child(4)', arrow:'top',
-   title:`Salva su Database`,
-   body:`Registra la fattura nel sistema centrale. La fattura riceve un <b>ID progressivo univoco</b> e sarà sempre disponibile nel tuo archivio personale — <b>ogni utente accede solo alle proprie fatture</b>.`},
+   title:`Fine Procedura`,
+   body:`A questo punto la procedura per l'emissione della fattura <b>termina qui</b>. Hai inserito tutti i dati, salvato sul database e gestito stampa e PDF. <b>Congratulazioni!</b>`},
+  // 32. VUOI CONTINUARE?
+  {screen:'s-home', target:null, targetQuery:'#home-btn-fatture', arrow:'bottom',
+   title:`Vuoi continuare?`,
+   body:`Se vuoi, puoi seguire una panoramica guidata anche della sezione <b>Le Mie Fatture</b>, dove potrai capire come consultare, gestire e archiviare tutte le fatture emesse.`},
 ];
 
 let _tourIdx=0;
