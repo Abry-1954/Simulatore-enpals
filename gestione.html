@@ -263,6 +263,9 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     <select id="fatture-anno" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;" onchange="renderFatture()">
       <option value="">Tutti gli anni</option>
     </select>
+    <select id="fatture-azienda" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;min-width:160px;" onchange="renderFatture()">
+      <option value="">Tutte le aziende</option>
+    </select>
     <span id="fatture-count" style="font-size:12px;color:#64748b;margin-left:4px;"></span>
   </div>
   <div class="tbl-wrap">
@@ -1035,6 +1038,14 @@ async function caricaFatture(){
   sel.innerHTML = '<option value="">Tutti gli anni</option>';
   anni.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
   if(valAtt) sel.value = valAtt;
+  // Popola select aziende
+  const aziende = [...new Set(_fattureAll.map(f=>(f.azienda||'').trim()).filter(Boolean))].sort();
+  const selAz = document.getElementById('fatture-azienda');
+  if(selAz){
+    const curAz = selAz.value;
+    selAz.innerHTML = '<option value="">Tutte le aziende</option>';
+    aziende.forEach(az=>{ const o=document.createElement('option'); o.value=az; o.textContent=az; if(az===curAz) o.selected=true; selAz.appendChild(o); });
+  }
   renderFatture();
 }
 
@@ -1043,10 +1054,12 @@ var _fattureExpanded = new Set();
 function renderFatture(){
   const cerca = (document.getElementById('fatture-cerca-nom').value||'').toLowerCase();
   const anno = document.getElementById('fatture-anno').value;
+  const azienda = (document.getElementById('fatture-azienda')?.value||'');
   let righe = _fattureAll.filter(f=>{
     const nomOk = !cerca || (f.nominativo||'').toLowerCase().includes(cerca);
     const annoOk = !anno || (f.rif_nbr||'').startsWith(anno+'-');
-    return nomOk && annoOk;
+    const azOk = !azienda || (f.azienda||'').trim()===azienda;
+    return nomOk && annoOk && azOk;
   });
   document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
   const tbody = document.getElementById('fatture-tbody');
