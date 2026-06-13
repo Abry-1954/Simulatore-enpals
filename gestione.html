@@ -266,6 +266,10 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     <select id="fatture-azienda" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;min-width:160px;" onchange="renderFatture()">
       <option value="">Tutte le aziende</option>
     </select>
+    <select id="fatture-datapag" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;min-width:160px;" onchange="renderFatture()">
+      <option value="">Tutti i pagamenti</option>
+      <option value="__nessuno__">— Non pagato</option>
+    </select>
     <span id="fatture-count" style="font-size:12px;color:#64748b;margin-left:4px;"></span>
   </div>
   <div class="tbl-wrap">
@@ -1038,6 +1042,15 @@ async function caricaFatture(){
   sel.innerHTML = '<option value="">Tutti gli anni</option>';
   anni.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
   if(valAtt) sel.value = valAtt;
+  // Popola select data pagamento
+  const pagamenti = [...new Set(_fattureAll.map(f=>(f.data_pagamento||'').trim()).filter(Boolean))].sort();
+  const selDp = document.getElementById('fatture-datapag');
+  if(selDp){
+    const curDp = selDp.value;
+    selDp.innerHTML = '<option value="">Tutti i pagamenti</option><option value="__nessuno__">— Non pagato</option>';
+    pagamenti.forEach(dp=>{ const o=document.createElement('option'); o.value=dp; o.textContent=dp.length>20?dp.substring(0,20)+'…':dp; if(dp===curDp) o.selected=true; selDp.appendChild(o); });
+    if(curDp) selDp.value=curDp;
+  }
   // Popola select aziende
   const aziende = [...new Set(_fattureAll.map(f=>(f.azienda_rag||'').trim()).filter(Boolean))].sort();
   const selAz = document.getElementById('fatture-azienda');
@@ -1055,11 +1068,13 @@ function renderFatture(){
   const cerca = (document.getElementById('fatture-cerca-nom').value||'').toLowerCase();
   const anno = document.getElementById('fatture-anno').value;
   const azienda = (document.getElementById('fatture-azienda')?.value||'');
+  const datapag = (document.getElementById('fatture-datapag')?.value||'');
   let righe = _fattureAll.filter(f=>{
     const nomOk = !cerca || (f.nominativo||'').toLowerCase().includes(cerca);
     const annoOk = !anno || (f.rif_nbr||'').startsWith(anno+'-');
     const azOk = !azienda || (f.azienda_rag||'').trim()===azienda;
-    return nomOk && annoOk && azOk;
+    const dpOk = !datapag || (datapag==='__nessuno__' ? !(f.data_pagamento||'').trim() : (f.data_pagamento||'').trim()===datapag);
+    return nomOk && annoOk && azOk && dpOk;
   });
   document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
   const tbody = document.getElementById('fatture-tbody');
