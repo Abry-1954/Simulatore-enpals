@@ -1039,10 +1039,10 @@ tr:nth-child(even) td{background:#f5f7ff;}
     <div class="tb-dots" id="tb-dots"></div>
     <!-- Pulsanti voce tour -->
     <div style="display:flex;gap:8px;margin-bottom:.5rem;">
-      <button id="tb-btn-speak" onclick="tourLeggi()" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 20px;cursor:pointer;font-size:18px;font-weight:700;color:#1d4ed8;display:flex;align-items:center;gap:10px;width:100%;justify-content:center;">
+      <button id="tb-btn-speak" onclick="tourLeggi()" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:9px 18px;cursor:pointer;font-size:15px;font-weight:700;color:#1d4ed8;display:flex;align-items:center;gap:8px;width:100%;justify-content:center;">
         🔊 Ascolta
       </button>
-      <button id="tb-btn-stop" onclick="tourStop()" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 20px;cursor:pointer;font-size:18px;font-weight:700;color:#dc2626;align-items:center;gap:10px;width:100%;justify-content:center;">
+      <button id="tb-btn-stop" onclick="tourStop()" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:9px 18px;cursor:pointer;font-size:15px;font-weight:700;color:#dc2626;align-items:center;gap:8px;width:100%;justify-content:center;">
         ⏹ Stop
       </button>
     </div>
@@ -1063,10 +1063,10 @@ tr:nth-child(even) td{background:#f5f7ff;}
     <div class="wt-body" id="wt-body"></div>
     <!-- Pulsanti voce -->
     <div style="display:flex;gap:8px;margin-top:.75rem;">
-      <button id="wt-btn-speak" onclick="wtLeggi()" title="Leggi ad alta voce" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 20px;cursor:pointer;font-size:18px;font-weight:700;color:#1d4ed8;display:flex;align-items:center;gap:10px;width:100%;justify-content:center;">
+      <button id="wt-btn-speak" onclick="wtLeggi()" title="Leggi ad alta voce" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:9px 18px;cursor:pointer;font-size:15px;font-weight:700;color:#1d4ed8;display:flex;align-items:center;gap:8px;width:100%;justify-content:center;">
         🔊 Ascolta
       </button>
-      <button id="wt-btn-stop" onclick="wtStop()" title="Ferma lettura" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 20px;cursor:pointer;font-size:18px;font-weight:700;color:#dc2626;align-items:center;gap:10px;width:100%;justify-content:center;">
+      <button id="wt-btn-stop" onclick="wtStop()" title="Ferma lettura" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:9px 18px;cursor:pointer;font-size:15px;font-weight:700;color:#dc2626;align-items:center;gap:8px;width:100%;justify-content:center;">
         ⏹ Stop
       </button>
     </div>
@@ -1429,7 +1429,7 @@ In entrambi i casi, al termine, torni automaticamente alla schermata iniziale.`}
 
 let _tourIdx=0;
 let _tourActive=false;
-let _ttsAttivo=false; // true = lettura automatica attiva ad ogni step
+let _ttsAttivo=false;
 
 function tourStart(){
   _tourIdx=0;
@@ -1439,7 +1439,7 @@ function tourStart(){
 }
 
 function tourExit(){
-  _ttsAttivo = false;
+  _ttsAttivo=false;
   tourStop();
   _tourActive=false;
   document.getElementById('tour-overlay').classList.remove('active');
@@ -1449,11 +1449,11 @@ function tourExit(){
 }
 
 function tourStep(d){
+  const eraAttivo=_ttsAttivo;
   tourStop();
   _tourIdx=Math.max(0,Math.min(TOUR_STEPS.length-1,_tourIdx+d));
   tourGo();
-  // Se lettura automatica attiva, riparte sul nuovo passo
-  if(_ttsAttivo) setTimeout(()=>tourLeggi(), 300);
+  if(eraAttivo){ _ttsAttivo=true; setTimeout(()=>tourLeggi(),300); }
 }
 
 function tourGo(){
@@ -1711,12 +1711,12 @@ function _ttsParla(titolo, corpo, btnSpeak, btnStop){
 function tourLeggi(){
   const step = TOUR_STEPS[_tourIdx];
   if(!step) return;
-  _ttsAttivo = true; // attiva lettura continua
+  _ttsAttivo=true;
   // Se c'è l'MP3 per questo passo, usalo
   const audioSrc = (typeof TOUR_AUDIO !== 'undefined') ? TOUR_AUDIO[_tourIdx] : null;
   if(audioSrc){
-    tourStop();
-    _ttsAttivo = true; // tourStop lo resetta, riattiva
+    if(window._tourAudio){ window._tourAudio.pause(); window._tourAudio=null; }
+    if(window._tourAudioCtx){ try{window._tourAudioCtx.close();}catch(e){} window._tourAudioCtx=null; }
     const audio = new Audio(audioSrc);
     audio.volume = 1.0;
     // Web Audio API — amplifica il volume
@@ -1750,7 +1750,7 @@ function tourLeggi(){
   }
 }
 function tourStop(){
-  _ttsAttivo = false; // disattiva lettura continua
+  _ttsAttivo=false;
   // Ferma MP3
   if(window._tourAudio){
     window._tourAudio.pause();
