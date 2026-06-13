@@ -1100,7 +1100,7 @@ function renderFatture(){
     html += '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">';
     const dp = (f.data_pagamento||'');
     html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;)" title="Modifica data pagamento">✏️</button>';
-    html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',&quot;'+nomSafe+'&quot;)">&#128465;</button>';
+    html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',&quot;'+nomSafe+'&quot;)" title="Elimina fattura">&#128465;</button>';
     html += '</div></td></tr>';
     if(exp){
       html += '<tr><td colspan="13" style="padding:0;background:#f8fafc;">';
