@@ -1096,6 +1096,46 @@ function renderFatture(){
   tbody.innerHTML = html;
 }
 
+var _dataPagRecNbr = null;
+
+function modificaDataPagamento(rec_nbr, valoreAttuale){
+  _dataPagRecNbr = rec_nbr;
+  const fat = _fattureAll.find(f=>f.rec_nbr===rec_nbr);
+  const rif = fat ? (fat.rif_nbr||'') : '';
+  document.getElementById('datapag-rif').textContent = rif ? 'Fattura: '+rif : '';
+  const inp = document.getElementById('datapag-input');
+  inp.value = valoreAttuale||'';
+  document.getElementById('overlay-datapag').classList.add('open');
+  setTimeout(()=>inp.focus(),100);
+}
+
+function chiudiModalDataPag(){
+  document.getElementById('overlay-datapag').classList.remove('open');
+  _dataPagRecNbr = null;
+}
+
+async function salvaDataPagamento(){
+  if(!_dataPagRecNbr) return;
+  const nuovo = document.getElementById('datapag-input').value.trim();
+  const btnSalva = document.querySelector('#overlay-datapag .btn-primary');
+  btnSalva.textContent = '⏳ Salvo...'; btnSalva.disabled = true;
+  try {
+    const r = await api('/fatture?id='+_dataPagRecNbr, 'PATCH', {data_pagamento: nuovo});
+    if(r && r.ok){
+      const fat = _fattureAll.find(f=>f.rec_nbr===_dataPagRecNbr);
+      if(fat) fat.data_pagamento = nuovo;
+      chiudiModalDataPag();
+      renderFatture();
+    } else {
+      alert('Errore: '+(r&&r.error||'risposta non valida'));
+    }
+  } catch(e){
+    alert('Errore di rete: '+e.message);
+  } finally {
+    btnSalva.textContent = '💾 Salva'; btnSalva.disabled = false;
+  }
+}
+
 async function eliminaFattura(rec_nbr, nome){
   if(!confirm('⚠️ Eliminare la fattura di "'+nome+'"?\n\nQuesta operazione NON è recuperabile.')) return;
   const r = await api('/fatture?id='+rec_nbr,'DELETE');
@@ -1161,5 +1201,27 @@ function buildFatturaDetail(f){
 
 
 </script>
+
+<!-- ══ MODAL DATA PAGAMENTO ══ -->
+<div class="overlay" id="overlay-datapag">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title" style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:20px;">💳</span>
+      <span>Aggiorna Data / Nota Pagamento</span>
+    </div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:1rem;" id="datapag-rif"></div>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>Data pagamento o nota libera</label>
+      <input id="datapag-input" type="text" placeholder="es. 15/06/2026 oppure Pagato Luglio"
+        style="font-size:14px;padding:10px 12px;"
+        onkeydown="if(event.key==='Enter') salvaDataPagamento()">
+      <span style="font-size:11px;color:#94a3b8;margin-top:3px;">Lascia vuoto per cancellare il valore</span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="chiudiModalDataPag()">Annulla</button>
+      <button class="btn btn-primary" onclick="salvaDataPagamento()">💾 Salva</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
