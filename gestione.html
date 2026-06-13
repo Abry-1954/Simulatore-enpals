@@ -270,7 +270,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
   </div>
   <div class="tbl-wrap">
     <table class="tbl"><thead><tr>
-      <th style="width:28px;"></th><th>#</th><th>Rif.</th><th>Nominativo</th><th>Azienda</th>
+      <th style="width:28px;"></th><th>#</th><th style="max-width:320px;">Rif.</th><th>Nominativo</th><th>Azienda</th>
       <th>Data Fattura</th><th>GG</th><th>Turni</th><th>Righe</th><th>Imponibile</th><th>Netto</th>
       <th>Data Pagamento</th><th>Azioni</th>
     </tr></thead>
@@ -1078,7 +1078,7 @@ function renderFatture(){
     const nomSafe = (f.nominativo||'').replace(/'/g,"\\'");
     html += '<tr style="cursor:pointer;border-top:2px solid #cbd5e1;" onclick="toggleFatturaDetail('+f.rec_nbr+')">';
     html += '<td style="text-align:center;color:#64748b;font-size:11px;">'+arrow+'</td>';
-    html += '<td>'+n+'</td><td>'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
+    html += '<td>'+n+'</td><td style="max-width:320px;word-break:break-word;white-space:normal;">'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
     const righe_tot = f.tot_righe!=null ? f.tot_righe : '—';
     html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td><td style="text-align:center;">'+righe_tot+'</td>';
     html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
