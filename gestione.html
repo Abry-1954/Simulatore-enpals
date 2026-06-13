@@ -1069,7 +1069,7 @@ function renderFatture(){
     n++;
     const imp   = f.tot_imponibile!=null ? parseFloat(f.tot_imponibile).toFixed(2)+' €' : '—';
     const netto = f.tot_netto!=null      ? parseFloat(f.tot_netto).toFixed(2)+' €'      : '—';
-    const dataPag  = f.data_pagamento ? f.data_pagamento.substring(0,10) : '—';
+    const dataPag  = f.data_pagamento ? (f.data_pagamento.length>30 ? f.data_pagamento.substring(0,30)+'…' : f.data_pagamento) : '—';
     const dataFatt = f.data_fattura   ? f.data_fattura.substring(0,10)   : '—';
     const gg    = f.tot_giorni!=null ? f.tot_giorni : '—';
     const turni = f.tot_turni!=null  ? f.tot_turni  : '—';
@@ -1083,8 +1083,8 @@ function renderFatture(){
     html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td><td style="text-align:center;">'+righe_tot+'</td>';
     html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
     html += '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">';
-    const dp = (f.data_pagamento||'').substring(0,10);
-    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;)" title="Modifica data pagamento">&#9999;</button>';
+    const dp = (f.data_pagamento||'');
+    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;)" title="Modifica data pagamento">✏️</button>';
     html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',&quot;'+nomSafe+'&quot;)">&#128465;</button>';
     html += '</div></td></tr>';
     if(exp){
@@ -1126,6 +1126,12 @@ async function salvaDataPagamento(){
       if(fat) fat.data_pagamento = nuovo;
       chiudiModalDataPag();
       renderFatture();
+      // Messaggio conferma
+      const av = document.createElement('div');
+      av.textContent = '✅ Data pagamento aggiornata!';
+      av.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);';
+      document.body.appendChild(av);
+      setTimeout(()=>av.remove(), 2500);
     } else {
       alert('Errore: '+(r&&r.error||'risposta non valida'));
     }
