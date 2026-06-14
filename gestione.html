@@ -276,7 +276,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     <table class="tbl"><thead><tr>
       <th style="width:28px;"></th><th>#</th><th style="max-width:320px;">Rif.</th><th>Nominativo</th><th>Azienda</th>
       <th>Data Fattura</th><th>GG</th><th>Turni</th><th>Righe</th><th>Imponibile</th><th>Netto</th>
-      <th>Data Pagamento</th><th>Azioni</th>
+      <th>Data Pagamento / Note</th><th>Azioni</th>
     </tr></thead>
     <tbody id="fatture-tbody"></tbody></table>
   </div>
@@ -1104,7 +1104,7 @@ function renderFatture(){
     html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
     html += '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">';
     const dp = (f.data_pagamento||'');
-    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;)" title="Modifica data pagamento">✏️</button>';
+    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;)" title="Modifica data pagamento / Note (max 30 caratteri)">✏️</button>';
     if(f.pdf_url){
       html += '<button class="btn btn-sm" style="background:#1d4ed8;color:#fff;" onclick="apriPdf('+f.rec_nbr+')" title="Apri PDF">📄</button>';
       html += '<button class="btn btn-sm" style="background:#0f9960;color:#fff;" onclick="scaricaPdf('+f.rec_nbr+')" title="Scarica PDF">⬇</button>';
