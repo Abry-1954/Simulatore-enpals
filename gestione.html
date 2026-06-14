@@ -1091,9 +1091,14 @@ function renderFatture(){
     const exp   = _fattureExpanded.has(f.rec_nbr);
     const arrow = exp ? '▼' : '▶';
     const nomSafe = (f.nominativo||'').replace(/'/g,"\\'");
+    const rifFull = f.rif_nbr||'—';
+    const rifShort = rifFull.length > 60 ? rifFull.substring(0,60)+'…' : rifFull;
+    const rifSafe = rifFull.replace(/'/g,"\\'");
     html += '<tr style="cursor:pointer;border-top:2px solid #cbd5e1;" onclick="toggleFatturaDetail('+f.rec_nbr+')">';
     html += '<td style="text-align:center;color:#64748b;font-size:11px;">'+arrow+'</td>';
-    html += '<td>'+n+'</td><td style="max-width:320px;word-break:break-word;white-space:normal;">'+(f.rif_nbr||'—')+'</td><td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
+    html += '<td>'+n+'</td>';
+    html += '<td style="max-width:220px;word-break:break-word;white-space:normal;" title="'+rifFull+'" onclick="event.stopPropagation();alert(\''+rifSafe+'\')">'+rifShort+'</td>';
+    html += '<td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
     const righe_tot = f.tot_righe!=null ? f.tot_righe : '—';
     html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td><td style="text-align:center;">'+righe_tot+'</td>';
     html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
