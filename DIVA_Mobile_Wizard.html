@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DIVA">
 <meta name="theme-color" content="#1e3a8a">
-<title>DIVA Mobile — Dubbing Invoice Wizard v1.1</title>
+<title>DIVA Mobile — Dubbing Invoice Wizard v1.2</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -347,50 +347,50 @@ tr:nth-child(even) td{background:#f5f7ff;}
   overflow-y:auto;
 }
 #modulo-overlay.open{display:block;}
-.mi-topband{background:linear-gradient(90deg,#1e3a8a,#1d4ed8);padding:.4rem 1rem;font-size:10px;color:#93c5fd;letter-spacing:.12em;text-align:center;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.mi-topband{background:#1e3a8a;padding:.4rem 1rem;font-size:10px;color:#93c5fd;letter-spacing:.12em;text-align:center;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
 .mi-close{background:none;border:none;color:#93c5fd;font-size:18px;cursor:pointer;padding:0 4px;}
-.mi-header{background:#161b2e;border-bottom:2px solid #3b82f6;padding:1rem 1.5rem .75rem;text-align:center;}
-.mi-header-logo{font-size:10px;color:#60a5fa;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.2rem;}
-.mi-header-title{font-size:1.3rem;font-weight:800;color:#e8edf8;margin-bottom:.2rem;}
-.mi-header-title span{color:#60a5fa;}
-.mi-header-sub{font-size:12px;color:#8b97b8;line-height:1.4;}
+.mi-header{background:#1e3a8a;border-bottom:2px solid #3b82f6;padding:1rem 1.5rem .75rem;text-align:center;}
+.mi-header-logo{font-size:10px;color:#93c5fd;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.2rem;}
+.mi-header-title{font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:.2rem;}
+.mi-header-title span{color:#93c5fd;}
+.mi-header-sub{font-size:12px;color:#bfdbfe;line-height:1.4;}
 .mi-wrap{max-width:600px;margin:1.5rem auto;padding:0 1rem 4rem;}
-.mi-card{background:#161b2e;border:1.5px solid #2e3a5c;border-radius:12px;overflow:hidden;}
-.mi-section{padding:1.25rem 1.5rem;border-bottom:1px solid #2e3a5c;}
+.mi-card{background:#a7f3d0;border:1.5px solid #6ee7b7;border-radius:12px;overflow:hidden;}
+.mi-section{padding:1.25rem 1.5rem;border-bottom:1px solid #6ee7b7;}
 .mi-section:last-child{border-bottom:none;}
-.mi-sec-title{font-size:11px;font-weight:700;color:#60a5fa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
-.mi-sec-title .line{flex:1;height:1px;background:linear-gradient(90deg,#3d4f7a,transparent);}
+.mi-sec-title{font-size:11px;font-weight:700;color:#1e3a8a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;border-left:3px solid #3b82f6;padding-left:.75rem;}
+.mi-sec-title .line{flex:1;height:1px;background:linear-gradient(90deg,#93c5fd,transparent);}
 .mi-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem;}
 .mi-span2{grid-column:span 2;}
 .mi-field{display:flex;flex-direction:column;gap:5px;}
-.mi-field label{font-size:10px;font-weight:600;color:#8b97b8;letter-spacing:.08em;text-transform:uppercase;}
-.mi-field label .req{color:#f59e0b;margin-left:2px;}
-.mi-field input,.mi-field select{font-size:14px;padding:9px 12px;border:1.5px solid #2e3a5c;border-radius:7px;background:#1e2540;color:#e8edf8;outline:none;width:100%;}
-.mi-field input:focus,.mi-field select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.12);}
-.mi-field input::placeholder{color:#4a5578;}
-.mi-field .hint{font-size:10px;color:#4a5578;line-height:1.4;}
-.mi-privacy{background:rgba(59,130,246,.05);border:1.5px solid rgba(59,130,246,.2);border-radius:8px;padding:1rem;margin-bottom:1rem;}
-.mi-privacy-title{font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:.5rem;}
-.mi-privacy-text{font-size:11px;color:#8b97b8;line-height:1.7;margin-bottom:1rem;border-left:2px solid #3d4f7a;padding-left:.75rem;}
-.mi-check-row{display:flex;align-items:flex-start;gap:.75rem;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:.75rem;}
-.mi-check-row input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:#f59e0b;}
-.mi-check-label{font-size:12px;color:#e8edf8;line-height:1.5;}
-.mi-check-label strong{color:#f59e0b;}
-.mi-date-row{display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;background:#1e2540;border:1px solid #3d4f7a;border-radius:7px;margin-bottom:1rem;}
-.mi-date-lbl{font-size:10px;color:#8b97b8;letter-spacing:.06em;text-transform:uppercase;}
-.mi-date-val{font-size:12px;color:#60a5fa;font-weight:600;margin-left:auto;}
-.mi-btn-row{display:flex;gap:.75rem;justify-content:flex-end;padding:1.25rem 1.5rem;background:#1e2540;border-top:1.5px solid #2e3a5c;}
+.mi-field label{font-size:10px;font-weight:600;color:#4a4a6a;letter-spacing:.08em;text-transform:uppercase;}
+.mi-field label .req{color:#d97706;margin-left:2px;}
+.mi-field input,.mi-field select{font-size:14px;padding:9px 12px;border:1.5px solid #93c5fd;border-radius:7px;background:#fff;color:#1a1a2e;outline:none;width:100%;}
+.mi-field input:focus,.mi-field select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.12);background:#eff6ff;}
+.mi-field input::placeholder{color:#7a7a9a;}
+.mi-field .hint{font-size:10px;color:#4a4a6a;line-height:1.4;}
+.mi-privacy{background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:1rem;margin-bottom:1rem;}
+.mi-privacy-title{font-size:12px;font-weight:700;color:#1e3a8a;margin-bottom:.5rem;}
+.mi-privacy-text{font-size:11px;color:#4a4a6a;line-height:1.7;margin-bottom:1rem;border-left:2px solid #60a5fa;padding-left:.75rem;}
+.mi-check-row{display:flex;align-items:flex-start;gap:.75rem;background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:.75rem;}
+.mi-check-row input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:#d97706;}
+.mi-check-label{font-size:12px;color:#1a1a2e;line-height:1.5;}
+.mi-check-label strong{color:#d97706;}
+.mi-date-row{display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;background:#eff6ff;border:1px solid #93c5fd;border-radius:7px;margin-bottom:1rem;}
+.mi-date-lbl{font-size:10px;color:#4a4a6a;letter-spacing:.06em;text-transform:uppercase;}
+.mi-date-val{font-size:12px;color:#2563eb;font-weight:600;margin-left:auto;}
+.mi-btn-row{display:flex;gap:.75rem;justify-content:flex-end;padding:1.25rem 1.5rem;background:#d1fae5;border-top:1.5px solid #6ee7b7;}
 .mi-btn{font-size:13px;font-weight:700;padding:10px 24px;border-radius:7px;border:none;cursor:pointer;}
-.mi-btn-cancel{background:transparent;color:#8b97b8;border:1.5px solid #3d4f7a;}
-.mi-btn-submit{background:#3b82f6;color:#fff;}
-.mi-btn-submit:disabled{background:#4a5578;cursor:not-allowed;}
-.mi-overlay-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;align-items:center;justify-content:center;padding:1rem;}
+.mi-btn-cancel{background:transparent;color:#4a4a6a;border:1.5px solid #93c5fd;}
+.mi-btn-submit{background:#1e3a8a;color:#fff;}
+.mi-btn-submit:disabled{background:#7a7a9a;cursor:not-allowed;}
+.mi-overlay-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:1rem;}
 .mi-overlay-modal.show{display:flex;}
-.mi-modal{background:#161b2e;border:1.5px solid #2e3a5c;border-radius:12px;padding:2rem;max-width:360px;width:100%;text-align:center;}
+.mi-modal{background:#fff;border:1.5px solid #93c5fd;border-radius:12px;padding:2rem;max-width:360px;width:100%;text-align:center;}
 .mi-modal-icon{font-size:2.5rem;margin-bottom:.75rem;}
-.mi-modal-title{font-size:1.1rem;font-weight:700;color:#e8edf8;margin-bottom:.5rem;}
-.mi-modal-desc{font-size:13px;color:#8b97b8;line-height:1.6;margin-bottom:1.25rem;}
-.mi-modal-btn{background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:9px 28px;font-size:13px;font-weight:700;cursor:pointer;}
+.mi-modal-title{font-size:1.1rem;font-weight:700;color:#1a1a2e;margin-bottom:.5rem;}
+.mi-modal-desc{font-size:13px;color:#4a4a6a;line-height:1.6;margin-bottom:1.25rem;}
+.mi-modal-btn{background:#1e3a8a;color:#fff;border:none;border-radius:7px;padding:9px 28px;font-size:13px;font-weight:700;cursor:pointer;}
 @media(max-width:480px){.mi-grid{grid-template-columns:1fr;}.mi-span2{grid-column:span 1;}.mi-section{padding:1rem;}}
 
 /* ══ SPOTLIGHT TOUR ══ */
@@ -572,7 +572,7 @@ tr:nth-child(even) td{background:#f5f7ff;}
 <text x="200" y="132" text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="url(#ggold)" letter-spacing="6" opacity="0.9">MOBILE</text>
 <text x="200" y="148" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#8ab0d8" letter-spacing="2">DUBBING INVOICE VERIFICATION &amp; AUDIT</text>
 <text x="200" y="163" text-anchor="middle" font-family="Georgia,serif" font-size="10" font-style="italic" fill="#c8a030" opacity="0.9">Ogni voce ha il suo valore</text>
-<text x="200" y="176" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="#4a6a9a" opacity="0.7">v1.1</text>
+<text x="200" y="176" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="#4a6a9a" opacity="0.7">v1.2</text>
 </svg>
 </div>
   <div class="step-label">Accesso</div>
@@ -1091,7 +1091,7 @@ tr:nth-child(even) td{background:#f5f7ff;}
 // Per aggiornare: cambia APP_VERSION qui sotto e rinomina
 // il file con il nuovo numero (es. DIVA_Mobile_Wizard_v1.1.html)
 // ════════════════════════════════════════════════════════
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 
 // ════════════════════════════════════════════════════════
 // DB PERSONE (da Supabase — ora embedded)
