@@ -1097,7 +1097,7 @@ function renderFatture(){
     html += '<tr style="cursor:pointer;border-top:2px solid #cbd5e1;" onclick="toggleFatturaDetail('+f.rec_nbr+')">';
     html += '<td style="text-align:center;color:#64748b;font-size:11px;">'+arrow+'</td>';
     html += '<td>'+n+'</td>';
-    html += '<td style="max-width:220px;word-break:break-word;white-space:normal;" title="'+rifFull+'" onclick="event.stopPropagation();alert(\''+rifSafe+'\')">'+rifShort+'</td>';
+    html += '<td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+rifFull+'" onclick="event.stopPropagation();alert(\''+rifSafe+'\')">'+rifShort+'</td>';
     html += '<td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
     const righe_tot = f.tot_righe!=null ? f.tot_righe : '—';
     html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td><td style="text-align:center;">'+righe_tot+'</td>';
