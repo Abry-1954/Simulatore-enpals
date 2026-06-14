@@ -6,8 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DIVA">
 <meta name="theme-color" content="#1e3a8a">
-<title>DIVA Mobile — Dubbing Invoice Wizard v1.0</title>
+<title>DIVA Mobile — Dubbing Invoice Wizard v1.1</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 /* ══════════════════════════════════════════
    VARIABILI & RESET
@@ -571,7 +572,7 @@ tr:nth-child(even) td{background:#f5f7ff;}
 <text x="200" y="132" text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="url(#ggold)" letter-spacing="6" opacity="0.9">MOBILE</text>
 <text x="200" y="148" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#8ab0d8" letter-spacing="2">DUBBING INVOICE VERIFICATION &amp; AUDIT</text>
 <text x="200" y="163" text-anchor="middle" font-family="Georgia,serif" font-size="10" font-style="italic" fill="#c8a030" opacity="0.9">Ogni voce ha il suo valore</text>
-<text x="200" y="176" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="#4a6a9a" opacity="0.7">v1.0</text>
+<text x="200" y="176" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="#4a6a9a" opacity="0.7">v1.1</text>
 </svg>
 </div>
   <div class="step-label">Accesso</div>
@@ -1090,7 +1091,7 @@ tr:nth-child(even) td{background:#f5f7ff;}
 // Per aggiornare: cambia APP_VERSION qui sotto e rinomina
 // il file con il nuovo numero (es. DIVA_Mobile_Wizard_v1.1.html)
 // ════════════════════════════════════════════════════════
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.1';
 
 // ════════════════════════════════════════════════════════
 // DB PERSONE (da Supabase — ora embedded)
@@ -2531,6 +2532,8 @@ async function salvaSuDB(){
     const sd = await sr.json();
     if(sd.ok){
       salvOk = true;
+      // Salva rec_nbr globalmente per uso in upload PDF
+      window._lastRecNbr = sd.rec_nbr || null;
       // Estrae il rif_nbr definitivo dal msg del server
       // msg formato: "Fattura NOME_COMPLETO_2026_ID-053 salvata (ID 53)"
       if(sd.rif_nbr){
@@ -2576,14 +2579,76 @@ function mostraDialogDopoSalvataggio(rif_nbr){
 function dialogAvviaPercorso(tipo){
   // Nascondi step1
   document.getElementById('salva-step1').style.display='none';
-  // Apri dialog di stampa
-  window.print();
-  // Dopo la stampa mostra il passo successivo
-  if(tipo==='stampa'){
-    document.getElementById('salva-step2a').style.display='block';
+
+  if(tipo==='pdf'){
+    // Genera PDF con html2pdf, carica su Supabase, poi apre stampa
+    const fatDiv = document.querySelector('#s-fattura .fat-body') || document.querySelector('#s-fattura .fattura-wrap') || document.getElementById('s-fattura');
+    const rifNbr = document.title || 'fattura';
+    const recNbr = window._lastRecNbr || null;
+    const SERVER = 'https://enpals-server.onrender.com';
+    const tok = sessionStorage.getItem('enpals_auth')||'';
+    const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
+
+    // Mostra messaggio attesa
+    const step2b = document.getElementById('salva-step2b');
+    if(step2b){
+      step2b.style.display='block';
+      const titolo = step2b.querySelector('div');
+      if(titolo) titolo.textContent = '⏳ Generazione PDF in corso...';
+    }
+
+    const opt = {
+      margin: [10,10,10,10],
+      filename: rifNbr + '.pdf',
+      image: { type:'jpeg', quality:0.95 },
+      html2canvas: { scale:2, useCORS:true },
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+    };
+
+    html2pdf().set(opt).from(fatDiv).outputPdf('arraybuffer').then(async function(buffer){
+      // Converti in base64
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      bytes.forEach(b => binary += String.fromCharCode(b));
+      const b64 = btoa(binary);
+
+      // Upload su Render → Supabase Storage
+      if(recNbr && authH){
+        try{
+          await fetch(SERVER+'/fatture_pdf',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+authH},
+            body: JSON.stringify({rec_nbr: recNbr, rif_nbr: rifNbr, pdf_b64: b64})
+          });
+        }catch(e){
+          console.warn('Upload PDF Supabase fallito:', e.message);
+        }
+      }
+
+      // Aggiorna messaggio e apri stampa
+      if(step2b){
+        const titolo = step2b.querySelector('div');
+        if(titolo) titolo.textContent = 'PDF salvato ✅';
+      }
+      // Apri dialog stampa per copia locale
+      window.print();
+      // Mostra step3
+      if(step2b) step2b.style.display='none';
+      document.getElementById('salva-step3').style.display='block';
+      const msg = document.getElementById('salva-step3-msg');
+      if(msg) msg.textContent='PDF salvato su archivio ✅';
+
+    }).catch(function(e){
+      console.warn('html2pdf errore:', e);
+      // Fallback: stampa normale anche se pdf fallisce
+      window.print();
+      document.getElementById('salva-step2b').style.display='block';
+    });
+
   } else {
-    // pdf
-    document.getElementById('salva-step2b').style.display='block';
+    // tipo === 'stampa' — flusso invariato
+    window.print();
+    document.getElementById('salva-step2a').style.display='block';
   }
 }
 
