@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DIVA">
 <meta name="theme-color" content="#1e3a8a">
-<title>DIVA Mobile — Dubbing Invoice Wizard v1.2</title>
+<title>DIVA Mobile — Dubbing Invoice Wizard v1.3</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -572,7 +572,7 @@ tr:nth-child(even) td{background:#f5f7ff;}
 <text x="200" y="132" text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="url(#ggold)" letter-spacing="6" opacity="0.9">MOBILE</text>
 <text x="200" y="148" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#8ab0d8" letter-spacing="2">DUBBING INVOICE VERIFICATION &amp; AUDIT</text>
 <text x="200" y="163" text-anchor="middle" font-family="Georgia,serif" font-size="10" font-style="italic" fill="#c8a030" opacity="0.9">Ogni voce ha il suo valore</text>
-<text x="200" y="176" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="#4a6a9a" opacity="0.7">v1.2</text>
+<text x="200" y="176" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="#4a6a9a" opacity="0.7">v1.3</text>
 </svg>
 </div>
   <div class="step-label">Accesso</div>
@@ -585,7 +585,10 @@ tr:nth-child(even) td{background:#f5f7ff;}
   <div id="login-err" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:8px 12px;font-size:12px;color:#f87171;margin-bottom:8px;text-align:center;"></div>
   <button id="btn-login" class="btn-next" style="width:100%" onclick="doLogin()"><i class="fa-solid fa-right-to-bracket"></i> Accedi</button>
   <button onclick="wtOpen()" style="width:100%;margin-top:.75rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
-    <i class="fa-solid fa-circle-question"></i> Panoramica dell'APP
+    <i class="fa-solid fa-circle-question"></i> 🎓 Panoramica — Emetti Fattura
+  </button>
+  <button onclick="apriTourMieFatture()" style="width:100%;margin-top:.5rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:var(--radius);padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+    <i class="fa-solid fa-circle-question"></i> 🎓 Panoramica — Le Mie Fatture
   </button>
   <button onclick="apriRichiesta()" style="width:100%;margin-top:.5rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:var(--radius);padding:11px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">
     <i class="fa-solid fa-user-plus"></i> Richiedi credenziali
@@ -1091,7 +1094,7 @@ tr:nth-child(even) td{background:#f5f7ff;}
 // Per aggiornare: cambia APP_VERSION qui sotto e rinomina
 // il file con il nuovo numero (es. DIVA_Mobile_Wizard_v1.1.html)
 // ════════════════════════════════════════════════════════
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.3';
 
 // ════════════════════════════════════════════════════════
 // DB PERSONE (da Supabase — ora embedded)
@@ -1658,6 +1661,12 @@ async function inviaIscrizione(){
 
 
 function wtOpen(){ tourStart(); }
+
+function apriTourMieFatture(){
+  // Apre gestione.html con ?tour=1 per lanciare automaticamente il tour
+  const base = window.location.href.replace(/[^/]*$/, '');
+  window.open(base + 'gestione.html?tour=1', '_blank');
+}
 function wtOpen_old(){
   wtCurrent=0;wtRender();
   document.getElementById('wt-overlay').classList.add('open');

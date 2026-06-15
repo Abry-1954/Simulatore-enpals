@@ -144,6 +144,10 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     sessionStorage.setItem('enpals_modo_g', 'online');
     sessionStorage.setItem('enpals_modo_mgmt', 'online');
   }
+  // Se aperto con ?tour=1 → lancia automaticamente il tour guida
+  if(p.get('tour') === '1'){
+    window._autoTour = true;
+  }
 })();
 </script>
 
@@ -1435,6 +1439,13 @@ function gtStart(){
   document.getElementById('gt-overlay').classList.add('active');
   gtGo();
 }
+
+// Auto-lancia il tour se richiesto da URL ?tour=1
+window.addEventListener('load', function(){
+  if(window._autoTour){
+    setTimeout(()=>gtStart(), 800);
+  }
+});
 
 function gtExit(){
   gtStop();
