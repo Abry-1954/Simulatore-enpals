@@ -1443,9 +1443,71 @@ function gtStart(){
 // Auto-lancia il tour se richiesto da URL ?tour=1
 window.addEventListener('load', function(){
   if(window._autoTour){
-    setTimeout(()=>gtStart(), 800);
+    setTimeout(()=>gtMockAndStart(), 300);
   }
 });
+
+function gtMockAndStart(){
+  // Nascondi login overlay
+  const loginOverlay = document.getElementById('login-overlay');
+  if(loginOverlay) loginOverlay.style.display = 'none';
+
+  // Mostra pannello fatture
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const panelFatture = document.getElementById('panel-fatture');
+  if(panelFatture) panelFatture.classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if(t.textContent.includes('Fatture')) t.classList.add('active');
+  });
+
+  // Precarica campo nominativo con nome finto
+  const cercaNom = document.getElementById('fatture-cerca-nom');
+  if(cercaNom) cercaNom.value = 'ROSSI MARIO';
+
+  // Popola filtro anno con esempio
+  const anno = document.getElementById('fatture-anno');
+  if(anno && anno.options.length <= 1){
+    const opt = document.createElement('option');
+    opt.value = '2026'; opt.textContent = '2026';
+    anno.appendChild(opt);
+  }
+
+  // Inserisci riga finta nella tabella
+  const tbody = document.getElementById('fatture-tbody');
+  if(tbody){
+    tbody.innerHTML = `
+    <tr style="cursor:pointer;border-top:2px solid #cbd5e1;">
+      <td style="text-align:center;color:#64748b;font-size:11px;">▶</td>
+      <td>1</td>
+      <td id="gt-mock-rif" style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ROSSI MARIO_Film_Esempio_3CYCLE_€ 334,00_2026_ID-001
+      </td>
+      <td>ROSSI MARIO</td>
+      <td>3CYCLE</td>
+      <td>14/06/2026</td>
+      <td>2</td><td>3</td><td>184</td>
+      <td>334,00 €</td><td>301,77 €</td>
+      <td>Pagato Giugno 2026</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px;" id="gt-mock-azioni">
+          <button class="btn btn-outline btn-sm" title="Data Pagamento / Note" id="gt-mock-edit">✏️</button>
+          <button class="btn btn-sm" style="background:#1d4ed8;color:#fff;" title="Apri PDF" id="gt-mock-pdf-open">📄</button>
+          <button class="btn btn-sm" style="background:#0f9960;color:#fff;" title="Scarica PDF" id="gt-mock-pdf-dl">⬇</button>
+          <button class="btn btn-danger btn-sm" title="Elimina fattura" id="gt-mock-del">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  // Aggiorna gli step del tour per puntare agli elementi mock
+  GT_STEPS[6].target = 'gt-mock-rif';
+  GT_STEPS[7].target = 'gt-mock-edit';
+  GT_STEPS[8].target = 'gt-mock-pdf-open';
+  GT_STEPS[9].target = 'gt-mock-del';
+
+  setTimeout(()=>gtStart(), 400);
+}
 
 function gtExit(){
   gtStop();
