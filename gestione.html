@@ -1644,7 +1644,13 @@ function gtLeggi(){
     const bst = document.getElementById('gt-btn-stop');
     if(bs) bs.style.display = 'none';
     if(bst) bst.style.display = 'flex';
-    audio.onended = audio.onerror = () => {
+    audio.onended = () => {
+      if(bs) bs.style.display = 'flex';
+      if(bst) bst.style.display = 'none';
+      window._gtAudio = null;
+      // NON azzeriamo _gtTtsAttivo — così riparte automaticamente allo step successivo
+    };
+    audio.onerror = () => {
       _gtTtsAttivo = false;
       if(bs) bs.style.display = 'flex';
       if(bst) bst.style.display = 'none';
