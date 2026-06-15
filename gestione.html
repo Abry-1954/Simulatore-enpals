@@ -1322,8 +1322,8 @@ function buildFatturaDetail(f){
 <style>
 #gt-overlay{display:none;position:fixed;inset:0;z-index:88888;pointer-events:none;}
 #gt-overlay.active{display:block;}
-#gt-backdrop{position:fixed;inset:0;background:rgba(5,12,40,0.82);pointer-events:all;}
-#gt-spotlight{position:fixed;border-radius:8px;box-shadow:0 0 0 9999px rgba(5,12,40,0.75);transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:88890;outline:3px solid #22c55e;outline-offset:3px;}
+#gt-backdrop{position:fixed;inset:0;background:rgba(5,12,40,0.45);pointer-events:all;}
+#gt-spotlight{position:fixed;border-radius:8px;box-shadow:0 0 0 9999px rgba(5,12,40,0.45);transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:88890;outline:3px solid #22c55e;outline-offset:3px;}
 #gt-bubble{position:fixed;background:#fff;border-radius:12px;padding:1rem 1.1rem;width:calc(100vw - 32px);max-width:300px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(34,197,94,0.3);z-index:88891;pointer-events:all;transition:all .35s cubic-bezier(.4,0,.2,1);left:50% !important;transform:translateX(-50%);}
 #gt-bubble::before{content:'';position:absolute;border:8px solid transparent;}
 #gt-bubble.arrow-top::before{top:-16px;left:24px;border-bottom-color:#fff;}
@@ -1368,6 +1368,24 @@ function buildFatturaDetail(f){
 // ════════════════════════════════════════════
 // TOUR GUIDA — LE MIE FATTURE
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════
+// TOUR AUDIO — MP3 base64 per ogni passo
+// null = usa Web Speech API come fallback
+// Sostituire null con stringa base64 MP3
+// ════════════════════════════════════════════
+const GT_AUDIO = [
+  null, // step 1  — Benvenuto in Le Mie Fatture
+  null, // step 2  — Cerca per Nominativo
+  null, // step 3  — Filtro Anno
+  null, // step 4  — Filtro Azienda
+  null, // step 5  — Filtro Pagamenti / Note
+  null, // step 6  — La Tabella Fatture
+  null, // step 7  — Espandi il Dettaglio
+  null, // step 8  — Data Pagamento / Note
+  null, // step 9  — Apri PDF / Scarica PDF
+  null, // step 10 — Elimina Fattura
+];
+
 const GT_STEPS = [
   {
     target: 'panel-fatture',
@@ -1509,11 +1527,14 @@ function gtMockAndStart(){
   setTimeout(()=>gtStart(), 400);
 }
 
-function gtExit(){
+function gtExit(closeWindow){
   gtStop();
   _gtTtsAttivo = false;
   document.getElementById('gt-overlay').classList.remove('active');
   document.getElementById('gt-spotlight').style.display = 'none';
+  if(closeWindow){
+    setTimeout(()=>window.close(), 800);
+  }
 }
 
 function gtStep(d){
@@ -1590,8 +1611,8 @@ function gtGo(){
     const next = document.getElementById('gt-next');
     prev.style.visibility = _gtIdx === 0 ? 'hidden' : 'visible';
     if(_gtIdx === tot - 1){
-      next.textContent = '✓ Fine';
-      next.onclick = gtExit;
+      next.textContent = '✓ Fine — Chiudi';
+      next.onclick = () => gtExit(true);
     } else {
       next.textContent = 'Avanti →';
       next.onclick = () => gtStep(1);
@@ -1600,28 +1621,63 @@ function gtGo(){
 }
 
 function gtLeggi(){
-  if(!window.speechSynthesis) return;
   const step = GT_STEPS[_gtIdx];
-  const testo = step.title + '. ' + step.body.replace(/<[^>]+>/g,'');
-  const utt = new SpeechSynthesisUtterance(testo);
-  utt.lang = 'it-IT'; utt.rate = 0.95;
-  utt.onend = () => {
-    _gtTtsAttivo = false;
-    document.getElementById('gt-btn-speak').style.display = 'flex';
-    document.getElementById('gt-btn-stop').style.display = 'none';
-  };
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utt);
+  if(!step) return;
   _gtTtsAttivo = true;
-  document.getElementById('gt-btn-speak').style.display = 'none';
-  document.getElementById('gt-btn-stop').style.display = 'flex';
+  const audioSrc = GT_AUDIO[_gtIdx] || null;
+  if(audioSrc){
+    if(window._gtAudio){ window._gtAudio.pause(); window._gtAudio = null; }
+    if(window._gtAudioCtx){ try{window._gtAudioCtx.close();}catch(e){} window._gtAudioCtx = null; }
+    const audio = new Audio(audioSrc);
+    audio.volume = 1.0;
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = ctx.createMediaElementSource(audio);
+      const gain = ctx.createGain();
+      gain.gain.value = 3.0;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      window._gtAudioCtx = ctx;
+    }catch(e){}
+    window._gtAudio = audio;
+    const bs = document.getElementById('gt-btn-speak');
+    const bst = document.getElementById('gt-btn-stop');
+    if(bs) bs.style.display = 'none';
+    if(bst) bst.style.display = 'flex';
+    audio.onended = audio.onerror = () => {
+      _gtTtsAttivo = false;
+      if(bs) bs.style.display = 'flex';
+      if(bst) bst.style.display = 'none';
+      window._gtAudio = null;
+    };
+    audio.play();
+  } else {
+    // Fallback Web Speech API
+    if(!window.speechSynthesis) return;
+    const testo = step.title + '. ' + step.body.replace(/<[^>]+>/g,'');
+    const utt = new SpeechSynthesisUtterance(testo);
+    utt.lang = 'it-IT'; utt.rate = 0.95;
+    utt.onend = () => {
+      _gtTtsAttivo = false;
+      document.getElementById('gt-btn-speak').style.display = 'flex';
+      document.getElementById('gt-btn-stop').style.display = 'none';
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
+    document.getElementById('gt-btn-speak').style.display = 'none';
+    document.getElementById('gt-btn-stop').style.display = 'flex';
+  }
 }
 
 function gtStop(){
+  if(window._gtAudio){ window._gtAudio.pause(); window._gtAudio.currentTime=0; window._gtAudio=null; }
+  if(window._gtAudioCtx){ try{window._gtAudioCtx.close();}catch(e){} window._gtAudioCtx=null; }
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   _gtTtsAttivo = false;
-  document.getElementById('gt-btn-speak').style.display = 'flex';
-  document.getElementById('gt-btn-stop').style.display = 'none';
+  const bs = document.getElementById('gt-btn-speak');
+  const bst = document.getElementById('gt-btn-stop');
+  if(bs) bs.style.display = 'flex';
+  if(bst) bst.style.display = 'none';
 }
 </script>
 </body>
