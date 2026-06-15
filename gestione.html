@@ -90,6 +90,31 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 <style>
 .btn-chiudi{position:fixed;top:12px;right:16px;z-index:1000;background:#7f1d1d;color:#fca5a5;border:1px solid #dc2626;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;}
 .btn-chiudi:hover{background:#dc2626;color:#fff;}
+/* ══ WALKTHROUGH ══ */
+#gw-overlay{display:none;position:fixed;inset:0;z-index:9000;pointer-events:none;}
+#gw-overlay.active{display:block;}
+#gw-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);pointer-events:all;}
+#gw-spotlight{position:fixed;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none;transition:all .3s ease;z-index:9001;}
+#gw-bubble{position:fixed;z-index:9002;background:#fff;border-radius:12px;padding:1.25rem 1.25rem 1rem;width:min(340px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.25);pointer-events:all;transition:all .3s ease;}
+#gw-bubble::before{content:'';position:absolute;width:0;height:0;border:9px solid transparent;}
+#gw-bubble.arrow-top::before{top:-18px;left:24px;border-bottom-color:#fff;}
+#gw-bubble.arrow-bottom::before{bottom:-18px;left:24px;border-top-color:#fff;}
+#gw-bubble.arrow-left::before{left:-18px;top:20px;border-right-color:#fff;}
+#gw-bubble.arrow-right::before{right:-18px;top:20px;border-left-color:#fff;}
+.gw-step{font-size:10px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem;}
+.gw-title{font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:.5rem;line-height:1.3;}
+.gw-body{font-size:13px;color:#4a4a6a;line-height:1.6;margin-bottom:.75rem;}
+.gw-body b{color:#1e3a8a;}
+.gw-speak-row{display:flex;gap:8px;margin-bottom:.75rem;}
+.gw-btn-speak{flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px;cursor:pointer;font-size:14px;font-weight:700;color:#1d4ed8;display:flex;align-items:center;justify-content:center;gap:6px;}
+.gw-btn-stop{flex:1;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px;cursor:pointer;font-size:14px;font-weight:700;color:#dc2626;display:none;align-items:center;justify-content:center;gap:6px;}
+.gw-nav{display:flex;align-items:center;gap:8px;margin-top:.5rem;}
+.gw-btn-prev,.gw-btn-next{background:#1e3a8a;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;}
+.gw-btn-prev:disabled{background:#bfdbfe;color:#93c5fd;cursor:not-allowed;}
+.gw-dots{flex:1;display:flex;justify-content:center;gap:5px;}
+.gw-dot{width:7px;height:7px;border-radius:50%;background:#bfdbfe;transition:background .2s;}
+.gw-dot.active{background:#1e3a8a;}
+.gw-exit{display:block;text-align:center;margin-top:.6rem;font-size:11px;color:#7a7a9a;cursor:pointer;text-decoration:underline;background:none;border:none;width:100%;}
 </style>
 <button class="btn-chiudi" onclick="window.close()">✕ Chiudi</button>
 
@@ -271,12 +296,13 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
       <option value="__nessuno__">— Non pagato</option>
     </select>
     <span id="fatture-count" style="font-size:12px;color:#64748b;margin-left:4px;"></span>
+    <button id="gt-btn-guida" onclick="gtStart()" style="background:#1e3a8a;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;">🎓 Guida</button>
   </div>
-  <div class="tbl-wrap">
+  <div class="tbl-wrap" id="gt-tbl-wrap">
     <table class="tbl"><thead><tr>
-      <th style="width:28px;"></th><th>#</th><th style="max-width:320px;">Rif.</th><th>Nominativo</th><th>Azienda</th>
+      <th style="width:28px;"></th><th>#</th><th id="gt-th-rif" style="max-width:320px;">Rif.</th><th>Nominativo</th><th>Azienda</th>
       <th>Data Fattura</th><th>GG</th><th>Turni</th><th>Righe</th><th>Imponibile</th><th>Netto</th>
-      <th>Data Pagamento / Note</th><th>Azioni</th>
+      <th id="gt-th-datapag">Data Pagamento / Note</th><th id="gt-th-azioni">Azioni</th>
     </tr></thead>
     <tbody id="fatture-tbody"></tbody></table>
   </div>
@@ -1285,7 +1311,245 @@ function buildFatturaDetail(f){
       <button class="btn btn-outline" onclick="chiudiModalDataPag()">Annulla</button>
       <button class="btn btn-primary" onclick="salvaDataPagamento()">💾 Salva</button>
     </div>
+</div>
+</div>
+
+<!-- ══ TOUR GUIDA FATTURE ══ -->
+<style>
+#gt-overlay{display:none;position:fixed;inset:0;z-index:88888;pointer-events:none;}
+#gt-overlay.active{display:block;}
+#gt-backdrop{position:fixed;inset:0;background:rgba(5,12,40,0.82);pointer-events:all;}
+#gt-spotlight{position:fixed;border-radius:8px;box-shadow:0 0 0 9999px rgba(5,12,40,0.75);transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:88890;outline:3px solid #22c55e;outline-offset:3px;}
+#gt-bubble{position:fixed;background:#fff;border-radius:12px;padding:1rem 1.1rem;width:calc(100vw - 32px);max-width:300px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(34,197,94,0.3);z-index:88891;pointer-events:all;transition:all .35s cubic-bezier(.4,0,.2,1);left:50% !important;transform:translateX(-50%);}
+#gt-bubble::before{content:'';position:absolute;border:8px solid transparent;}
+#gt-bubble.arrow-top::before{top:-16px;left:24px;border-bottom-color:#fff;}
+#gt-bubble.arrow-bottom::before{bottom:-16px;left:24px;border-top-color:#fff;}
+.gt-step{font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem;}
+.gt-title{font-size:14px;font-weight:700;color:#1e3a8a;margin-bottom:.4rem;line-height:1.3;}
+.gt-body{font-size:12px;color:#374151;line-height:1.6;margin-bottom:.75rem;}
+.gt-body b{color:#1e3a8a;}
+.gt-dots{display:flex;gap:4px;justify-content:center;margin-bottom:.75rem;}
+.gt-dot{width:6px;height:6px;border-radius:50%;background:#e2e8f0;}
+.gt-dot.on{background:#3b82f6;width:14px;border-radius:3px;}
+.gt-speak-row{display:flex;gap:8px;margin-bottom:.75rem;}
+.gt-btn-speak{flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:9px;cursor:pointer;font-size:14px;font-weight:700;color:#1d4ed8;display:flex;align-items:center;justify-content:center;gap:6px;}
+.gt-btn-stop{flex:1;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:9px;cursor:pointer;font-size:14px;font-weight:700;color:#dc2626;display:none;align-items:center;justify-content:center;gap:6px;}
+.gt-nav{display:flex;gap:8px;margin-top:.25rem;}
+.gt-btn-prev{background:#f1f5f9;border:none;border-radius:6px;padding:9px 0;font-size:13px;cursor:pointer;color:#374151;flex:1;}
+.gt-btn-next{background:#1e3a8a;border:none;border-radius:6px;padding:9px 0;font-size:13px;font-weight:700;color:#fff;cursor:pointer;flex:2;}
+.gt-exit{background:none;border:none;font-size:11px;color:#9ca3af;cursor:pointer;text-decoration:underline;margin-top:.5rem;display:block;text-align:center;width:100%;}
+</style>
+
+<div id="gt-overlay">
+  <div id="gt-backdrop"></div>
+  <div id="gt-spotlight"></div>
+  <div id="gt-bubble">
+    <div class="gt-step" id="gt-step"></div>
+    <div class="gt-title" id="gt-title"></div>
+    <div class="gt-body" id="gt-body"></div>
+    <div class="gt-dots" id="gt-dots"></div>
+    <div class="gt-speak-row">
+      <button class="gt-btn-speak" id="gt-btn-speak" onclick="gtLeggi()">🔊 Ascolta</button>
+      <button class="gt-btn-stop" id="gt-btn-stop" onclick="gtStop()">⏹ Stop</button>
+    </div>
+    <div class="gt-nav">
+      <button class="gt-btn-prev" id="gt-prev" onclick="gtStep(-1)">← Indietro</button>
+      <button class="gt-btn-next" id="gt-next" onclick="gtStep(1)">Avanti →</button>
+    </div>
+    <button class="gt-exit" onclick="gtExit()">✕ Esci dalla guida</button>
   </div>
 </div>
+
+<script>
+// ════════════════════════════════════════════
+// TOUR GUIDA — LE MIE FATTURE
+// ════════════════════════════════════════════
+const GT_STEPS = [
+  {
+    target: 'panel-fatture',
+    arrow: 'top',
+    title: 'Benvenuto in "Le Mie Fatture"',
+    body: 'Questa sezione raccoglie tutte le fatture che hai emesso con <b>DIVA</b>. Puoi consultarle, filtrarle, aprire o scaricare il PDF, aggiungere note e molto altro. Tutto in un colpo solo, da qualsiasi dispositivo.'
+  },
+  {
+    target: 'fatture-cerca-nom',
+    arrow: 'bottom',
+    title: 'Cerca per Nominativo',
+    body: 'Il campo nominativo è <b>precaricato automaticamente</b> con il tuo nome. Non puoi modificarlo: vedrai sempre e solo le tue fatture.'
+  },
+  {
+    target: 'fatture-anno',
+    arrow: 'bottom',
+    title: 'Filtro Anno',
+    body: 'Filtra le fatture per <b>anno fiscale</b>. Seleziona un anno specifico per vedere solo le fatture di quel periodo, oppure lascia su "Tutti gli anni" per vedere tutto.'
+  },
+  {
+    target: 'fatture-azienda',
+    arrow: 'bottom',
+    title: 'Filtro Azienda',
+    body: 'Filtra le fatture per <b>azienda committente</b>. Utile quando lavori per più produttori e vuoi vedere solo le fatture di uno specifico cliente.'
+  },
+  {
+    target: 'fatture-datapag',
+    arrow: 'bottom',
+    title: 'Filtro Pagamenti / Note',
+    body: 'Filtra tramite le <b>informazioni che hai salvato</b> relative alla fattura — stato del pagamento, fattura pagata, non ancora pagata, eventuali commenti.'
+  },
+  {
+    target: 'gt-tbl-wrap',
+    arrow: 'top',
+    title: 'La Tabella Fatture',
+    body: 'Ogni riga è una fattura. Trovi il riferimento, la data, l\'azienda, i giorni e turni lavorati, l\'imponibile, il netto e le eventuali <b>informazioni che hai salvato</b> nel campo data pagamento.'
+  },
+  {
+    target: 'gt-th-rif',
+    arrow: 'bottom',
+    title: 'Espandi il Dettaglio',
+    body: '<b>Clicca su una riga</b> per espandere il dettaglio completo della fattura: vedrai tutti i record con titoli, attività e importi riga per riga.'
+  },
+  {
+    target: 'gt-th-datapag',
+    arrow: 'bottom',
+    title: '✏️ Data Pagamento / Note',
+    body: 'Il <b>pulsante con la matita</b> ti permette di registrare la data in cui hai ricevuto il pagamento, oppure di aggiungere una nota libera. Hai a disposizione fino a <b>30 caratteri</b>.'
+  },
+  {
+    target: 'gt-th-azioni',
+    arrow: 'bottom',
+    title: '📄 Apri PDF  ·  ⬇ Scarica PDF',
+    body: 'Il <b>pulsante blu</b> apre il PDF della fattura direttamente nel browser. Il <b>pulsante verde</b> lo scarica sul tuo dispositivo. I PDF sono archiviati in modo sicuro sul cloud e disponibili in qualsiasi momento.'
+  },
+  {
+    target: 'gt-th-azioni',
+    arrow: 'bottom',
+    title: '🗑 Elimina Fattura',
+    body: 'Il <b>pulsante rosso</b> elimina definitivamente la fattura dall\'archivio. <b>Attenzione:</b> l\'operazione è irreversibile e cancella anche il PDF dal cloud.'
+  }
+];
+
+let _gtIdx = 0;
+let _gtTtsAttivo = false;
+
+function gtStart(){
+  _gtIdx = 0;
+  document.getElementById('gt-overlay').classList.add('active');
+  gtGo();
+}
+
+function gtExit(){
+  gtStop();
+  _gtTtsAttivo = false;
+  document.getElementById('gt-overlay').classList.remove('active');
+  document.getElementById('gt-spotlight').style.display = 'none';
+}
+
+function gtStep(d){
+  const eraAttivo = _gtTtsAttivo;
+  gtStop();
+  _gtIdx = Math.max(0, Math.min(GT_STEPS.length - 1, _gtIdx + d));
+  gtGo();
+  if(eraAttivo){ _gtTtsAttivo = true; setTimeout(()=>gtLeggi(), 300); }
+}
+
+function gtGo(){
+  const step = GT_STEPS[_gtIdx];
+  const tot = GT_STEPS.length;
+
+  setTimeout(()=>{
+    const el = document.getElementById(step.target);
+    const spot = document.getElementById('gt-spotlight');
+
+    if(el){
+      const r = el.getBoundingClientRect();
+      const pad = 8;
+      spot.style.cssText = `
+        display:block;position:fixed;
+        left:${r.left - pad}px;top:${r.top - pad}px;
+        width:${r.width + pad*2}px;height:${r.height + pad*2}px;
+        border-radius:8px;
+        box-shadow:0 0 0 9999px rgba(5,12,40,0.75);
+        outline:3px solid #22c55e;outline-offset:3px;
+        pointer-events:none;z-index:88890;
+        transition:all .35s cubic-bezier(.4,0,.2,1);
+      `;
+    } else {
+      spot.style.display = 'none';
+    }
+
+    // Posiziona fumetto
+    const bubble = document.getElementById('gt-bubble');
+    bubble.className = '';
+    let bTop = 0;
+    if(el){
+      const r = el.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - r.bottom - 16;
+      const spaceAbove = r.top - 16;
+      if(spaceBelow >= 180 || spaceBelow >= spaceAbove){
+        bTop = r.bottom + 12;
+        bubble.classList.add('arrow-top');
+      } else {
+        bTop = Math.max(8, r.top - 220);
+        bubble.classList.add('arrow-bottom');
+      }
+    } else {
+      bTop = window.innerHeight / 2 - 80;
+      bubble.classList.add('arrow-top');
+    }
+    bTop = Math.max(8, Math.min(window.innerHeight - 240, bTop));
+    bubble.style.top = bTop + 'px';
+
+    // Contenuto
+    document.getElementById('gt-step').textContent = 'Passo ' + (_gtIdx + 1) + ' di ' + tot;
+    document.getElementById('gt-title').textContent = step.title;
+    document.getElementById('gt-body').innerHTML = step.body;
+
+    // Dots
+    const dc = document.getElementById('gt-dots');
+    dc.innerHTML = '';
+    GT_STEPS.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'gt-dot' + (i === _gtIdx ? ' on' : '');
+      dc.appendChild(d);
+    });
+
+    // Navigazione
+    const prev = document.getElementById('gt-prev');
+    const next = document.getElementById('gt-next');
+    prev.style.visibility = _gtIdx === 0 ? 'hidden' : 'visible';
+    if(_gtIdx === tot - 1){
+      next.textContent = '✓ Fine';
+      next.onclick = gtExit;
+    } else {
+      next.textContent = 'Avanti →';
+      next.onclick = () => gtStep(1);
+    }
+  }, 100);
+}
+
+function gtLeggi(){
+  if(!window.speechSynthesis) return;
+  const step = GT_STEPS[_gtIdx];
+  const testo = step.title + '. ' + step.body.replace(/<[^>]+>/g,'');
+  const utt = new SpeechSynthesisUtterance(testo);
+  utt.lang = 'it-IT'; utt.rate = 0.95;
+  utt.onend = () => {
+    _gtTtsAttivo = false;
+    document.getElementById('gt-btn-speak').style.display = 'flex';
+    document.getElementById('gt-btn-stop').style.display = 'none';
+  };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utt);
+  _gtTtsAttivo = true;
+  document.getElementById('gt-btn-speak').style.display = 'none';
+  document.getElementById('gt-btn-stop').style.display = 'flex';
+}
+
+function gtStop(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  _gtTtsAttivo = false;
+  document.getElementById('gt-btn-speak').style.display = 'flex';
+  document.getElementById('gt-btn-stop').style.display = 'none';
+}
+</script>
 </body>
 </html>
