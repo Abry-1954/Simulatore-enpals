@@ -2177,6 +2177,14 @@ function goMieFatture(){
 
 function doLogout(){
   if(!confirm('Vuoi uscire?')) return;
+  // LOG LOGOUT
+  try {
+    fetch('https://enpals-server.onrender.com/log-azione', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window._authToken || '') },
+      body: JSON.stringify({ azione: 'LOGOUT', dettaglio: '', utente: S.lav.nominativo || S.user || '', ruolo: 'utente' })
+    });
+  } catch(e) {}
   S = { lav:{}, righi:[], soc:{}, tipoFatt:{}, anzianita:'SY', user:'' };
   showScreen('s-login');
   document.getElementById('inp-user').value='';
