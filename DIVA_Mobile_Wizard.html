@@ -2089,7 +2089,7 @@ async function doLogin(){
     return;
   }
 
-  // 3. Carica persone.db da Render (/db) — fonte unica, nessun embedded
+  // 3. Carica persone e aziende da Render (/db) — fonte unica, nessun embedded
   ovMsg('Caricamento dati...', 'Recupero il tuo profilo da Supabase.');
   let persone = [];
   try{
@@ -2099,6 +2099,18 @@ async function doLogin(){
     if(dbRes.ok){
       const dbData = await dbRes.json();
       persone = dbData.persone || [];
+      // Carica aziende da Supabase — sovrascrive array globale
+      if(dbData.aziende && dbData.aziende.length > 0){
+        window._AZIENDE_DB = dbData.aziende.map(function(a){ return {
+          id: a.id,
+          ragione_sociale: a.rag || '',
+          via: a.ind || '',
+          cap: '',
+          comune: a.sede || '',
+          piva_cf: a.fisc || '',
+          cod_destinatario: a.coddest || ''
+        }; });
+      }
     }
   }catch(e){
     console.warn('Impossibile caricare /db:', e.message);
@@ -2172,16 +2184,15 @@ function doLogout(){
 }
 
 // ════════════════════════════════════════════
-// DATI AZIENDE (da Supabase — ora hardcoded)
-// ════════════════════════════════════════════
-const AZIENDE_DB = [{"id": 1, "ragione_sociale": "3CYCLE", "via": "VIA LUCREZIO CARO 62", "cap": "00193", "comune": "ROMA", "piva_cf": "12659431006", "cod_destinatario": ""}, {"id": 2, "ragione_sociale": "ANGRYGIRLS SRLS", "via": "VIA ALBALONGA 36/B", "cap": "00183", "comune": "ROMA", "piva_cf": "13900901003", "cod_destinatario": ""}, {"id": 3, "ragione_sociale": "ARGON SRL", "via": "CIRCONVALLAZIONE CLODIA 3C", "cap": "00195", "comune": "ROMA", "piva_cf": "10966071002", "cod_destinatario": ""}, {"id": 4, "ragione_sociale": "ASCI VOICE AND MIND S.R.L.", "via": "VIALE CONI ZUGNA 71", "cap": "20144", "comune": "MILANO", "piva_cf": "10873440969", "cod_destinatario": ""}, {"id": 5, "ragione_sociale": "BB DUB S.R.L.", "via": "VIA NIZZA 153", "cap": "00198", "comune": "ROMA", "piva_cf": "YYYYYYYYYYY", "cod_destinatario": ""}, {"id": 6, "ragione_sociale": "BEEP STUDIOS SRL", "via": "VIA PIETRO CARTONI 22", "cap": "00152", "comune": "ROMA", "piva_cf": "8427401008", "cod_destinatario": ""}, {"id": 7, "ragione_sociale": "BIVISION SRL", "via": "LARGO ARENULA 22", "cap": "00186", "comune": "ROMA", "piva_cf": "1844461002", "cod_destinatario": ""}, {"id": 8, "ragione_sociale": "CAST DOPPIAGGIO SRL", "via": "VIA SANGEMINI 72", "cap": "00135", "comune": "ROMA", "piva_cf": "1938911003", "cod_destinatario": ""}, {"id": 9, "ragione_sociale": "CD CINE DUBBING SRL", "via": "VIA MAGNA GRECIA 84", "cap": "00183", "comune": "ROMA", "piva_cf": "13310251007", "cod_destinatario": ""}, {"id": 10, "ragione_sociale": "CDC SEFIT GROUP SPA", "via": "VIA GUALTIERO SERAFINO 18", "cap": "00136", "comune": "ROMA", "piva_cf": "11096441008", "cod_destinatario": "SUBM70N"}, {"id": 11, "ragione_sociale": "CDL DOPPIAGGIO EDIZIONI SRL", "via": "VIA GIUSEPPE FERRARI 1A", "cap": "00195", "comune": "ROMA", "piva_cf": "5816891005", "cod_destinatario": ""}, {"id": 12, "ragione_sociale": "CDR CREATIVE DUBBING ROME", "via": "VIA MARCHETTI 19", "cap": "00199", "comune": "ROMA", "piva_cf": "12152271008", "cod_destinatario": ""}, {"id": 13, "ragione_sociale": "CDR SRL", "via": "VIA FILIPPO MARCHETTI 19", "cap": "00199", "comune": "ROMA", "piva_cf": "13616261007", "cod_destinatario": "M5UXCR1"}, {"id": 14, "ragione_sociale": "CDS SEFIT SRL", "via": "VIALE DELLE MEDAGLIE D'ORO 83", "cap": "00136", "comune": "ROMA", "piva_cf": "4705191007", "cod_destinatario": "SUBM70N"}, {"id": 15, "ragione_sociale": "CINECITTA' SPA", "via": "VIA TUSCOLANA 1055", "cap": "00173", "comune": "ROMA", "piva_cf": "11638811007", "cod_destinatario": "1KY7V0P"}, {"id": 18, "ragione_sociale": "D-HUB STUDIOS SRL", "via": "VIA MICHELANGELO PINTO 21", "cap": "00149", "comune": "ROMA", "piva_cf": "12350661000", "cod_destinatario": ""}, {"id": 16, "ragione_sociale": "DAT EDIZIONI SRL", "via": "VIA ANTONIO BAIAMONTI 4", "cap": "00195", "comune": "ROMA", "piva_cf": "5501901002", "cod_destinatario": ""}, {"id": 17, "ragione_sociale": "DEA5 SRL", "via": "VIA GAETANO MARTINO", "cap": "00139", "comune": "ROMA", "piva_cf": "1550511008", "cod_destinatario": "1550511008"}, {"id": 19, "ragione_sociale": "DUBBING ACADEMY", "via": "PIAZZA SANTA SCOLASTICA 3", "cap": "03043", "comune": "CASSINO (FR)", "piva_cf": "90020110608", "cod_destinatario": "KRRH6B9"}, {"id": 20, "ragione_sociale": "DUBBING BROTHERS INTERNATIONAL ITALIA SRL", "via": "VIA MALCESINE 41", "cap": "00135", "comune": "ROMA", "piva_cf": "5353071003", "cod_destinatario": "T9K4ZHO"}, {"id": 21, "ragione_sociale": "EDDY CORTESE SOC COOP A RL", "via": "VIA FILIPPO MARCHETTI 19", "cap": "00199", "comune": "ROMA", "piva_cf": "1658171002", "cod_destinatario": "1658171002"}, {"id": 22, "ragione_sociale": "ETS STUDIOS SRL", "via": "CIRCONVALLAZIONE CLODIA 3C", "cap": "00195", "comune": "ROMA", "piva_cf": "13602301007", "cod_destinatario": ""}, {"id": 23, "ragione_sociale": "IYUNO ITALY SRL", "via": "VIA NEVIO 1", "cap": "00136", "comune": "ROMA", "piva_cf": "60565531004", "cod_destinatario": ""}, {"id": 24, "ragione_sociale": "KEA SRL", "via": "PIAZZA CAMERINO 4", "cap": "00182", "comune": "ROMA", "piva_cf": "9328331005", "cod_destinatario": ""}, {"id": 25, "ragione_sociale": "LABiBi.IT", "via": "VIA", "cap": "00100", "comune": "ROMA", "piva_cf": "XXXXXXXXXXX", "cod_destinatario": ""}, {"id": 26, "ragione_sociale": "LASER DIGITAL FILM S.R.L.", "via": "VIA FLAMINIA 999", "cap": "00189", "comune": "ROMA", "piva_cf": "12838921000", "cod_destinatario": ""}, {"id": 27, "ragione_sociale": "LOCAL TRANSIT DI ANGELA PAOLETTI", "via": "VIA DELLA MADDALENA 15", "cap": "57126", "comune": "LIVORNO", "piva_cf": "1247530494", "cod_destinatario": ""}, {"id": 28, "ragione_sociale": "LUMAX PRODUCTION SRL", "via": "VIA CESARE FRACASSINI 46", "cap": "00196", "comune": "ROMA", "piva_cf": "10246401003", "cod_destinatario": "BA6ET11"}, {"id": 29, "ragione_sociale": "MAGMALABSTUDIO SRL", "via": "VA GRAZIA DELEDDA. 75", "cap": "00137", "comune": "ROMA", "piva_cf": "", "cod_destinatario": ""}, {"id": 30, "ragione_sociale": "MICKI di CRISTIANO SARACENI", "via": "VIA MASSIMI 35", "cap": "00136", "comune": "ROMA", "piva_cf": "12228421009", "cod_destinatario": ""}, {"id": 31, "ragione_sociale": "MULTIMEDIA NETWORK", "via": "VIA", "cap": "00100", "comune": "ROMA", "piva_cf": "XXXXXXXXXXX", "cod_destinatario": ""}, {"id": 32, "ragione_sociale": "N.V.P. NEW VIDEO PROJECT SAS", "via": "VIA AUGUSTO RIBOTY 22", "cap": "00195", "comune": "ROMA", "piva_cf": "4096771003", "cod_destinatario": ""}, {"id": 33, "ragione_sociale": "OMNIMEDIA AUDIOVISIVI SRLS", "via": "CORSO MARCONI 23", "cap": "00053", "comune": "CIVITAVECCHIA (RM)", "piva_cf": "16884941002", "cod_destinatario": "KRRH6B9"}, {"id": 34, "ragione_sociale": "PALMAFILM SRL", "via": "VIA FRATELLI ROSSELLI 7", "cap": "00195", "comune": "ROMA", "piva_cf": "1473901005", "cod_destinatario": ""}, {"id": 36, "ragione_sociale": "PUMAISDUE SRL", "via": "VIA DEL FORTE BRAVETTA 182", "cap": "00164", "comune": "ROMA", "piva_cf": "5739421005", "cod_destinatario": ""}, {"id": 35, "ragione_sociale": "Pi.Ti  di DE JULIO & C. SNC", "via": "VICOLO DE' BOVARI 11", "cap": "00186", "comune": "ROMA", "piva_cf": "1815021009", "cod_destinatario": "USAL8PV"}, {"id": 37, "ragione_sociale": "ROAD TELEVISION SRL", "via": "VIA ASIAGO 8", "cap": "00195", "comune": "ROMA", "piva_cf": "4941061006", "cod_destinatario": "BA6ET1"}, {"id": 38, "ragione_sociale": "ROY FILM SRL", "via": "VIA DELLA SCROFA", "cap": "00186", "comune": "ROMA", "piva_cf": "882891005", "cod_destinatario": ""}, {"id": 39, "ragione_sociale": "SANTINI EDIZIONI & COMPANY", "via": "VIA SANGEMINI 78", "cap": "00135", "comune": "ROMA", "piva_cf": "7153371005", "cod_destinatario": ""}, {"id": 40, "ragione_sociale": "SDI MEDIA ITALIA SRL", "via": "VIA OSLAVIA 17", "cap": "20134", "comune": "MILANO", "piva_cf": "8431510968", "cod_destinatario": ""}, {"id": 41, "ragione_sociale": "SEDIF S.R.L.", "via": "VIA SANGEMINI 72", "cap": "00135", "comune": "ROMA", "piva_cf": "978201002", "cod_destinatario": ""}, {"id": 42, "ragione_sociale": "SINTESI EDIZIONI SRL", "via": "VIA ANTONIO BOSIO 22", "cap": "00161", "comune": "ROMA", "piva_cf": "7569971000", "cod_destinatario": ""}, {"id": 46, "ragione_sociale": "SOCIETA' PRODUZIONI AUDIO VIDEO SRL", "via": "VIA MONTE BIANCO 91", "cap": "00141", "comune": "ROMA", "piva_cf": "7318031007", "cod_destinatario": "spavsrl@pec.it"}, {"id": 43, "ragione_sociale": "SOUND FARM 999", "via": "VIA F MARCHETTI 19", "cap": "00199", "comune": "ROMA", "piva_cf": "13897651009", "cod_destinatario": ""}, {"id": 44, "ragione_sociale": "SOUNDAR 23", "via": "VIA GIUSEPPE FERRARI 1", "cap": "00195", "comune": "ROMA", "piva_cf": "XXXXXXXXXXX", "cod_destinatario": ""}, {"id": 45, "ragione_sociale": "SPAV SRL", "via": "VIA MONTE BIANCO 91", "cap": "00141", "comune": "ROMA", "piva_cf": "7318031007", "cod_destinatario": "KRRH6B9"}, {"id": 47, "ragione_sociale": "STUDIO EMME SPA", "via": "VIA CASALMONFERRATO 4/A", "cap": "00182", "comune": "ROMA", "piva_cf": "4558741007", "cod_destinatario": ""}, {"id": 48, "ragione_sociale": "STUDIO MEGA DI MGRAZIA ARGIOLAS", "via": "VIA STEFANO BORGIA 84", "cap": "00168", "comune": "ROMA", "piva_cf": "P.I. 10658440580", "cod_destinatario": ""}, {"id": 49, "ragione_sociale": "TECNOMOVIES SRLS", "via": "VIA PAVIA 2", "cap": "00161", "comune": "ROMA", "piva_cf": "13886091001", "cod_destinatario": "T9K4ZHO"}, {"id": 50, "ragione_sociale": "TIGER FILM SRL", "via": "PIAZZA SANTA SCOLASTICA 3", "cap": "03043", "comune": "CASSINO (FR)", "piva_cf": "3029430604", "cod_destinatario": ""}, {"id": 51, "ragione_sociale": "TS VIDEO SRL", "via": "VIA MARCANTONIO BRAGADIN 6", "cap": "00136", "comune": "ROMA", "piva_cf": "6824771007", "cod_destinatario": ""}, {"id": 52, "ragione_sociale": "VIDEOSOUND SERVICE SRL", "via": "VIA G ANTONELLI 33", "cap": "00197", "comune": "ROMA", "piva_cf": "2018411005", "cod_destinatario": "M5UXCR1"}, {"id": 53, "ragione_sociale": "VSI ITALIA", "via": "VIA G BATTISTA DEROSSI 3", "cap": "00161", "comune": "ROMA", "piva_cf": "9335891009", "cod_destinatario": ""}];
+// AZIENDE_DB — caricate da Supabase al login (vedi doLogin)
+var _AZIENDE_DB = [];
 
 function filtraAziende(){
   const q = document.getElementById('az-search').value.trim().toUpperCase();
   const lista = document.getElementById('az-lista');
   const filtered = q.length < 1
-    ? AZIENDE_DB
-    : AZIENDE_DB.filter(a => a.ragione_sociale.toUpperCase().includes(q));
+    ? _AZIENDE_DB
+    : _AZIENDE_DB.filter(a => a.ragione_sociale.toUpperCase().includes(q));
   if(filtered.length === 0){
     lista.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:13px;padding:8px">Nessuna azienda trovata</div>';
     return;
@@ -2198,7 +2209,7 @@ function filtraAziende(){
 }
 
 function selezionaAzienda(id){
-  const az = AZIENDE_DB.find(a => a.id === id);
+  const az = _AZIENDE_DB.find(a => a.id === id);
   if(!az) return;
   S.soc = az;
   filtraAziende(); // aggiorna selezione visiva
