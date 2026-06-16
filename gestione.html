@@ -1517,6 +1517,11 @@ function gtMockAndStart(){
   const loginOverlay = document.getElementById('login-overlay');
   if(loginOverlay) loginOverlay.style.display = 'none';
 
+  // Nascondi tab Persone, Aziende, Variabili durante il tour
+  document.querySelectorAll('.tab').forEach(t => {
+    if(!t.textContent.includes('Fatture')) t.style.display = 'none';
+  });
+
   // Mostra pannello fatture
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1579,6 +1584,8 @@ function gtExit(closeWindow){
   _gtTtsAttivo = false;
   document.getElementById('gt-overlay').classList.remove('active');
   document.getElementById('gt-spotlight').style.display = 'none';
+  // Ripristina visibilità di tutti i tab
+  document.querySelectorAll('.tab').forEach(t => t.style.display = '');
   if(closeWindow){
     setTimeout(()=>window.close(), 800);
   }
