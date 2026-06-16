@@ -584,6 +584,37 @@ tr:nth-child(even) td{background:#f5f7ff;}
   </div>
   <div id="login-err" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:8px 12px;font-size:12px;color:#f87171;margin-bottom:8px;text-align:center;"></div>
   <button id="btn-login" class="btn-next" style="width:100%" onclick="doLogin()"><i class="fa-solid fa-right-to-bracket"></i> Accedi</button>
+
+  <!-- OVERLAY ATTESA LOGIN -->
+  <div id="login-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,20,45,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+    <div style="width:100%;max-width:360px;text-align:center;">
+      <!-- Logo -->
+      <div style="font-family:Georgia,serif;font-size:2.2rem;font-weight:700;font-style:italic;background:linear-gradient(135deg,#f5c842,#c8860a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px;margin-bottom:.2rem;">DIVA</div>
+      <div style="font-size:.7rem;letter-spacing:4px;color:#8ab0d8;margin-bottom:2rem;">MOBILE</div>
+      <!-- Icona animata -->
+      <div id="ov-icon" style="font-size:2.5rem;margin-bottom:1.2rem;animation:spin-slow 3s linear infinite;">🎙️</div>
+      <!-- Messaggio principale -->
+      <div id="ov-msg" style="font-size:1rem;font-weight:600;color:#e2e8f0;margin-bottom:.4rem;">Connessione al server...</div>
+      <!-- Sottotitolo -->
+      <div id="ov-sub" style="font-size:.8rem;color:#8ab0d8;margin-bottom:1.5rem;">Il server si sta svegliando, attendere.</div>
+      <!-- Barra di avanzamento -->
+      <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;overflow:hidden;margin-bottom:.6rem;">
+        <div id="ov-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#f5c842,#c8860a);border-radius:99px;transition:width .5s ease;"></div>
+      </div>
+      <!-- Tentativo e secondi -->
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#4a6a9a;margin-bottom:1.5rem;">
+        <span id="ov-attempt">Tentativo 1 di 5</span>
+        <span id="ov-secs">⏱️ 0s</span>
+      </div>
+      <!-- Info -->
+      <div style="font-size:.72rem;color:#4a6a9a;line-height:1.5;border-top:1px solid rgba(255,255,255,.08);padding-top:1rem;">
+        La prima connessione può richiedere fino a 60 secondi.<br>Non chiudere questa schermata.
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes spin-slow { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  </style>
   <button onclick="wtOpen()" style="width:100%;margin-top:.75rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
     <i class="fa-solid fa-circle-question"></i> 🎓 Panoramica — Emetti Fattura
   </button>
@@ -1966,8 +1997,42 @@ async function doLogin(){
 
   const btn = document.getElementById('btn-login');
   const errEl = document.getElementById('login-err');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ Connessione...'; }
+  const overlay = document.getElementById('login-overlay');
   if(errEl){ errEl.style.display='none'; }
+  if(btn){ btn.disabled=true; }
+
+  // Helper overlay
+  const ICONS = ['🎙️','🎬','🎭','🎵','🎤'];
+  let _secsTimer = null;
+  let _secsCount = 0;
+
+  function ovShow(tentativo, MAX){
+    if(!overlay) return;
+    overlay.style.display='flex';
+    document.getElementById('ov-attempt').textContent = 'Tentativo '+tentativo+' di '+MAX;
+    document.getElementById('ov-bar').style.width = Math.round((tentativo/MAX)*100)+'%';
+    document.getElementById('ov-icon').textContent = ICONS[(tentativo-1)%ICONS.length];
+    const msgs = ['Connessione al server...','Server in avvio...','Quasi pronto...','Un altro momento...','Ultimo tentativo...'];
+    document.getElementById('ov-msg').textContent = msgs[Math.min(tentativo-1, msgs.length-1)];
+    // Contatore secondi
+    if(_secsTimer) clearInterval(_secsTimer);
+    _secsCount = 0;
+    document.getElementById('ov-secs').textContent = '⏱️ 0s';
+    _secsTimer = setInterval(function(){
+      _secsCount++;
+      document.getElementById('ov-secs').textContent = '⏱️ '+_secsCount+'s';
+    }, 1000);
+  }
+
+  function ovHide(){
+    if(overlay) overlay.style.display='none';
+    if(_secsTimer){ clearInterval(_secsTimer); _secsTimer=null; }
+  }
+
+  function ovMsg(msg, sub){
+    if(document.getElementById('ov-msg')) document.getElementById('ov-msg').textContent = msg;
+    if(sub && document.getElementById('ov-sub')) document.getElementById('ov-sub').textContent = sub;
+  }
 
   const SERVER = 'https://enpals-server.onrender.com';
   const MAX_TENTATIVI = 5;
@@ -1976,11 +2041,12 @@ async function doLogin(){
   let serverOk = false;
 
   // 1. Login su Render con retry automatici (gestisce Render addormentato)
+  ovShow(1, MAX_TENTATIVI);
   while(!serverOk && tentativo < MAX_TENTATIVI){
     tentativo++;
     try{
       if(tentativo > 1){
-        if(btn) btn.textContent = '⏳ Server in avvio... ('+tentativo+'/'+MAX_TENTATIVI+')';
+        ovShow(tentativo, MAX_TENTATIVI);
         await new Promise(function(r){ setTimeout(r, 12000); });
       }
       const fetchOpts = {
@@ -2004,8 +2070,9 @@ async function doLogin(){
     if(!res) throw new Error('Server non raggiungibile dopo '+MAX_TENTATIVI+' tentativi');
     loginData = await res.json();
     if(!loginData.ok){
+      ovHide();
       if(errEl){ errEl.textContent='Credenziali non valide.'; errEl.style.display='block'; }
-      if(btn){ btn.disabled=false; btn.textContent='Entra'; }
+      if(btn){ btn.disabled=false; }
       return;
     }
     // Salva token e credenziali
@@ -2016,13 +2083,14 @@ async function doLogin(){
     sessionStorage.setItem('enpals_ruolo', loginData.ruolo||'utente');
     serverOk = true;
   }catch(e){
+    ovHide();
     if(errEl){ errEl.textContent='Errore: '+e.message; errEl.style.display='block'; }
-    if(btn){ btn.disabled=false; btn.textContent='Entra'; }
+    if(btn){ btn.disabled=false; }
     return;
   }
 
   // 3. Carica persone.db da Render (/db) — fonte unica, nessun embedded
-  if(btn) btn.textContent = '⏳ Caricamento dati...';
+  ovMsg('Caricamento dati...', 'Recupero il tuo profilo da Supabase.');
   let persone = [];
   try{
     const dbRes = await fetch(SERVER+'/db', {
@@ -2070,7 +2138,8 @@ async function doLogin(){
   }
 
   // 5. Vai alla home
-  if(btn){ btn.disabled=false; btn.textContent='Entra'; }
+  ovHide();
+  if(btn){ btn.disabled=false; }
   const benvenuto = document.getElementById('home-benvenuto');
   if(benvenuto) benvenuto.textContent = 'Ciao, ' + (S.lav.nominativo||u).split(' ')[0];
   showScreen('s-home');
