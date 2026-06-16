@@ -1981,14 +1981,14 @@ async function doLogin(){
     try{
       if(tentativo > 1){
         if(btn) btn.textContent = '⏳ Server in avvio... ('+tentativo+'/'+MAX_TENTATIVI+')';
-        await new Promise(function(r){ setTimeout(r, 8000); });
+        await new Promise(function(r){ setTimeout(r, 12000); });
       }
       const fetchOpts = {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({username:u, password:p})
       };
-      try{ fetchOpts.signal = AbortSignal.timeout(15000); }catch(ex){}
+      try{ fetchOpts.signal = AbortSignal.timeout(55000); }catch(ex){}
       res = await fetch(SERVER+'/login', fetchOpts);
       break;
     }catch(e){
