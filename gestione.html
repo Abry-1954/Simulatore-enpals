@@ -1153,22 +1153,66 @@ function renderFatture(){
   tbody.innerHTML = html;
 }
 
+function mostraMessaggioAttesa(testo){
+  const el = document.createElement('div');
+  el.id = '_msg_attesa_pdf';
+  el.textContent = testo;
+  el.style.cssText = [
+    'position:fixed',
+    'top:50%',
+    'left:50%',
+    'transform:translate(-50%,-50%)',
+    'background:#1e3a8a',
+    'color:#fff',
+    'padding:22px 40px',
+    'border-radius:12px',
+    'font-size:17px',
+    'font-weight:700',
+    'font-family:"DM Sans",sans-serif',
+    'z-index:99999',
+    'box-shadow:0 8px 40px rgba(0,0,0,0.45)',
+    'letter-spacing:0.03em',
+    'text-align:center',
+    'min-width:320px',
+    'border:2px solid #60a5fa',
+    'pointer-events:none'
+  ].join(';');
+  // backdrop semi-trasparente
+  const bg = document.createElement('div');
+  bg.id = '_msg_attesa_pdf_bg';
+  bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:99998;pointer-events:none;';
+  document.body.appendChild(bg);
+  document.body.appendChild(el);
+}
+
+function nascondiMessaggioAttesa(){
+  const el = document.getElementById('_msg_attesa_pdf');
+  const bg = document.getElementById('_msg_attesa_pdf_bg');
+  if(el) el.remove();
+  if(bg) bg.remove();
+}
+
 async function apriPdf(rec_nbr){
+  mostraMessaggioAttesa('⏳  ATTENDERE .... APERTURA DEL PDF IN CORSO');
   try{
     const r = await api('/fatture_pdf_url?rec_nbr='+rec_nbr);
+    nascondiMessaggioAttesa();
     if(r && r.ok && r.signed_url){
       window.open(r.signed_url, '_blank');
     } else {
       alert('PDF non disponibile: '+(r&&r.error||'errore sconosciuto'));
     }
   }catch(e){
+    nascondiMessaggioAttesa();
     alert('Errore: '+e.message);
   }
 }
 
 async function scaricaPdf(rec_nbr){
+  mostraMessaggioAttesa('⏳  ATTENDERE ... DOWNLOAD DEL FILE IN CORSO');
   try{
     const r = await api('/fatture_pdf_url?rec_nbr='+rec_nbr);
+    nascondiMessaggioAttesa();
     if(r && r.ok && r.signed_url){
       const a = document.createElement('a');
       a.href = r.signed_url;
@@ -1180,6 +1224,7 @@ async function scaricaPdf(rec_nbr){
       alert('PDF non disponibile: '+(r&&r.error||'errore sconosciuto'));
     }
   }catch(e){
+    nascondiMessaggioAttesa();
     alert('Errore: '+e.message);
   }
 }
