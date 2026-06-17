@@ -2667,8 +2667,9 @@ async function salvaSuDB(){
     const sd = await sr.json();
     if(sd.ok){
       salvOk = true;
-      // Salva rec_nbr globalmente per uso in upload PDF
+      // Salva rec_nbr e rif_nbr globalmente per uso in upload PDF
       window._lastRecNbr = sd.rec_nbr || null;
+      window._lastRifNbr = rif_nbr;
       // Estrae il rif_nbr definitivo dal msg del server
       // msg formato: "Fattura NOME_COMPLETO_2026_ID-053 salvata (ID 53)"
       if(sd.rif_nbr){
@@ -2677,6 +2678,8 @@ async function salvaSuDB(){
         const extracted = sd.msg.replace('Fattura ','').split(' salvata ')[0];
         if(extracted) rif_nbr = extracted;
       }
+      // Aggiorna con il rif_nbr definitivo (include _ID-NNN)
+      window._lastRifNbr = rif_nbr;
     } else {
       if(spinner) spinner.style.display='none';
       alert('❌ Errore salvataggio: '+(sd.error||sd.msg||sr.status));
@@ -2718,7 +2721,7 @@ function dialogAvviaPercorso(tipo){
   if(tipo==='pdf'){
     // Genera PDF con html2pdf, carica su Supabase, poi apre stampa
     const fatDiv = document.querySelector('#s-fattura .fat-body') || document.querySelector('#s-fattura .fattura-wrap') || document.getElementById('s-fattura');
-    const rifNbr = document.title || 'fattura';
+    const rifNbr = window._lastRifNbr || document.title || 'fattura';
     const recNbr = window._lastRecNbr || null;
     const SERVER = 'https://enpals-server.onrender.com';
     const tok = sessionStorage.getItem('enpals_auth')||'';
