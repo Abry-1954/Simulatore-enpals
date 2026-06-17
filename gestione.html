@@ -118,6 +118,15 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
 </style>
 <button class="btn-chiudi" onclick="window.close()">✕ Chiudi</button>
 
+<script>
+// Nascondi subito il login-overlay se arriviamo dal Wizard (_tk) o con tour=1
+(function(){
+  var _p = new URLSearchParams(window.location.search);
+  if(_p.get('_tk') || _p.get('tour') === '1'){
+    document.write('<style>#login-overlay{display:none!important}</style>');
+  }
+})();
+</script>
 <div id="login-overlay">
   <div class="login-box">
     <div class="login-logo">ENPALS / GESTIONE</div>
@@ -483,7 +492,6 @@ function logDB(azione, dettaglio){
 // ══════════════════════════════════════════════════════════════
 (function(){
   var K = "enpals_auth";
-  var U = "alberita", P = "12111957";
 
   function applyLogin(){
     var overlay = document.getElementById("login-overlay");
@@ -553,24 +561,10 @@ function logDB(azione, dettaglio){
       console.log("Server non raggiungibile, uso login locale:", e.message);
     }
 
-    // 2. Fallback login locale
+    // 2. Fallback — server non raggiungibile
     if(!serverOk){
-      if(u === U && p === P){
-        sessionStorage.setItem(K, "1");
-        sessionStorage.setItem('enpals_cu', u);
-        sessionStorage.setItem('enpals_cp', p);
-        document.getElementById("login-overlay").style.display = "none";
-        // Mostra avviso server offline
-        setTimeout(function(){
-          var av=document.createElement("div");
-          av.textContent="⚠ Server non raggiungibile — accesso locale attivo";
-          av.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#92400e;color:#fef3c7;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3);";
-          document.body.appendChild(av);
-          setTimeout(function(){av.remove();},4000);
-        },300);
-      } else {
-        errEl.style.display = "block";
-      }
+      errEl.textContent = "⚠ Server non raggiungibile. Riprova tra qualche secondo.";
+      errEl.style.display = "block";
     }
     btn.textContent = "Entra"; btn.disabled = false;
   };
