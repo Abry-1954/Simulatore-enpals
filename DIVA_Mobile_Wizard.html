@@ -1159,7 +1159,7 @@ const TIPI_FATT=[
   {cod:'FA', label:'Fatt. Agev.',     labelLong:'FATTURA REGIME AGEVOLATO',      iva:0},
   {cod:'RS', label:'Ric. Semplice',   labelLong:'RICEVUTA SEMPLICE',             iva:0},
   {cod:'RA', label:'Ric. Adat.',      labelLong:'RICEVUTA ADATTATORI',           iva:0},
-  {cod:'RGA',label:'Ric. Agev. Adat.',labelLong:'RICEVUTA REGIME AGEVOLATO ADATTATORI', iva:0},
+  {cod:'RGA',label:'Ric. Agev. Adat.',labelLong:'RICEVUTA REGIME AGEVOLATO ADATTATORI NO IVA E NO RA', iva:0},
 ];
 const NOTE_LEGALI={
   'FO': 'Operazione effettuata ai sensi dell\'art. 1, commi da 54 a 89, della Legge n. 190/2014.<br>Marca da bollo da 2 euro per importi maggiori di 77,47 euro.',
@@ -2601,7 +2601,7 @@ async function salvaSuDB(){
     rif_nbr,
     nominativo:       lav.nominativo||'',
     codfisc:          lav.codfisc||lav.cf||'',
-    tipo_fatt:        tf.cod||'',
+    tipo_fatt:        tf.labelLong||tf.cod||'',
     anzianita:        S.anzianita||'SY',
     via:              lav.via||'',
     comune:           lav.comune||'',
@@ -2624,7 +2624,7 @@ async function salvaSuDB(){
     rec[n+'titolo']    = r.titolo||'';
     rec[n+'attivita']  = (r.tipoLavLabel||r.attivita||'').toUpperCase();
     rec[n+'tipo_lav']  = (r.tipoOperaLabel||'').toUpperCase();
-    rec[n+'tipo_fatt'] = tf.cod||'';
+    rec[n+'tipo_fatt'] = tf.labelLong||tf.cod||'';
     rec[n+'anzianita'] = S.anzianita||'SY';
     rec[n+'data_lav']  = r.datalav||'';
     rec[n+'giorni']    = 1;
