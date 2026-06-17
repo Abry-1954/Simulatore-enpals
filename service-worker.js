@@ -1,6 +1,7 @@
-const CACHE_NAME = 'diva-mobile-v1';
+const CACHE_NAME = 'diva-mobile-v2';
 const ASSETS = [
-  '/Simulatore-enpals/DIVA_Mobile_Wizard.html'
+  '/Simulatore-enpals/DIVA_Mobile_Wizard.html',
+  '/Simulatore-enpals/gestione.html'
 ];
 
 self.addEventListener('install', function(e){
