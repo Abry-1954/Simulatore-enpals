@@ -2622,8 +2622,8 @@ async function salvaSuDB(){
   S.righi.forEach(function(r,i){
     const n='r'+String(i+1).padStart(2,'0')+'_';
     rec[n+'titolo']    = r.titolo||'';
-    rec[n+'attivita']  = r.tipoLavLabel||r.attivita||'';
-    rec[n+'tipo_lav']  = r.tipoOperaLabel||'';
+    rec[n+'attivita']  = (r.tipoLavLabel||r.attivita||'').toUpperCase();
+    rec[n+'tipo_lav']  = (r.tipoOperaLabel||'').toUpperCase();
     rec[n+'tipo_fatt'] = tf.cod||'';
     rec[n+'anzianita'] = S.anzianita||'SY';
     rec[n+'data_lav']  = r.datalav||'';
