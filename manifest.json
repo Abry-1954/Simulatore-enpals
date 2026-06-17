@@ -3,6 +3,7 @@
   "short_name": "DIVA",
   "description": "Dubbing Invoice Verification & Audit",
   "start_url": "/Simulatore-enpals/DIVA_Mobile_Wizard.html",
+  "scope": "/Simulatore-enpals/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#1e3a8a",
