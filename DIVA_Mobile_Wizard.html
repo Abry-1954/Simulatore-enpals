@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DIVA">
 <meta name="theme-color" content="#1e3a8a">
+<link rel="manifest" href="manifest.json">
 <title>DIVA Mobile — Dubbing Invoice Wizard v1.3</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -2943,6 +2944,16 @@ function usciFattura(){
 function nuovaFattura(){
   S={user:S.user,anzianita:S.anzianita,tipoFatt:null,tipoLav:'',tipoLavLabel:'',tipoOpera:'',tipoOperaLabel:'',righi:[],rigoIdx:0,nPrevisti:0,lav:S.lav,soc:S.soc};
   buildNRighi();showScreen('s-nrighi');
+}
+</script>
+<script>
+// Registrazione Service Worker per PWA
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('service-worker.js')
+      .then(function(reg){ console.log('SW registrato:', reg.scope); })
+      .catch(function(err){ console.log('SW errore:', err); });
+  });
 }
 </script>
 </body>

@@ -1,0 +1,24 @@
+{
+  "name": "DIVA Mobile",
+  "short_name": "DIVA",
+  "description": "Dubbing Invoice Verification & Audit",
+  "start_url": "/Simulatore-enpals/DIVA_Mobile_Wizard.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "diva-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "diva-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
