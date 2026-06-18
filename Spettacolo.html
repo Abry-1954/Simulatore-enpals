@@ -2110,6 +2110,27 @@ function stampaFattura(titoloPDF){
   document.body.removeChild(form);
 }
 
+// Restituisce l'HTML interno della fattura (senza <html><head>) per html2pdf
+function _spettBuildHtmlFattura(){
+  // Richiama stampaFattura intercettando l'HTML generato
+  var _captured = null;
+  var _origOpen = window.open;
+  var _origBlob = window.Blob;
+  // Patch temporanea: intercetta la Blob URL per catturare l'HTML
+  window.Blob = function(parts, opts){
+    if(opts && opts.type && opts.type.includes('text/html') && parts && parts[0]){
+      _captured = parts[0];
+    }
+    return new _origBlob(parts, opts);
+  };
+  window.Blob.prototype = _origBlob.prototype;
+  try{
+    stampaFattura('__pdf__');
+  }catch(e){}
+  window.Blob = _origBlob;
+  return _captured;
+}
+
 // ══════════════════════════════════════════════════════════════
 // TURNO AD HOC — ADATTATORE (solo riga 1)
 // ══════════════════════════════════════════════════════════════
@@ -2482,6 +2503,13 @@ async function salvaFatturaSuDB(){
     if(d.ok){
       logAzione('SALVA', _dettaglioFattura());
       setFetchStatus("✅ "+d.msg, true);
+      // Aggiorna rif_nbr con quello definitivo dal server (contiene ID-NNN)
+      if(d.rif_nbr){
+        rif_nbr = d.rif_nbr;
+      } else if(d.msg && d.msg.includes(' salvata ')){
+        const extracted = d.msg.replace('Fattura ','').split(' salvata ')[0];
+        if(extracted) rif_nbr = extracted;
+      }
       // Salva riferimenti globali per il dialog PDF
       _spettLastRifNbr = rif_nbr;
       _spettLastRecNbr = d.rec_nbr || null;
@@ -2547,13 +2575,21 @@ async function spettGeneraPDF(){
   const step2bMsg=document.getElementById('salva-step2b-msg');
   if(step2bMsg) step2bMsg.textContent='⏳ Generazione PDF in corso...';
 
-  // Trova il div della fattura (stessa logica stampaFattura)
-  const fatDiv = document.querySelector('.fat-body') || document.querySelector('.fattura-wrap') || document.querySelector('#fattura-preview');
+  // Costruisce l'HTML della fattura (stessa logica di stampaFattura)
+  // usando un div temporaneo nascosto nella pagina
+  let htmlFattura = null;
+  try{ htmlFattura = _spettBuildHtmlFattura(); }catch(e){ htmlFattura = null; }
 
-  if(!fatDiv){
-    if(step2bMsg) step2bMsg.textContent='❌ Fattura non trovata — stampa prima la fattura';
+  if(!htmlFattura){
+    if(step2bMsg) step2bMsg.textContent='❌ Impossibile generare la fattura — riprova';
     return;
   }
+
+  // Crea div temporaneo nascosto con l'HTML della fattura
+  const tmpDiv = document.createElement('div');
+  tmpDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:#fff;';
+  tmpDiv.innerHTML = htmlFattura;
+  document.body.appendChild(tmpDiv);
 
   const opt = {
     margin: [10,10,10,10],
@@ -2564,7 +2600,9 @@ async function spettGeneraPDF(){
   };
 
   try{
-    const buffer = await html2pdf().set(opt).from(fatDiv).outputPdf('arraybuffer');
+    const buffer = await html2pdf().set(opt).from(tmpDiv).outputPdf('arraybuffer');
+    document.body.removeChild(tmpDiv);
+
     const bytes = new Uint8Array(buffer);
     let binary = '';
     bytes.forEach(function(b){ binary += String.fromCharCode(b); });
@@ -2584,13 +2622,13 @@ async function spettGeneraPDF(){
     }
 
     if(step2bMsg) step2bMsg.textContent='PDF salvato ✅';
-    // Mostra step3
     step2b.style.display='none';
     const msg=document.getElementById('salva-step3-msg');
     if(msg) msg.textContent='PDF salvato su archivio ✅';
     document.getElementById('salva-step3').style.display='block';
 
   }catch(e){
+    document.body.removeChild(tmpDiv);
     console.warn('html2pdf errore:', e);
     if(step2bMsg) step2bMsg.textContent='❌ Errore PDF — prova a stampare';
   }
