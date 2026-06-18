@@ -739,6 +739,24 @@ self.addEventListener('fetch',e=>{
   window.addEventListener("DOMContentLoaded", function(){
     applyLogin();
     ripristinaRuolo();
+    // ── Avvio da Wizard: ?modifica=REC_NBR&from=wizard ──
+    var urlParams = new URLSearchParams(window.location.search);
+    var modRec = urlParams.get('modifica');
+    var fromWiz = urlParams.get('from') === 'wizard';
+    if(modRec){
+      // Aspetta che il DB sia caricato poi lancia la modifica
+      setTimeout(async function(){
+        var rif = decodeURIComponent(urlParams.get('rif') || '');
+        await caricaFatturaInModifica(parseInt(modRec), rif);
+      }, 1200);
+    }
+    // Mostra pulsanti "Torna a Wizard" se proveniente da Wizard
+    if(fromWiz){
+      var btnTorna = document.getElementById('btn-torna-wizard');
+      if(btnTorna) btnTorna.style.display = 'inline-block';
+      var btnStep3 = document.getElementById('btn-step3-torna-wizard');
+      if(btnStep3) btnStep3.style.display = 'block';
+    }
   });
   // Aggiorna altezza header per layout mobile
   function updateHdrHeight(){
@@ -896,6 +914,7 @@ function toggleMain(){
   <button id="btn-annulla-modifica" onclick="annullaModifica();" style="display:none;background:#dc2626;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Annulla modifica e torna alla modalità normale">✕ Annulla Modifica</button>
   <button class="btn-carica" onclick="richiedeServer('Carica Fattura', apriModaleFatture);" title="Carica fattura da database">📂 Carica Fattura da DB</button>
   <button id="btn-mie-fatture" onclick="apriMieFatture();" style="display:none;background:#7c3aed;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza le tue fatture">📋 Le mie fatture</button>
+  <button id="btn-torna-wizard" onclick="window.location.href='DIVA_Mobile_Wizard.html';" style="display:none;background:#1e3a8a;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Torna al Wizard">↩ Torna a Wizard</button>
   <!-- Banner modalità modifica -->
   <div id="banner-modifica" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-sm);padding:4px 10px;font-size:11px;font-weight:600;color:#92400e;">⚠️ MODIFICA: <span id="banner-modifica-rif"></span></div>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
@@ -4210,7 +4229,8 @@ function toggleModoSP(){
     <div id="salva-step3" style="display:none;">
       <div style="font-size:22px;margin-bottom:8px;">✅</div>
       <div id="salva-step3-msg" style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:20px;"></div>
-      <button onclick="spettDialogChiudi()" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">✖ Chiudi</button>
+      <button onclick="spettDialogChiudi()" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;width:100%;margin-bottom:8px;">✖ Chiudi</button>
+      <button id="btn-step3-torna-wizard" onclick="window.location.href='DIVA_Mobile_Wizard.html';" style="display:none;background:#1e3a8a;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">↩ Torna a Wizard</button>
     </div>
   </div>
 </div>

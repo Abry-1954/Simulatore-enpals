@@ -1138,6 +1138,7 @@ function renderFatture(){
       html += '<button class="btn btn-sm" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;" title="PDF non disponibile" disabled>📄</button>';
       html += '<button class="btn btn-sm" style="background:#e2e8f0;color:#94a3b8;cursor:not-allowed;" title="PDF non disponibile" disabled>⬇</button>';
     }
+    html += '<button class="btn btn-sm" style="background:#d97706;color:#fff;" onclick="modificaInSpettacolo('+f.rec_nbr+',&quot;'+rifSafe+'&quot;)" title="Modifica fattura in Spettacolo">✏️ Modifica</button>';
     html += '<button class="btn btn-danger btn-sm" onclick="eliminaFattura('+f.rec_nbr+',&quot;'+nomSafe+'&quot;)" title="Elimina fattura">&#128465;</button>';
     html += '</div></td></tr>';
     if(exp){
@@ -1269,6 +1270,12 @@ async function salvaDataPagamento(){
   } finally {
     btnSalva.textContent = '💾 Salva'; btnSalva.disabled = false;
   }
+}
+
+function modificaInSpettacolo(rec_nbr, rif_nbr){
+  // Apre Spettacolo.html nella stessa finestra con i parametri per la modifica
+  const rif = encodeURIComponent(rif_nbr || '');
+  window.location.href = 'Spettacolo.html?modifica=' + rec_nbr + '&rif=' + rif + '&from=wizard';
 }
 
 async function eliminaFattura(rec_nbr, nome){
