@@ -2579,70 +2579,50 @@ async function spettGeneraPDF(){
   const tok = sessionStorage.getItem('enpals_auth')||'';
   const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
 
-  // Mostra step2b con messaggio attesa
-  const step2b=document.getElementById('salva-step2b');
+  const step2b = document.getElementById('salva-step2b');
   if(step2b) step2b.style.display='block';
-  const step2bMsg=document.getElementById('salva-step2b-msg');
+  const step2bMsg = document.getElementById('salva-step2b-msg');
   if(step2bMsg) step2bMsg.textContent='⏳ Generazione PDF in corso...';
 
-  // Costruisce l'HTML della fattura (stessa logica di stampaFattura)
-  // usando un div temporaneo nascosto nella pagina
+  // Ottieni HTML completo della fattura
   let htmlFattura = null;
-  try{ htmlFattura = _spettBuildHtmlFattura(); }catch(e){ htmlFattura = null; }
-
+  try{ htmlFattura = stampaFattura(_spettLastRifNbr||'fattura', true); }catch(e){}
   if(!htmlFattura){
     if(step2bMsg) step2bMsg.textContent='❌ Impossibile generare la fattura — riprova';
     return;
   }
 
-  // Estrai il contenuto del <body> e del <style> dall'HTML completo
-  // per iniettarlo nel DOM principale (stesso approccio del Wizard)
-  const styleMatch = htmlFattura.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
-  const bodyMatch  = htmlFattura.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  const cssText    = styleMatch ? styleMatch[1] : '';
-  const bodyHtml   = bodyMatch  ? bodyMatch[1]  : htmlFattura;
+  // Aggiungi script html2pdf + logica di generazione/upload nella finestra popup
+  const uploadScript = `
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+<script>
+window.onload = async function(){
+  const rifNbr = ${JSON.stringify(rifNbr)};
+  const recNbr = ${JSON.stringify(recNbr)};
+  const SERVER = ${JSON.stringify(SERVER)};
+  const authH  = ${JSON.stringify(authH)};
 
-  // Inietta stile temporaneo
-  const tmpStyle = document.createElement('style');
-  tmpStyle.id = '_spett_pdf_style';
-  tmpStyle.textContent = cssText;
-  document.head.appendChild(tmpStyle);
+  // Rimuovi pulsanti no-print dal div che viene catturato
+  const noPrint = document.querySelector('.no-print');
+  if(noPrint) noPrint.style.display='none';
 
-  // Inietta div con il corpo della fattura
-  const tmpDiv = document.createElement('div');
-  tmpDiv.id = '_spett_pdf_div';
-  tmpDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:#fff;z-index:-1;';
-  tmpDiv.innerHTML = bodyHtml;
-  document.body.appendChild(tmpDiv);
-
-  // Attendi rendering
-  await new Promise(r => setTimeout(r, 400));
-
+  const fatDiv = document.querySelector('.page') || document.body;
   const opt = {
     margin: [10,10,10,10],
     filename: rifNbr + '.pdf',
     image: { type:'jpeg', quality:0.95 },
-    html2canvas: { scale:2, useCORS:true, windowWidth:794 },
+    html2canvas: { scale:2, useCORS:true },
     jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
   };
 
-  function _cleanupPdfDom(){
-    const s = document.getElementById('_spett_pdf_style');
-    const d = document.getElementById('_spett_pdf_div');
-    if(s) s.remove();
-    if(d) d.remove();
-  }
-
   try{
-    const buffer = await html2pdf().set(opt).from(tmpDiv).outputPdf('arraybuffer');
-    _cleanupPdfDom();
-
+    const buffer = await html2pdf().set(opt).from(fatDiv).outputPdf('arraybuffer');
     const bytes = new Uint8Array(buffer);
     let binary = '';
-    bytes.forEach(function(b){ binary += String.fromCharCode(b); });
+    bytes.forEach(b => binary += String.fromCharCode(b));
     const b64 = btoa(binary);
 
-    // 1) Upload su Render → Supabase Storage (bucket)
+    // 1) Upload bucket
     if(recNbr && authH){
       try{
         await fetch(SERVER+'/fatture_pdf',{
@@ -2650,49 +2630,67 @@ async function spettGeneraPDF(){
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+authH},
           body: JSON.stringify({rec_nbr: recNbr, rif_nbr: rifNbr, pdf_b64: b64})
         });
-      }catch(e){
-        console.warn('Upload PDF Supabase fallito:', e.message);
-      }
+      }catch(e){ console.warn('Upload bucket fallito:', e.message); }
     }
 
-    // 2) Salvataggio locale con prompt scelta cartella
-    if(step2bMsg) step2bMsg.textContent='⏳ Salvataggio locale...';
-    const pdfBlob = new Blob([new Uint8Array(buffer)], {type:'application/pdf'});
+    // 2) Salva locale con prompt cartella
+    const pdfBlob = new Blob([bytes], {type:'application/pdf'});
     try{
       if(window.showSaveFilePicker){
-        // API moderna — apre dialog con scelta cartella e nome file
         const fh = await window.showSaveFilePicker({
           suggestedName: rifNbr + '.pdf',
-          types:[{description:'PDF', accept:{'application/pdf':['.pdf']}}]
+          types:[{description:'PDF',accept:{'application/pdf':['.pdf']}}]
         });
         const writable = await fh.createWritable();
         await writable.write(pdfBlob);
         await writable.close();
       } else {
-        // Fallback: download automatico
         const url = URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
-        a.href = url; a.download = rifNbr + '.pdf';
+        a.href=url; a.download=rifNbr+'.pdf';
         document.body.appendChild(a); a.click();
-        setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 3000);
+        setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },3000);
       }
     }catch(saveErr){
-      // Utente ha annullato il salvataggio locale — non è un errore bloccante
-      if(saveErr.name !== 'AbortError') console.warn('Salvataggio locale:', saveErr.message);
+      if(saveErr.name!=='AbortError') console.warn('Salvataggio locale:', saveErr.message);
     }
 
-    if(step2bMsg) step2bMsg.textContent='PDF salvato ✅';
-    step2b.style.display='none';
-    const msg=document.getElementById('salva-step3-msg');
-    if(msg) msg.textContent='PDF salvato su archivio e in locale ✅';
-    document.getElementById('salva-step3').style.display='block';
+    // 3) Comunica risultato alla finestra padre
+    if(window.opener && window.opener._spettPdfDone){
+      window.opener._spettPdfDone(true);
+    }
+    window.print();
 
   }catch(e){
-    _cleanupPdfDom();
     console.warn('html2pdf errore:', e);
-    if(step2bMsg) step2bMsg.textContent='❌ Errore PDF — prova a stampare';
+    if(window.opener && window.opener._spettPdfDone) window.opener._spettPdfDone(false);
   }
+};
+<\/script>`;
+
+  // Inietta script nell'HTML prima di </body>
+  const htmlConScript = htmlFattura.replace('</body>', uploadScript + '</body>');
+
+  // Callback dal popup
+  window._spettPdfDone = function(ok){
+    if(step2bMsg) step2bMsg.textContent = ok ? 'PDF salvato ✅' : '❌ Errore PDF';
+    if(step2b && ok){ step2b.style.display='none'; }
+    const msg = document.getElementById('salva-step3-msg');
+    if(msg) msg.textContent = ok ? 'PDF salvato su archivio e in locale ✅' : 'Errore PDF';
+    document.getElementById('salva-step3').style.display='block';
+  };
+
+  // Apri popup con HTML fattura + script
+  const blob = new Blob([htmlConScript], {type:'text/html;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const popup = window.open(url, '_blank', 'width=900,height=700');
+  if(!popup){
+    if(step2bMsg) step2bMsg.textContent='❌ Popup bloccato — abilita i popup per questo sito';
+    return;
+  }
+  setTimeout(()=> URL.revokeObjectURL(url), 60000);
 }
+
 
 
 
