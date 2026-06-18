@@ -3095,8 +3095,8 @@ function _vocLoginAvviaRiconoscimento(){
         document.getElementById("voc-mic-stato").textContent="";
         var inpUser=document.getElementById("inp-user");
         var inpPass=document.getElementById("inp-pass");
-        if(inpUser)inpUser.value=_voc._loginUser;
-        if(inpPass)inpPass.value=_voc._loginPass;
+        if(inpUser)inpUser.value=(_voc._loginUser||"").toLowerCase().trim();
+        if(inpPass)inpPass.value=(_voc._loginPass||"").toLowerCase().trim();
         showScreen("s-login");
         // Dopo il login riuscito avviaModalitaVocale viene chiamata
         _voc._dopoLoginVocale=true;
