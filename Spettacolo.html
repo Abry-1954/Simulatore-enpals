@@ -508,6 +508,11 @@ self.addEventListener('fetch',e=>{
     if(saved==="1" || saved && saved.startsWith("tok:")){
       if(saved.startsWith("tok:")) window._authToken = saved.slice(4);
       overlay.style.display="none";
+      // Se già loggato (es. arrivo da gestione.html) avvia fetchDB se non ancora fatto
+      if(window._spOnline && !_dbCaricatiDaServer){
+        _dbCaricatiDaServer = true;
+        setTimeout(function(){ if(typeof fetchDB==='function') fetchDB(); }, 100);
+      }
     }
   }
 
@@ -758,8 +763,15 @@ self.addEventListener('fetch',e=>{
         // DB già pronto (es. ricarica pagina)
         setTimeout(_avviaModifica, 300);
       } else {
-        // Registra callback — fetchDB lo chiamerà appena le persone sono caricate
-        window._onDbReady = _avviaModifica;
+        // Aspetta con polling che il DB sia pronto (evita conflitti con _onDbReady)
+        var _modWait = setInterval(function(){
+          if(typeof DB !== 'undefined' && DB.persone && DB.persone.length > 0){
+            clearInterval(_modWait);
+            _avviaModifica();
+          }
+        }, 300);
+        // Timeout massimo 30 secondi
+        setTimeout(function(){ clearInterval(_modWait); }, 30000);
       }
     }
     // Mostra pulsanti "Torna a Wizard" se proveniente da Wizard
