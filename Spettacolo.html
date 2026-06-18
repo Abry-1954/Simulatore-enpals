@@ -892,9 +892,12 @@ function toggleMain(){
     <span style="color:#fca5a5;font-weight:600;">PROFORMA</span>
   </label>
   <button class="btn-stampa" onclick="stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
-  <button class="btn-salva" onclick="richiedeServer('Salva su DB Fatture', salvaFatturaSuDB);" title="Salva fattura su database">💾 Salva Fatture su DB</button>
+  <button id="btn-salva-db" class="btn-salva" onclick="richiedeServer('Salva su DB Fatture', salvaFatturaSuDB);" title="Salva fattura su database">💾 Salva Fatture su DB</button>
+  <button id="btn-annulla-modifica" onclick="annullaModifica();" style="display:none;background:#dc2626;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Annulla modifica e torna alla modalità normale">✕ Annulla Modifica</button>
   <button class="btn-carica" onclick="richiedeServer('Carica Fattura', apriModaleFatture);" title="Carica fattura da database">📂 Carica Fattura da DB</button>
   <button id="btn-mie-fatture" onclick="apriMieFatture();" style="display:none;background:#7c3aed;color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Visualizza le tue fatture">📋 Le mie fatture</button>
+  <!-- Banner modalità modifica -->
+  <div id="banner-modifica" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-sm);padding:4px 10px;font-size:11px;font-weight:600;color:#92400e;">⚠️ MODIFICA: <span id="banner-modifica-rif"></span></div>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
   <span id="server-status" style="font-size:11px;color:#93c5fd;margin-left:.5rem;">🔵 Modalità standard</span>
 </div>
@@ -2381,6 +2384,9 @@ async function fetchDB(){
 // Variabili globali per il dialog salva
 var _spettLastRifNbr = '';
 var _spettLastRecNbr = null;
+// --- MODALITÀ MODIFICA ---
+var _spettModificaRecNbr = null;  // se valorizzato = stiamo modificando una fattura esistente
+var _spettModificaRifNbr = '';    // rif_nbr originale (non modificabile)
 
 async function salvaFatturaSuDB(){
   const nomEl=document.getElementById("inp-nom");
@@ -2493,20 +2499,29 @@ async function salvaFatturaSuDB(){
   rec.tot_giorni = _dateSet.size;
   rec.tot_turni  = _totTurni;
   rec.tot_righe  = _totRighe;
+
+  // Modalità modifica: usa PATCH con rec_nbr e rif_nbr originali (invariati)
+  const isModifica = !!_spettModificaRecNbr;
+  if(isModifica){
+    rec.rec_nbr = _spettModificaRecNbr;
+    rec.rif_nbr = _spettModificaRifNbr;
+  }
+
   try{
     const r=await authFetch("/fatture",{
-      method:"POST",
+      method: isModifica ? "PATCH" : "POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(rec)
     });
     const d=await r.json();
     if(d.ok){
-      logAzione('SALVA', _dettaglioFattura());
+      logAzione(isModifica?'MODIFICA':'SALVA', _dettaglioFattura());
       setFetchStatus("✅ "+d.msg, true);
-      // Usa rif_nbr e rec_nbr definitivi restituiti dal server (rif_nbr contiene _ID-NNN)
       _spettLastRifNbr = d.rif_nbr || rif_nbr;
-      _spettLastRecNbr = d.rec_nbr || null;
-      // Apri dialog
+      _spettLastRecNbr = d.rec_nbr || _spettModificaRecNbr || null;
+      // Se era in modifica, disattiva il banner
+      if(isModifica) annullaModifica();
+      // Apri dialog (stampa PDF che sovrascrive il precedente nel bucket)
       spettMostraDialog(_spettLastRifNbr);
     }else{
       setFetchStatus("❌ Errore: "+d.error, false);
@@ -2703,6 +2718,7 @@ function renderFatture(fatture){
         <td style='padding:5px 8px;text-align:center;'>${f.data_pagamento?"✅ "+f.data_pagamento.split("-").reverse().join("/"):"⏳"}</td>
         <td style='padding:5px 8px;text-align:center;display:flex;gap:4px;justify-content:center;'>
           <button onclick='caricaFattura(${f.rec_nbr})' style='background:#2563eb;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;'>⬆ Carica</button>
+          <button onclick='caricaFatturaInModifica(${f.rec_nbr},"${f.rif_nbr}")' style='background:#d97706;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;'>✏️ Modifica</button>
           <button onclick='eliminaFattura(${f.rec_nbr},"${f.rif_nbr}")' style='background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;'>🗑</button>
         </td>
       </tr>`).join("")+
@@ -2824,6 +2840,46 @@ async function caricaFattura(rec_nbr){
     alert("Errore caricamento: "+e.message);
   }
 }
+
+// ═══ MODALITÀ MODIFICA ═══════════════════════════════════════════
+async function caricaFatturaInModifica(rec_nbr, rif_nbr){
+  // Carica i campi nel form (esattamente come caricaFattura)
+  await caricaFattura(rec_nbr);
+  // Imposta stato modifica
+  _spettModificaRecNbr = rec_nbr;
+  _spettModificaRifNbr = rif_nbr;
+  // Mostra banner e pulsante Annulla
+  const banner = document.getElementById('banner-modifica');
+  const bannerRif = document.getElementById('banner-modifica-rif');
+  const btnAnnulla = document.getElementById('btn-annulla-modifica');
+  const btnSalva = document.getElementById('btn-salva-db');
+  if(banner){ banner.style.display='inline-block'; }
+  if(bannerRif){ bannerRif.textContent = rif_nbr; }
+  if(btnAnnulla){ btnAnnulla.style.display='inline-block'; }
+  if(btnSalva){ btnSalva.textContent='💾 Salva Modifica'; btnSalva.style.background='#d97706'; }
+  // Blocca il campo titolo riga 1 (rif_nbr non si tocca)
+  const tit1 = document.getElementById('tit_1');
+  if(tit1){ tit1.readOnly=true; tit1.style.background='#f1f5f9'; tit1.title='Titolo non modificabile in modalità modifica'; }
+  chiudiModaleFatture();
+  setFetchStatus('✏️ Modalità modifica: '+rif_nbr, true);
+}
+
+function annullaModifica(){
+  _spettModificaRecNbr = null;
+  _spettModificaRifNbr = '';
+  const banner = document.getElementById('banner-modifica');
+  const btnAnnulla = document.getElementById('btn-annulla-modifica');
+  const btnSalva = document.getElementById('btn-salva-db');
+  if(banner){ banner.style.display='none'; }
+  if(btnAnnulla){ btnAnnulla.style.display='none'; }
+  if(btnSalva){ btnSalva.textContent='💾 Salva Fatture su DB'; btnSalva.style.background=''; }
+  // Riabilita titolo riga 1
+  const tit1 = document.getElementById('tit_1');
+  if(tit1){ tit1.readOnly=false; tit1.style.background=''; tit1.title=''; }
+  resetTutto();
+  setFetchStatus('✕ Modifica annullata', false);
+}
+// ═════════════════════════════════════════════════════════════════
 
 async function eliminaFattura(rec_nbr, rif){
   if(!confirm("Eliminare la fattura "+rif+"?"))return;
