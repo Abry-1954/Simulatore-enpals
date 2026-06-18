@@ -2125,7 +2125,7 @@ function _spettBuildHtmlFattura(){
   };
   window.Blob.prototype = _origBlob.prototype;
   try{
-    stampaFattura('__pdf__');
+    stampaFattura(_spettLastRifNbr||'fattura');
   }catch(e){}
   window.Blob = _origBlob;
   return _captured;
@@ -2503,11 +2503,11 @@ async function salvaFatturaSuDB(){
     if(d.ok){
       logAzione('SALVA', _dettaglioFattura());
       setFetchStatus("✅ "+d.msg, true);
-      // Salva riferimenti globali per il dialog PDF
-      _spettLastRifNbr = rif_nbr;
+      // Usa rif_nbr e rec_nbr definitivi restituiti dal server (rif_nbr contiene _ID-NNN)
+      _spettLastRifNbr = d.rif_nbr || rif_nbr;
       _spettLastRecNbr = d.rec_nbr || null;
       // Apri dialog
-      spettMostraDialog(rif_nbr);
+      spettMostraDialog(_spettLastRifNbr);
     }else{
       setFetchStatus("❌ Errore: "+d.error, false);
     }
