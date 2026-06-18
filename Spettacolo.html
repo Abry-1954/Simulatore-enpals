@@ -508,10 +508,19 @@ self.addEventListener('fetch',e=>{
     if(saved==="1" || saved && saved.startsWith("tok:")){
       if(saved.startsWith("tok:")) window._authToken = saved.slice(4);
       overlay.style.display="none";
-      // Se già loggato (es. arrivo da gestione.html) avvia fetchDB se non ancora fatto
+      // Se online e DB non ancora caricato (es. arrivo da gestione.html)
+      // fa un re-login completo con le credenziali salvate → fetchDB parte normalmente
       if(window._spOnline && !_dbCaricatiDaServer){
-        _dbCaricatiDaServer = true;
-        setTimeout(function(){ if(typeof fetchDB==='function') fetchDB(); }, 100);
+        var uVal = sessionStorage.getItem('enpals_cu') || '';
+        var pVal = sessionStorage.getItem('enpals_cp') || '';
+        if(uVal && pVal){
+          // Popola i campi e chiama doLogin come se l'utente avesse premuto Entra
+          var loginUser = document.getElementById('login-user');
+          var loginPass = document.getElementById('login-pass');
+          if(loginUser) loginUser.value = uVal;
+          if(loginPass) loginPass.value = pVal;
+          setTimeout(function(){ if(typeof doLogin==='function') doLogin(); }, 100);
+        }
       }
     }
   }
@@ -2366,14 +2375,14 @@ async function fetchDB(){
     if(!res.ok)throw new Error("Server risposta: "+res.status);
     const newDB=await res.json();
 
-    // Aggiorna i dati in memoria
-    DB.tariffe=newDB.tariffe;
-    DB.inps=newDB.inps;
-    DB.fasce=newDB.fasce;
-    DB.massimali=newDB.massimali;
-    DB.tasse=newDB.tasse;
-    DB.persone=newDB.persone;
-    DB.aziende=newDB.aziende;
+    // Aggiorna i dati in memoria (|| [] protegge da undefined in modalità online)
+    DB.tariffe  = newDB.tariffe   || DB.tariffe   || [];
+    DB.inps     = newDB.inps      || DB.inps      || [];
+    DB.fasce    = newDB.fasce     || DB.fasce     || [];
+    DB.massimali= newDB.massimali || DB.massimali || [];
+    DB.tasse    = newDB.tasse     || DB.tasse     || [];
+    DB.persone  = newDB.persone   || DB.persone   || [];
+    DB.aziende  = newDB.aziende   || DB.aziende   || [];
 
     // Ricostruisci indici
     Object.keys(IDX).forEach(k=>{for(let p in IDX[k])delete IDX[k][p];});
