@@ -1827,7 +1827,8 @@ async function checkServer(){
 }
 
 async function richiedeServer(nomeAzione, callback){
-  if(_serverOnline){
+  // In modalità online il server Render è sempre disponibile — esegui subito
+  if(window._spOnline || _serverOnline){
     if(callback) callback();
     return true;
   }
