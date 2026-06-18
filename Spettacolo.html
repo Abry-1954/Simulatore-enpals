@@ -2503,13 +2503,6 @@ async function salvaFatturaSuDB(){
     if(d.ok){
       logAzione('SALVA', _dettaglioFattura());
       setFetchStatus("✅ "+d.msg, true);
-      // Aggiorna rif_nbr con quello definitivo dal server (contiene ID-NNN)
-      if(d.rif_nbr){
-        rif_nbr = d.rif_nbr;
-      } else if(d.msg && d.msg.includes(' salvata ')){
-        const extracted = d.msg.replace('Fattura ','').split(' salvata ')[0];
-        if(extracted) rif_nbr = extracted;
-      }
       // Salva riferimenti globali per il dialog PDF
       _spettLastRifNbr = rif_nbr;
       _spettLastRecNbr = d.rec_nbr || null;
