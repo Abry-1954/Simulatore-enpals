@@ -2519,10 +2519,21 @@ async function salvaFatturaSuDB(){
       setFetchStatus("✅ "+d.msg, true);
       _spettLastRifNbr = d.rif_nbr || rif_nbr;
       _spettLastRecNbr = d.rec_nbr || _spettModificaRecNbr || null;
-      // Se era in modifica, disattiva il banner
-      if(isModifica) annullaModifica();
-      // Apri dialog (stampa PDF che sovrascrive il precedente nel bucket)
+      // Apri dialog PRIMA (il PDF legge il form ancora popolato)
       spettMostraDialog(_spettLastRifNbr);
+      // Poi disattiva il banner (NON resetta il form — lo farà l'utente)
+      if(isModifica){
+        _spettModificaRecNbr = null;
+        _spettModificaRifNbr = '';
+        const banner = document.getElementById('banner-modifica');
+        const btnAnnulla = document.getElementById('btn-annulla-modifica');
+        const btnSalva = document.getElementById('btn-salva-db');
+        if(banner) banner.style.display='none';
+        if(btnAnnulla) btnAnnulla.style.display='none';
+        if(btnSalva){ btnSalva.textContent='💾 Salva Fatture su DB'; btnSalva.style.background=''; }
+        const tit1 = document.getElementById('tit_1');
+        if(tit1){ tit1.readOnly=false; tit1.style.background=''; tit1.title=''; }
+      }
     }else{
       setFetchStatus("❌ Errore: "+d.error, false);
     }
