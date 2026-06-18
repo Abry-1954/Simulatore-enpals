@@ -749,11 +749,18 @@ self.addEventListener('fetch',e=>{
     var modRec = urlParams.get('modifica');
     var fromWiz = urlParams.get('from') === 'wizard';
     if(modRec){
-      // Aspetta che il DB sia caricato poi lancia la modifica
-      setTimeout(async function(){
-        var rif = decodeURIComponent(urlParams.get('rif') || '');
-        await caricaFatturaInModifica(parseInt(modRec), rif);
-      }, 1200);
+      var rif = decodeURIComponent(urlParams.get('rif') || '');
+      // Aspetta che il DB sia pronto (persone caricate) poi lancia la modifica
+      function _avviaModifica(){
+        caricaFatturaInModifica(parseInt(modRec), rif);
+      }
+      if(typeof DB !== 'undefined' && DB.persone && DB.persone.length > 0){
+        // DB già pronto (es. ricarica pagina)
+        setTimeout(_avviaModifica, 300);
+      } else {
+        // Registra callback — fetchDB lo chiamerà appena le persone sono caricate
+        window._onDbReady = _avviaModifica;
+      }
     }
     // Mostra pulsanti "Torna a Wizard" se proveniente da Wizard
     if(fromWiz){
