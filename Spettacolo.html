@@ -471,7 +471,8 @@ self.addEventListener('fetch',e=>{
   // Se aperto da file:// o localhost → default Locale
   var _isGitHubPages = window.location.hostname.indexOf('github.io') >= 0;
   var _storedModo = sessionStorage.getItem('enpals_modo_sp');
-  var _spOnline = _storedModo ? (_storedModo === 'online') : _isGitHubPages;
+  // Su GitHub Pages forza sempre online — ignora eventuale valore locale salvato
+  var _spOnline = _isGitHubPages ? true : (_storedModo ? (_storedModo === 'online') : false);
   var SERVER_URL = _spOnline ? "https://enpals-server.onrender.com" : "http://localhost:8765";
   window.SERVER_URL = SERVER_URL;
   window._spOnline = _spOnline;
