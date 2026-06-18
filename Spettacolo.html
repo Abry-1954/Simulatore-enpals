@@ -2595,16 +2595,28 @@ async function spettGeneraPDF(){
     return;
   }
 
-  // Crea iframe nascosto con l'HTML completo della fattura (include stili)
-  const tmpIframe = document.createElement('iframe');
-  tmpIframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;height:297mm;border:none;background:#fff;';
-  document.body.appendChild(tmpIframe);
-  tmpIframe.contentDocument.open();
-  tmpIframe.contentDocument.write(htmlFattura);
-  tmpIframe.contentDocument.close();
-  // Attendi che il DOM dell'iframe sia pronto
-  await new Promise(r => setTimeout(r, 800));
-  const targetEl = tmpIframe.contentDocument.body;
+  // Estrai il contenuto del <body> e del <style> dall'HTML completo
+  // per iniettarlo nel DOM principale (stesso approccio del Wizard)
+  const styleMatch = htmlFattura.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  const bodyMatch  = htmlFattura.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const cssText    = styleMatch ? styleMatch[1] : '';
+  const bodyHtml   = bodyMatch  ? bodyMatch[1]  : htmlFattura;
+
+  // Inietta stile temporaneo
+  const tmpStyle = document.createElement('style');
+  tmpStyle.id = '_spett_pdf_style';
+  tmpStyle.textContent = cssText;
+  document.head.appendChild(tmpStyle);
+
+  // Inietta div con il corpo della fattura
+  const tmpDiv = document.createElement('div');
+  tmpDiv.id = '_spett_pdf_div';
+  tmpDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:#fff;z-index:-1;';
+  tmpDiv.innerHTML = bodyHtml;
+  document.body.appendChild(tmpDiv);
+
+  // Attendi rendering
+  await new Promise(r => setTimeout(r, 400));
 
   const opt = {
     margin: [10,10,10,10],
@@ -2614,16 +2626,23 @@ async function spettGeneraPDF(){
     jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
   };
 
+  function _cleanupPdfDom(){
+    const s = document.getElementById('_spett_pdf_style');
+    const d = document.getElementById('_spett_pdf_div');
+    if(s) s.remove();
+    if(d) d.remove();
+  }
+
   try{
-    const buffer = await html2pdf().set(opt).from(targetEl).outputPdf('arraybuffer');
-    document.body.removeChild(tmpIframe);
+    const buffer = await html2pdf().set(opt).from(tmpDiv).outputPdf('arraybuffer');
+    _cleanupPdfDom();
 
     const bytes = new Uint8Array(buffer);
     let binary = '';
     bytes.forEach(function(b){ binary += String.fromCharCode(b); });
     const b64 = btoa(binary);
 
-    // Upload su Render → Supabase Storage
+    // 1) Upload su Render → Supabase Storage (bucket)
     if(recNbr && authH){
       try{
         await fetch(SERVER+'/fatture_pdf',{
@@ -2636,14 +2655,40 @@ async function spettGeneraPDF(){
       }
     }
 
+    // 2) Salvataggio locale con prompt scelta cartella
+    if(step2bMsg) step2bMsg.textContent='⏳ Salvataggio locale...';
+    const pdfBlob = new Blob([new Uint8Array(buffer)], {type:'application/pdf'});
+    try{
+      if(window.showSaveFilePicker){
+        // API moderna — apre dialog con scelta cartella e nome file
+        const fh = await window.showSaveFilePicker({
+          suggestedName: rifNbr + '.pdf',
+          types:[{description:'PDF', accept:{'application/pdf':['.pdf']}}]
+        });
+        const writable = await fh.createWritable();
+        await writable.write(pdfBlob);
+        await writable.close();
+      } else {
+        // Fallback: download automatico
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url; a.download = rifNbr + '.pdf';
+        document.body.appendChild(a); a.click();
+        setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 3000);
+      }
+    }catch(saveErr){
+      // Utente ha annullato il salvataggio locale — non è un errore bloccante
+      if(saveErr.name !== 'AbortError') console.warn('Salvataggio locale:', saveErr.message);
+    }
+
     if(step2bMsg) step2bMsg.textContent='PDF salvato ✅';
     step2b.style.display='none';
     const msg=document.getElementById('salva-step3-msg');
-    if(msg) msg.textContent='PDF salvato su archivio ✅';
+    if(msg) msg.textContent='PDF salvato su archivio e in locale ✅';
     document.getElementById('salva-step3').style.display='block';
 
   }catch(e){
-    if(document.body.contains(tmpIframe)) document.body.removeChild(tmpIframe);
+    _cleanupPdfDom();
     console.warn('html2pdf errore:', e);
     if(step2bMsg) step2bMsg.textContent='❌ Errore PDF — prova a stampare';
   }
