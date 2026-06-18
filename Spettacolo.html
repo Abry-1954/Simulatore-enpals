@@ -10,6 +10,7 @@
 <meta name="theme-color" content="#1e3a8a">
 <title>DIVA Desktop — Dubbing Invoice Management</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root {
   --bg:#f0f0f0; --bg2:#ffffff; --bg3:#f7f7f7; --bg4:#efefef;
@@ -2356,6 +2357,10 @@ async function fetchDB(){
 // SALVA / CARICA FATTURA
 // ══════════════════════════════════════════════════════════════
 
+// Variabili globali per il dialog salva
+var _spettLastRifNbr = '';
+var _spettLastRecNbr = null;
+
 async function salvaFatturaSuDB(){
   const nomEl=document.getElementById("inp-nom");
   const nominativo=nomEl?nomEl.value.trim():"";
@@ -2366,27 +2371,25 @@ async function salvaFatturaSuDB(){
   const anno=df1?new Date(df1).getFullYear().toString():new Date().getFullYear().toString();
 
   // Recupera prossimo rif_nbr dal server
-  let rif_nbr="";
+  let progressivo="";
   try{
     const r=await authFetch("/fatture_next/"+anno);
     const d=await r.json();
-    rif_nbr=d.rif_nbr||"";
+    progressivo=d.rif_nbr||"";
   }catch(e){
-    rif_nbr=anno+"-001";
+    progressivo=anno+"-001";
   }
 
-    // Costruisci nome suggerito: nominativo_datalav_tipolaw_titolo_azienda_totfattura_rifnbr
-  var dl1  = document.getElementById("dl_1")?document.getElementById("dl_1").value:"";
-  var tl1  = document.getElementById("tl_1")?document.getElementById("tl_1").value:"";
-  var tit1 = document.getElementById("tit_1")?document.getElementById("tit_1").value:"";
-  var az1  = document.getElementById("az-name")?document.getElementById("az-name").textContent:"";
+  // Costruisci rif_nbr automaticamente (stesso formato Wizard) — niente prompt
+  function safeP(s){return (s||"").trim().replace(/[\/:*?"<>|]/g,"");}
+  var dl1  = document.getElementById("dl_1")?.value||"";
+  var tl1  = document.getElementById("tl_1")?.value||"";
+  var tit1 = document.getElementById("tit_1")?.value||"";
+  var az1  = document.getElementById("az-name")?.textContent||"";
   var totEl2= document.getElementById("t-totfatt");
-  var totStr= totEl2?totEl2.textContent.trim():"";
-  var nomeParts=[nominativo,dl1,tl1,tit1,az1,totStr,rif_nbr]
-    .map(function(s){return s.trim().replace(/[\/:*?"<>|]/g,"");})
-    .filter(function(s){return s.length>0;});
-  rif_nbr=prompt("Nome / riferimento fattura da salvare:",nomeParts.join("_"));
-  if(!rif_nbr)return;
+  var totStr= totEl2?"€ "+totEl2.textContent.trim():"";
+  var rif_nbr=[nominativo,dl1,tl1,tit1,az1,totStr,progressivo]
+    .map(safeP).filter(function(s){return s.length>0;}).join("_");
 
   
 
@@ -2479,6 +2482,11 @@ async function salvaFatturaSuDB(){
     if(d.ok){
       logAzione('SALVA', _dettaglioFattura());
       setFetchStatus("✅ "+d.msg, true);
+      // Salva riferimenti globali per il dialog PDF
+      _spettLastRifNbr = rif_nbr;
+      _spettLastRecNbr = d.rec_nbr || null;
+      // Apri dialog
+      spettMostraDialog(rif_nbr);
     }else{
       setFetchStatus("❌ Errore: "+d.error, false);
     }
@@ -2486,6 +2494,109 @@ async function salvaFatturaSuDB(){
     setFetchStatus("❌ Server non raggiungibile",false);
   }
 }
+
+function spettMostraDialog(rif_nbr){
+  const dlg=document.getElementById('salva-dialog');
+  const rif=document.getElementById('salva-dialog-rif');
+  if(rif) rif.textContent=rif_nbr;
+  ['salva-step1','salva-step2a','salva-step2b','salva-step3'].forEach(function(id){
+    document.getElementById(id).style.display='none';
+  });
+  document.getElementById('salva-step1').style.display='block';
+  if(dlg) dlg.style.display='flex';
+}
+
+function spettDialogChiudi(){
+  const dlg=document.getElementById('salva-dialog');
+  if(dlg) dlg.style.display='none';
+}
+
+function spettDialogPercorso(tipo){
+  document.getElementById('salva-step1').style.display='none';
+  if(tipo==='pdf'){
+    spettGeneraPDF();
+  } else {
+    window.print();
+    document.getElementById('salva-step2a').style.display='block';
+  }
+}
+
+function spettDialogStepPrint(fase){
+  document.getElementById('salva-step2a').style.display='none';
+  document.getElementById('salva-step2b').style.display='none';
+  if(fase==='pdf_dopo_stampa'){
+    spettGeneraPDF();
+  } else {
+    window.print();
+    const msg=document.getElementById('salva-step3-msg');
+    if(msg) msg.textContent='Stampa completata ✅';
+    document.getElementById('salva-step3').style.display='block';
+  }
+}
+
+async function spettGeneraPDF(){
+  const rifNbr = _spettLastRifNbr || 'fattura';
+  const recNbr = _spettLastRecNbr;
+  const SERVER = 'https://enpals-server.onrender.com';
+  const tok = sessionStorage.getItem('enpals_auth')||'';
+  const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
+
+  // Mostra step2b con messaggio attesa
+  const step2b=document.getElementById('salva-step2b');
+  if(step2b) step2b.style.display='block';
+  const step2bMsg=document.getElementById('salva-step2b-msg');
+  if(step2bMsg) step2bMsg.textContent='⏳ Generazione PDF in corso...';
+
+  // Trova il div della fattura (stessa logica stampaFattura)
+  const fatDiv = document.querySelector('.fat-body') || document.querySelector('.fattura-wrap') || document.querySelector('#fattura-preview');
+
+  if(!fatDiv){
+    if(step2bMsg) step2bMsg.textContent='❌ Fattura non trovata — stampa prima la fattura';
+    return;
+  }
+
+  const opt = {
+    margin: [10,10,10,10],
+    filename: rifNbr + '.pdf',
+    image: { type:'jpeg', quality:0.95 },
+    html2canvas: { scale:2, useCORS:true },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  };
+
+  try{
+    const buffer = await html2pdf().set(opt).from(fatDiv).outputPdf('arraybuffer');
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    bytes.forEach(function(b){ binary += String.fromCharCode(b); });
+    const b64 = btoa(binary);
+
+    // Upload su Render → Supabase Storage
+    if(recNbr && authH){
+      try{
+        await fetch(SERVER+'/fatture_pdf',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+authH},
+          body: JSON.stringify({rec_nbr: recNbr, rif_nbr: rifNbr, pdf_b64: b64})
+        });
+      }catch(e){
+        console.warn('Upload PDF Supabase fallito:', e.message);
+      }
+    }
+
+    if(step2bMsg) step2bMsg.textContent='PDF salvato ✅';
+    // Mostra step3
+    step2b.style.display='none';
+    const msg=document.getElementById('salva-step3-msg');
+    if(msg) msg.textContent='PDF salvato su archivio ✅';
+    document.getElementById('salva-step3').style.display='block';
+
+  }catch(e){
+    console.warn('html2pdf errore:', e);
+    if(step2bMsg) step2bMsg.textContent='❌ Errore PDF — prova a stampare';
+  }
+}
+
+
 
 async function salvaSuDB(){
   const recStr = sessionStorage.getItem("enpals_rec_pending");
@@ -3923,6 +4034,49 @@ function toggleModoSP(){
   window.location.reload();
 }
 </script>
+
+<!-- ══ DIALOG SALVA FATTURA ══ -->
+<div id="salva-dialog" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+    <div style="font-size:28px;margin-bottom:8px;">✅</div>
+    <div style="font-weight:700;font-size:16px;color:#1e3a8a;margin-bottom:6px;">Fattura salvata su DB!</div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Riferimento:</div>
+    <div id="salva-dialog-rif" style="font-size:11px;color:#1e40af;font-weight:600;margin-bottom:16px;word-break:break-all;background:#eff6ff;border-radius:6px;padding:6px 8px;"></div>
+    <!-- STEP 1: scegli azione -->
+    <div id="salva-step1" style="display:block;">
+      <div style="font-size:14px;color:#374151;margin-bottom:16px;">Cosa vuoi fare con questa fattura?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button onclick="spettDialogPercorso('stampa')" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">🖨 Stampa</button>
+        <button onclick="spettDialogPercorso('pdf')" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">📄 Salva PDF</button>
+        <button onclick="spettDialogChiudi()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:6px;">➜ Fatto, chiudi</button>
+      </div>
+    </div>
+    <!-- STEP 2a: dopo stampa → chiedi PDF -->
+    <div id="salva-step2a" style="display:none;">
+      <div style="font-size:22px;margin-bottom:8px;">🖨</div>
+      <div style="font-weight:700;font-size:15px;color:#1e3a8a;margin-bottom:6px;">Vuoi anche salvare in PDF?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        <button onclick="spettDialogStepPrint('pdf_dopo_stampa')" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">📄 Sì, salva PDF</button>
+        <button onclick="spettDialogChiudi()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">No, chiudi</button>
+      </div>
+    </div>
+    <!-- STEP 2b: generazione PDF in corso / dopo PDF → chiedi stampa -->
+    <div id="salva-step2b" style="display:none;">
+      <div style="font-size:22px;margin-bottom:8px;">📄</div>
+      <div id="salva-step2b-msg" style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:16px;">⏳ Generazione PDF...</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button onclick="spettDialogStepPrint('stampa_dopo_pdf')" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;">🖨 Sì, stampa</button>
+        <button onclick="spettDialogChiudi()" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:600;cursor:pointer;">No, chiudi</button>
+      </div>
+    </div>
+    <!-- STEP 3: conferma finale -->
+    <div id="salva-step3" style="display:none;">
+      <div style="font-size:22px;margin-bottom:8px;">✅</div>
+      <div id="salva-step3-msg" style="font-weight:700;font-size:15px;color:#16a34a;margin-bottom:20px;"></div>
+      <button onclick="spettDialogChiudi()" style="background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">✖ Chiudi</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
