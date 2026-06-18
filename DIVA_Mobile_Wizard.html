@@ -3060,18 +3060,29 @@ function _vocLoginAvviaRiconoscimento(){
   }
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   var r=new SR();
-  r.lang="it-IT";r.continuous=false;r.interimResults=false;r.maxAlternatives=1;
+  r.lang="it-IT";r.continuous=false;r.interimResults=true;r.maxAlternatives=3;
   r.onstart=function(){
     var btn=document.getElementById("voc-mic-btn");
     if(btn){btn.style.background="rgba(239,68,68,0.4)";btn.style.borderColor="#ef4444";}
     document.getElementById("voc-mic-stato").textContent="Sto ascoltando...";
   };
   r.onresult=function(e){
-    var testo=e.results[0][0].transcript.trim();
-    document.getElementById("voc-risposta-testo").textContent=testo;
-    document.getElementById("voc-risposta-box").style.display="block";
+    // Mostra interim results in tempo reale
+    var interim="",final_text="";
+    for(var i=0;i<e.results.length;i++){
+      if(e.results[i].isFinal){final_text+=e.results[i][0].transcript;}
+      else{interim+=e.results[i][0].transcript;}
+    }
+    var testo=(final_text||interim).trim();
+    if(testo){
+      document.getElementById("voc-risposta-testo").textContent=testo;
+      document.getElementById("voc-risposta-box").style.display="block";
+      document.getElementById("voc-mic-stato").textContent=final_text?"Risposta ricevuta":"Sto sentendo...";
+    }
+    if(!final_text)return;
+    _vocGotResult=true;
+    testo=final_text.trim();
     document.getElementById("voc-bottoni").style.display="flex";
-    document.getElementById("voc-mic-stato").textContent="Risposta ricevuta";
     var btn=document.getElementById("voc-mic-btn");
     if(btn){btn.style.background="rgba(34,197,94,0.3)";btn.style.borderColor="#22c55e";}
     if(_voc._loginStep==="user"){
@@ -3108,6 +3119,17 @@ function _vocLoginAvviaRiconoscimento(){
     document.getElementById("voc-mic-stato").textContent="Non ho capito, riprova";
     setTimeout(_vocLoginAvviaRiconoscimento,1000);
   };
+  var _vocGotResult=false;
+  r.onresult=r.onresult||(function(){_vocGotResult=true;});
+  var _origOnResult=r.onresult;
+  r.onend=function(){
+    _voc.inAscolto=false;
+    // Se non ha ricevuto nulla riavvia automaticamente
+    if(!_vocGotResult){
+      document.getElementById("voc-mic-stato").textContent="Non ho sentito nulla, riprovo...";
+      setTimeout(_vocLoginAvviaRiconoscimento,800);
+    }
+  };
   r.start();
 }
 
@@ -3120,7 +3142,7 @@ function avviaModalitaVocale(){
 }
 function fermaVocale(){
   if(_voc.recognition){try{_voc.recognition.stop();}catch(e){}}
-  _voc.inAscolto=false;showScreen("s-home");
+  _voc.inAscolto=false;showScreen("s-login");
 }
 function vocaleImpostaStep(idx){
   _voc.step=idx;var step=_vocSteps[idx];if(!step)return;
