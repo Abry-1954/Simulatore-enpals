@@ -480,7 +480,11 @@ self.addEventListener('fetch',e=>{
   // Inizializza pulsante toggle al caricamento
   document.addEventListener('DOMContentLoaded', function(){
     var btn = document.getElementById('toggle-modo-sp');
-    if(btn){ btn.textContent = _spOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _spOnline ? '#1e3a8a' : '#374151'; }
+    if(btn){
+      // Su GitHub Pages nascondi il toggle — è sempre e solo online
+      if(_isGitHubPages){ btn.style.display='none'; }
+      else { btn.textContent = _spOnline ? '☁ Online' : '💾 Locale'; btn.style.background = _spOnline ? '#1e3a8a' : '#374151'; }
+    }
     // In modalità online: svuota persone embedded (arrivano solo da Supabase)
     // e nascondi pulsante Salva HTML
     if(_spOnline){
@@ -919,7 +923,7 @@ function toggleMain(){
   <!-- Banner modalità modifica -->
   <div id="banner-modifica" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:var(--radius-sm);padding:4px 10px;font-size:11px;font-weight:600;color:#92400e;">⚠️ MODIFICA: <span id="banner-modifica-rif"></span></div>
   <span id="fetch-status" style="font-size:11px;color:#93c5fd;"></span>
-  <span id="server-status" style="font-size:11px;color:#93c5fd;margin-left:.5rem;">🔵 Modalità standard</span>
+  <span id="server-status" style="font-size:11px;color:#93c5fd;margin-left:.5rem;display:none;">🔵 Modalità standard</span>
 </div>
 
 <div class="layout" id="main-layout">
@@ -1803,7 +1807,11 @@ var _dbCaricatiDaServer = false;
 async function checkServer(){
   // In modalità online il fetchDB viene chiamato direttamente dal login
   // quindi checkServer non deve chiamarlo (evita doppio fetch e conflitti)
-  if(window._spOnline) return;
+  if(window._spOnline){
+    var st = document.getElementById('server-status');
+    if(st){ st.style.display='none'; }
+    return;
+  }
   try{
     const r = await authFetch("/db", {method:"GET", signal: AbortSignal.timeout(2000)});
     if(r.ok){
