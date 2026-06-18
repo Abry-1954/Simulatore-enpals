@@ -1895,7 +1895,7 @@ function escHtml(s){
   return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
-function stampaFattura(titoloPDF){
+function stampaFattura(titoloPDF, _captureOnly){
   var nomEl=document.getElementById("inp-nom");
   var nominativo=nomEl?nomEl.value.trim():"";
   if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
@@ -2091,6 +2091,8 @@ function stampaFattura(titoloPDF){
 
   // ── Apri la fattura: prima prova Blob (funziona sempre online),
   //    fallback al server locale se disponibile ──
+  // Se chiamata in modalità cattura (per html2pdf), restituisce l'HTML direttamente
+  if(_captureOnly) return html;
   var blob = new Blob([html], {type: 'text/html; charset=utf-8'});
   var blobUrl = URL.createObjectURL(blob);
   var win = window.open(blobUrl, '_blank');
@@ -2113,25 +2115,14 @@ function stampaFattura(titoloPDF){
   document.body.removeChild(form);
 }
 
-// Restituisce l'HTML interno della fattura (senza <html><head>) per html2pdf
+// Restituisce l'HTML completo della fattura per html2pdf
 function _spettBuildHtmlFattura(){
-  // Richiama stampaFattura intercettando l'HTML generato
-  var _captured = null;
-  var _origOpen = window.open;
-  var _origBlob = window.Blob;
-  // Patch temporanea: intercetta la Blob URL per catturare l'HTML
-  window.Blob = function(parts, opts){
-    if(opts && opts.type && opts.type.includes('text/html') && parts && parts[0]){
-      _captured = parts[0];
-    }
-    return new _origBlob(parts, opts);
-  };
-  window.Blob.prototype = _origBlob.prototype;
   try{
-    stampaFattura(_spettLastRifNbr||'fattura');
-  }catch(e){}
-  window.Blob = _origBlob;
-  return _captured;
+    return stampaFattura(_spettLastRifNbr||'fattura', true); // _captureOnly=true
+  }catch(e){
+    console.warn('_spettBuildHtmlFattura errore:', e);
+    return null;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2604,23 +2595,28 @@ async function spettGeneraPDF(){
     return;
   }
 
-  // Crea div temporaneo nascosto con l'HTML della fattura
-  const tmpDiv = document.createElement('div');
-  tmpDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:#fff;';
-  tmpDiv.innerHTML = htmlFattura;
-  document.body.appendChild(tmpDiv);
+  // Crea iframe nascosto con l'HTML completo della fattura (include stili)
+  const tmpIframe = document.createElement('iframe');
+  tmpIframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;height:297mm;border:none;background:#fff;';
+  document.body.appendChild(tmpIframe);
+  tmpIframe.contentDocument.open();
+  tmpIframe.contentDocument.write(htmlFattura);
+  tmpIframe.contentDocument.close();
+  // Attendi che il DOM dell'iframe sia pronto
+  await new Promise(r => setTimeout(r, 800));
+  const targetEl = tmpIframe.contentDocument.body;
 
   const opt = {
     margin: [10,10,10,10],
     filename: rifNbr + '.pdf',
     image: { type:'jpeg', quality:0.95 },
-    html2canvas: { scale:2, useCORS:true },
+    html2canvas: { scale:2, useCORS:true, windowWidth:794 },
     jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
   };
 
   try{
-    const buffer = await html2pdf().set(opt).from(tmpDiv).outputPdf('arraybuffer');
-    document.body.removeChild(tmpDiv);
+    const buffer = await html2pdf().set(opt).from(targetEl).outputPdf('arraybuffer');
+    document.body.removeChild(tmpIframe);
 
     const bytes = new Uint8Array(buffer);
     let binary = '';
@@ -2647,7 +2643,7 @@ async function spettGeneraPDF(){
     document.getElementById('salva-step3').style.display='block';
 
   }catch(e){
-    document.body.removeChild(tmpDiv);
+    if(document.body.contains(tmpIframe)) document.body.removeChild(tmpIframe);
     console.warn('html2pdf errore:', e);
     if(step2bMsg) step2bMsg.textContent='❌ Errore PDF — prova a stampare';
   }
