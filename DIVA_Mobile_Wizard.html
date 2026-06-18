@@ -585,6 +585,14 @@ tr:nth-child(even) td{background:#f5f7ff;}
   </div>
   <div id="login-err" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:8px 12px;font-size:12px;color:#f87171;margin-bottom:8px;text-align:center;"></div>
   <button id="btn-login" class="btn-next" style="width:100%" onclick="doLogin()"><i class="fa-solid fa-right-to-bracket"></i> Accedi</button>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+    <div style="flex:1;height:1px;background:rgba(255,255,255,0.15);"></div>
+    <span style="font-size:11px;color:rgba(255,255,255,0.4);">oppure</span>
+    <div style="flex:1;height:1px;background:rgba(255,255,255,0.15);"></div>
+  </div>
+  <button id="btn-login-vocale" onclick="avviaLoginVocale();" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:var(--radius);padding:14px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+    <span style="font-size:22px;">🎤</span><span>Accedi con la voce</span>
+  </button>
 
   <!-- OVERLAY ATTESA LOGIN -->
   <div id="login-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,20,45,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
@@ -641,6 +649,10 @@ tr:nth-child(even) td{background:#f5f7ff;}
     <button id="home-btn-fatture" onclick="goMieFatture()" style="width:100%;max-width:320px;background:linear-gradient(135deg,#065f46,#059669);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(5,150,105,0.4);">
       <span style="font-size:28px;">📋</span>
       <span style="text-align:left;"><div>Le mie fatture</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Visualizza e gestisci le tue fatture</div></span>
+    </button>
+    <button id="home-btn-vocale" onclick="avviaModalitaVocale();" style="width:100%;max-width:320px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(124,58,237,0.4);">
+      <span style="font-size:28px;">🎤</span>
+      <span style="text-align:left;"><div>Fattura Vocale</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Compila la fattura con la voce</div></span>
     </button>
     <button id="home-btn-logout" onclick="doLogout()" style="margin-top:10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:8px;padding:10px 24px;font-size:13px;cursor:pointer;">⏻ Esci</button>
   </div>
@@ -2155,7 +2167,13 @@ async function doLogin(){
   if(btn){ btn.disabled=false; }
   const benvenuto = document.getElementById('home-benvenuto');
   if(benvenuto) benvenuto.textContent = 'Ciao, ' + (S.lav.nominativo||u).split(' ')[0];
-  showScreen('s-home');
+  // Se login avviato da modalita vocale, salta direttamente al flusso vocale
+  if(_voc&&_voc._dopoLoginVocale){
+    _voc._dopoLoginVocale=false;
+    setTimeout(avviaModalitaVocale,500);
+  }else{
+    showScreen('s-home');
+  }
 }
 
 // ════════════════════════════════════════════
@@ -2959,5 +2977,271 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SCHERMO FATTURA VOCALE                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="s-vocale" class="screen" style="background:linear-gradient(155deg,#2e1065 0%,#4c1d95 50%,#7c3aed 100%);min-height:100vh;padding:2rem 1.5rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+    <button onclick="fermaVocale();" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;">✕ Esci</button>
+    <div style="font-size:13px;color:#c4b5fd;font-weight:600;">🎤 MODALITÀ VOCALE</div>
+    <div id="voc-step-badge" style="background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;font-size:12px;color:#e9d5ff;">Step 1</div>
+  </div>
+
+  <!-- Domanda corrente -->
+  <div style="text-align:center;margin-bottom:2rem;">
+    <div id="voc-domanda" style="font-size:22px;font-weight:700;color:#fff;line-height:1.4;min-height:60px;"></div>
+    <div id="voc-sottotitolo" style="font-size:13px;color:#c4b5fd;margin-top:8px;"></div>
+  </div>
+
+  <!-- Indicatore ascolto -->
+  <div style="display:flex;justify-content:center;margin-bottom:2rem;">
+    <div id="voc-mic-btn" onclick="vocaleTogliascolta();" style="width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.1);border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:40px;cursor:pointer;transition:all 0.3s;">🎤</div>
+  </div>
+  <div id="voc-mic-stato" style="text-align:center;font-size:13px;color:#c4b5fd;margin-bottom:1.5rem;">Tocca il microfono per rispondere</div>
+
+  <!-- Risposta riconosciuta -->
+  <div id="voc-risposta-box" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:16px;margin-bottom:1.5rem;min-height:50px;display:none;">
+    <div style="font-size:11px;color:#c4b5fd;margin-bottom:4px;">Ho capito:</div>
+    <div id="voc-risposta-testo" style="font-size:18px;font-weight:700;color:#fff;"></div>
+  </div>
+
+  <!-- Bottoni conferma -->
+  <div id="voc-bottoni" style="display:none;gap:12px;flex-direction:column;">
+    <button id="voc-btn-ok" onclick="vocaleConferma();" style="background:#22c55e;color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;">✅ Sì, corretto</button>
+    <button id="voc-btn-riprova" onclick="vocaleRiprova();" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;">🔄 Riprova</button>
+  </div>
+
+  <!-- Riepilogo fattura in costruzione -->
+  <div id="voc-riepilogo" style="margin-top:2rem;background:rgba(0,0,0,0.2);border-radius:12px;padding:16px;display:none;">
+    <div style="font-size:11px;color:#c4b5fd;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Fattura in costruzione</div>
+    <div id="voc-riepilogo-contenuto" style="font-size:13px;color:#e9d5ff;line-height:2;"></div>
+  </div>
+</div>
+
+<script>
+var _voc={step:0,dati:{azienda:null,righe:[]},rigaCorrente:{tipo:"",attivita:"",data:"",titolo:"",righe:0,turni:0},recognition:null,inAscolto:false,rispostaCorrente:""};
+var _vocAudio={benvenuto:null,azienda:null,trovata:null,nonTrovata:null,tipoFattura:null,attivita:null,dataLavoro:null,titolo:null,quanteRighe:null,quantiTurni:null,altraData:null,corretto:null,salvata:null};
+var _vocSteps=[
+  {id:"azienda",  domanda:"Dimmi il nome dell'azienda",    sottotitolo:"Pronuncia il nome dell'azienda"},
+  {id:"tipo",     domanda:"Dimmi il tipo di fattura",       sottotitolo:"Es: Film, TvMovie, Cartoni..."},
+  {id:"attivita", domanda:"Dimmi la tua attivita",          sottotitolo:"Es: Doppiatore, Adattatore..."},
+  {id:"data",     domanda:"Dimmi la data di lavoro",        sottotitolo:"Es: venticinque giugno 2026"},
+  {id:"titolo",   domanda:"Dimmi il titolo",                sottotitolo:"Il titolo del programma o film"},
+  {id:"righe",    domanda:"Quante righe?",                  sottotitolo:"Numero di righe"},
+  {id:"turni",    domanda:"Quanti turni?",                  sottotitolo:"Numero di turni"},
+  {id:"altraData",domanda:"Vuoi aggiungere un'altra data?", sottotitolo:"Rispondi Si o No"}
+];
+function avviaLoginVocale(){
+  // Se gia loggato salta direttamente al flusso vocale
+  var saved=sessionStorage.getItem("enpals_auth");
+  if(saved&&(saved==="1"||saved.startsWith("tok:"))){
+    avviaModalitaVocale();return;
+  }
+  // Non loggato: chiedi username poi password via voce
+  showScreen("s-vocale");
+  document.getElementById("voc-step-badge").textContent="Login vocale";
+  document.getElementById("voc-domanda").textContent="Benvenuto in DIVA. Dimmi il tuo username";
+  document.getElementById("voc-sottotitolo").textContent="Pronuncia il tuo nome utente";
+  document.getElementById("voc-risposta-box").style.display="none";
+  document.getElementById("voc-bottoni").style.display="none";
+  document.getElementById("voc-mic-stato").textContent="In ascolto...";
+  vocaleRiproduciAudio("benvenuto");
+  // Stato speciale: login
+  _voc._loginStep="user";
+  setTimeout(function(){
+    _vocLoginAvviaRiconoscimento();
+  },800);
+}
+
+function _vocLoginAvviaRiconoscimento(){
+  if(!("webkitSpeechRecognition" in window)&&!("SpeechRecognition" in window)){
+    alert("Browser non supporta riconoscimento vocale. Usa Chrome.");return;
+  }
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var r=new SR();
+  r.lang="it-IT";r.continuous=false;r.interimResults=false;r.maxAlternatives=1;
+  r.onstart=function(){
+    var btn=document.getElementById("voc-mic-btn");
+    if(btn){btn.style.background="rgba(239,68,68,0.4)";btn.style.borderColor="#ef4444";}
+    document.getElementById("voc-mic-stato").textContent="Sto ascoltando...";
+  };
+  r.onresult=function(e){
+    var testo=e.results[0][0].transcript.trim();
+    document.getElementById("voc-risposta-testo").textContent=testo;
+    document.getElementById("voc-risposta-box").style.display="block";
+    document.getElementById("voc-bottoni").style.display="flex";
+    document.getElementById("voc-mic-stato").textContent="Risposta ricevuta";
+    var btn=document.getElementById("voc-mic-btn");
+    if(btn){btn.style.background="rgba(34,197,94,0.3)";btn.style.borderColor="#22c55e";}
+    if(_voc._loginStep==="user"){
+      _voc._loginUser=testo;
+      // Conferma automatica dopo 1 secondo e chiedi password
+      setTimeout(function(){
+        document.getElementById("voc-domanda").textContent="Dimmi la password";
+        document.getElementById("voc-sottotitolo").textContent="Pronuncia la tua password";
+        document.getElementById("voc-risposta-box").style.display="none";
+        document.getElementById("voc-bottoni").style.display="none";
+        _voc._loginStep="pass";
+        setTimeout(_vocLoginAvviaRiconoscimento,600);
+      },1500);
+    }else if(_voc._loginStep==="pass"){
+      _voc._loginPass=testo;
+      // Popola campi e fa login automatico
+      setTimeout(function(){
+        document.getElementById("voc-domanda").textContent="Accesso in corso...";
+        document.getElementById("voc-risposta-box").style.display="none";
+        document.getElementById("voc-bottoni").style.display="none";
+        document.getElementById("voc-mic-stato").textContent="";
+        var inpUser=document.getElementById("inp-user");
+        var inpPass=document.getElementById("inp-pass");
+        if(inpUser)inpUser.value=_voc._loginUser;
+        if(inpPass)inpPass.value=_voc._loginPass;
+        showScreen("s-login");
+        // Dopo il login riuscito avviaModalitaVocale viene chiamata
+        _voc._dopoLoginVocale=true;
+        doLogin();
+      },1000);
+    }
+  };
+  r.onerror=function(){
+    document.getElementById("voc-mic-stato").textContent="Non ho capito, riprova";
+    setTimeout(_vocLoginAvviaRiconoscimento,1000);
+  };
+  r.start();
+}
+
+function avviaModalitaVocale(){
+  _voc.step=0;_voc.dati={azienda:null,righe:[]};
+  _voc.rigaCorrente={tipo:"",attivita:"",data:"",titolo:"",righe:0,turni:0};
+  _voc.rispostaCorrente="";
+  showScreen("s-vocale");vocaleAggiornaBadge();vocaleImpostaStep(0);
+  setTimeout(vocaleAvviaRiconoscimento,800);
+}
+function fermaVocale(){
+  if(_voc.recognition){try{_voc.recognition.stop();}catch(e){}}
+  _voc.inAscolto=false;showScreen("s-home");
+}
+function vocaleImpostaStep(idx){
+  _voc.step=idx;var step=_vocSteps[idx];if(!step)return;
+  document.getElementById("voc-domanda").textContent=step.domanda;
+  document.getElementById("voc-sottotitolo").textContent=step.sottotitolo;
+  document.getElementById("voc-risposta-box").style.display="none";
+  document.getElementById("voc-bottoni").style.display="none";
+  document.getElementById("voc-mic-stato").textContent="In ascolto...";
+  vocaleAggiornaBadge();vocaleRiproduciAudio(step.id);
+}
+function vocaleAggiornaBadge(){
+  var b=document.getElementById("voc-step-badge");
+  if(b)b.textContent="Step "+(_voc.step+1)+" / "+_vocSteps.length;
+}
+function vocaleRiproduciAudio(id){
+  var b64=_vocAudio[id];if(!b64)return;
+  try{new Audio("data:audio/mp3;base64,"+b64).play();}catch(e){}
+}
+function vocaleAvviaRiconoscimento(){
+  if(!("webkitSpeechRecognition" in window)&&!("SpeechRecognition" in window)){
+    alert("Browser non supporta riconoscimento vocale. Usa Chrome su Android.");return;
+  }
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  _voc.recognition=new SR();
+  _voc.recognition.lang="it-IT";_voc.recognition.continuous=false;
+  _voc.recognition.interimResults=false;_voc.recognition.maxAlternatives=1;
+  _voc.recognition.onstart=function(){
+    _voc.inAscolto=true;
+    var btn=document.getElementById("voc-mic-btn");
+    if(btn){btn.style.background="rgba(239,68,68,0.4)";btn.style.borderColor="#ef4444";}
+    document.getElementById("voc-mic-stato").textContent="Sto ascoltando...";
+  };
+  _voc.recognition.onresult=function(e){
+    var testo=e.results[0][0].transcript.trim();_voc.rispostaCorrente=testo;
+    document.getElementById("voc-risposta-testo").textContent=testo;
+    document.getElementById("voc-risposta-box").style.display="block";
+    document.getElementById("voc-bottoni").style.display="flex";
+    var btn=document.getElementById("voc-mic-btn");
+    if(btn){btn.style.background="rgba(34,197,94,0.3)";btn.style.borderColor="#22c55e";}
+    document.getElementById("voc-mic-stato").textContent="Risposta ricevuta";
+  };
+  _voc.recognition.onerror=function(){
+    document.getElementById("voc-mic-stato").textContent="Non ho capito, riprova";
+    var btn=document.getElementById("voc-mic-btn");
+    if(btn){btn.style.background="rgba(255,255,255,0.1)";btn.style.borderColor="rgba(255,255,255,0.3)";}
+    _voc.inAscolto=false;
+  };
+  _voc.recognition.onend=function(){_voc.inAscolto=false;};
+  _voc.recognition.start();
+}
+function vocaleTogliascolta(){
+  if(_voc.inAscolto){try{_voc.recognition.stop();}catch(e){}}
+  else{_voc.rispostaCorrente="";document.getElementById("voc-risposta-box").style.display="none";
+    document.getElementById("voc-bottoni").style.display="none";vocaleAvviaRiconoscimento();}
+}
+function vocaleRiprova(){
+  _voc.rispostaCorrente="";
+  document.getElementById("voc-risposta-box").style.display="none";
+  document.getElementById("voc-bottoni").style.display="none";
+  document.getElementById("voc-mic-stato").textContent="In ascolto...";
+  vocaleAvviaRiconoscimento();
+}
+function vocaleConferma(){
+  var step=_vocSteps[_voc.step];var risposta=_voc.rispostaCorrente.toLowerCase().trim();
+  if(step.id==="azienda"){
+    var trovate=(_AZIENDE_DB||[]).filter(function(a){return a.ragione_sociale.toLowerCase().includes(risposta);});
+    if(trovate.length===1){
+      _voc.dati.azienda=trovate[0];vocaleAggiornaRiepilogo();vocaleImpostaStep(1);setTimeout(vocaleAvviaRiconoscimento,400);
+    }else if(trovate.length>1){
+      var nomi=trovate.slice(0,3).map(function(a,i){return (i+1)+") "+a.ragione_sociale;}).join(" - ");
+      document.getElementById("voc-domanda").textContent="Ho trovato: "+nomi+". Dici Prima, Seconda o Terza";
+      _voc._trovateAziende=trovate;setTimeout(vocaleAvviaRiconoscimento,400);
+    }else{
+      document.getElementById("voc-domanda").textContent="Azienda non trovata. Riprova con un nome diverso";
+      setTimeout(vocaleAvviaRiconoscimento,400);
+    }
+    return;
+  }
+  if(step.id==="tipo")     _voc.rigaCorrente.tipo=_voc.rispostaCorrente;
+  if(step.id==="attivita") _voc.rigaCorrente.attivita=_voc.rispostaCorrente;
+  if(step.id==="data")     _voc.rigaCorrente.data=vocaleConvertiData(_voc.rispostaCorrente);
+  if(step.id==="titolo")   _voc.rigaCorrente.titolo=_voc.rispostaCorrente;
+  if(step.id==="righe")    _voc.rigaCorrente.righe=parseInt(_voc.rispostaCorrente)||1;
+  if(step.id==="turni")    _voc.rigaCorrente.turni=parseInt(_voc.rispostaCorrente)||1;
+  if(step.id==="altraData"){
+    var siNo=risposta.includes("si")||risposta.includes("yes");
+    _voc.dati.righe.push(Object.assign({},_voc.rigaCorrente));vocaleAggiornaRiepilogo();
+    if(siNo){
+      _voc.rigaCorrente={tipo:_voc.rigaCorrente.tipo,attivita:_voc.rigaCorrente.attivita,data:"",titolo:"",righe:0,turni:0};
+      vocaleImpostaStep(3);
+    }else{vocaleCompilaSalva();}
+    setTimeout(vocaleAvviaRiconoscimento,400);return;
+  }
+  vocaleAggiornaRiepilogo();vocaleImpostaStep(_voc.step+1);setTimeout(vocaleAvviaRiconoscimento,400);
+}
+function vocaleAggiornaRiepilogo(){
+  var box=document.getElementById("voc-riepilogo"),cont=document.getElementById("voc-riepilogo-contenuto");
+  if(!box||!cont)return;
+  var html="";
+  if(_voc.dati.azienda)html+="Azienda: <b>"+_voc.dati.azienda.ragione_sociale+"</b><br>";
+  if(_voc.rigaCorrente.tipo)html+="Tipo: <b>"+_voc.rigaCorrente.tipo+"</b><br>";
+  if(_voc.rigaCorrente.attivita)html+="Attivita: <b>"+_voc.rigaCorrente.attivita+"</b><br>";
+  if(_voc.dati.righe.length>0)html+="Righe aggiunte: <b>"+_voc.dati.righe.length+"</b><br>";
+  box.style.display=html?"block":"none";cont.innerHTML=html;
+}
+function vocaleConvertiData(testo){
+  var mesi={gennaio:"01",febbraio:"02",marzo:"03",aprile:"04",maggio:"05",giugno:"06",luglio:"07",agosto:"08",settembre:"09",ottobre:"10",novembre:"11",dicembre:"12"};
+  var t=testo.toLowerCase(),anno=new Date().getFullYear(),mese="06",giorno="01";
+  Object.keys(mesi).forEach(function(m){if(t.includes(m))mese=mesi[m];});
+  var n=t.match(/[0-9]+/g);if(n&&n[0])giorno=n[0].padStart(2,"0");
+  return anno+"-"+mese+"-"+giorno;
+}
+function vocaleCompilaSalva(){
+  document.getElementById("voc-domanda").textContent="Salvataggio in corso...";
+  document.getElementById("voc-bottoni").style.display="none";
+  document.getElementById("voc-mic-stato").textContent="";
+  var msg="Fattura completata! Azienda: "+((_voc.dati.azienda||{}).ragione_sociale||"---")+" - Righe: "+_voc.dati.righe.length;
+  setTimeout(function(){
+    document.getElementById("voc-domanda").textContent=msg;
+    document.getElementById("voc-mic-stato").textContent="Premi Esci per tornare alla home";
+  },500);
+}
+</script>
 </body>
-</html>
