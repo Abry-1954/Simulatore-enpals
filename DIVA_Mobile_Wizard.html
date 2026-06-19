@@ -3500,22 +3500,110 @@ async function vocaleFlussoFattura(){
   await vocaleCompilaSalva();
 }
 
+// Mappa testo vocale → codice TIPI_FATT
+function vocaleMapTipoFatt(testo){
+  var t=testo.toLowerCase();
+  if(t.includes("agevolato")&&t.includes("adatt"))  return TIPI_FATT.find(function(x){return x.cod==="RGA";});
+  if(t.includes("adatt"))                            return TIPI_FATT.find(function(x){return x.cod==="RA";});
+  if(t.includes("agevolato")||t.includes("forfett")) return TIPI_FATT.find(function(x){return x.cod==="FA";});
+  if(t.includes("semplice")||t.includes("ricevuta")) return TIPI_FATT.find(function(x){return x.cod==="RS";});
+  return TIPI_FATT.find(function(x){return x.cod==="FO";}); // default ordinario
+}
+
+// Mappa testo vocale → codice TIPI_LAV
+function vocaleMapTipoLav(testo){
+  var t=testo.toLowerCase();
+  if(t.includes("adatt"))  return TIPI_LAV.find(function(x){return x.cod==="ADAT";});
+  if(t.includes("assist")) return TIPI_LAV.find(function(x){return x.cod==="ASST";});
+  if(t.includes("dirett")) return TIPI_LAV.find(function(x){return x.cod==="DIR";});
+  return TIPI_LAV.find(function(x){return x.cod==="DOPP";}); // default doppiatore
+}
+
+// Mappa testo vocale → codice TIPI_OPERA
+function vocaleMapTipoOpera(testo){
+  var t=testo.toLowerCase();
+  if(t.includes("soap"))                             return TIPI_OPERA.find(function(x){return x.cod==="SOAP";});
+  if(t.includes("telefilm"))                         return TIPI_OPERA.find(function(x){return x.cod==="TELEFILM";});
+  if(t.includes("carton"))                           return TIPI_OPERA.find(function(x){return x.cod==="CARTONI";});
+  if(t.includes("tvmovie")||t.includes("tv movie"))  return TIPI_OPERA.find(function(x){return x.cod==="TVMOVIE";});
+  if(t.includes("doc")&&t.includes("sync"))          return TIPI_OPERA.find(function(x){return x.cod==="DOC NO SYNC";});
+  if(t.includes("doc"))                              return TIPI_OPERA.find(function(x){return x.cod==="DOC";});
+  return TIPI_OPERA.find(function(x){return x.cod==="FILM";}); // default film
+}
+
 async function vocaleCompilaSalva(){
-  vocaleSetStato("Salvataggio in corso...");
+  if(_voc._stopped)return;
+  vocaleSetStato("Elaborazione fattura...");
   document.getElementById("voc-domanda").textContent="Fattura completata!";
   await riproduciAudio("fatturaCompletata");
   await pausa(500);
-  // TODO: popolare i campi del Wizard e chiamare salvaSuDB()
-  await pausa(1000);
-  await riproduciAudio("salvata");
-  await pausa(300);
-  var risposta=await ascoltaVoce(8000).catch(function(){return "si";});
-  var _rs=risposta.toLowerCase();
-  if(_rs.includes("si")||_rs.includes("yes")||_rs.includes("ok")||_rs.includes("confermo")||_rs.includes("corretto")||_rs.includes("giusto")||_rs.includes("esatto")||_rs.includes("vai")||_rs.includes("avanti")||_rs.includes("perfetto")||_rs.includes("bene")){
-    showScreen("s-home");
-  }else{
-    showScreen("s-home");
+  if(_voc._stopped)return;
+
+  // ── Popola S con i dati vocali ──────────────────────────
+  // Reset S
+  S.righi=[];S.rigoIdx=0;
+
+  // Tipo fattura
+  var tf=vocaleMapTipoFatt(_voc.rigaCorrente.tipo||"");
+  S.tipoFatt=tf;
+
+  // Tipo lavorazione e opera (uguali per tutti i record)
+  var tl=vocaleMapTipoLav(_voc.rigaCorrente.attivita||"");
+  var to=vocaleMapTipoOpera(_voc.rigaCorrente.lavorazione||"");
+  S.tipoLav=tl?tl.cod:"DOPP";
+  S.tipoLavLabel=tl?tl.label:"Doppiatore";
+  S.tipoOpera=to?to.cod:"FILM";
+  S.tipoOperaLabel=to?to.label:"Film";
+  S.nPrevisti=_voc.dati.righe.length;
+
+  // Azienda
+  if(_voc.dati.azienda){
+    S.soc={
+      ragione_sociale: _voc.dati.azienda.ragione_sociale||"",
+      indirizzo:       _voc.dati.azienda.indirizzo||"",
+      cap:             _voc.dati.azienda.cap||"",
+      comune:          _voc.dati.azienda.citta||"",
+      piva:            _voc.dati.azienda.piva||_voc.dati.azienda.partita_iva||"",
+      cod_fiscale:     _voc.dati.azienda.cf||_voc.dati.azienda.cod_fiscale||"",
+      cod_dest:        _voc.dati.azienda.cod_dest||""
+    };
   }
+
+  // Righe/record
+  for(var i=0;i<_voc.dati.righe.length;i++){
+    var r=_voc.dati.righe[i];
+    var datafatt=new Date().toISOString().split("T")[0];
+    var imp=calcImp(S.tipoLav,S.tipoOpera,r.turni||1,r.righe||1);
+    S.righi.push({
+      n:          i+1,
+      tipoLav:    S.tipoLav,
+      tipoLavLabel:S.tipoLavLabel,
+      tipoOpera:  S.tipoOpera,
+      tipoOperaLabel:S.tipoOperaLabel,
+      titolo:     r.titolo||"",
+      datalav:    r.data||datafatt,
+      datafatt:   datafatt,
+      turni:      r.turni||1,
+      righe:      r.righe||1,
+      imp:        imp
+    });
+  }
+  S.rigoIdx=S.righi.length;
+
+  // ── Salva su DB ─────────────────────────────────────────
+  try{
+    await salvaSuDB();
+  }catch(e){
+    console.warn("vocaleCompilaSalva errore:", e);
+    await sintesiVocale("Errore nel salvataggio. Riprova.");
+    return;
+  }
+
+  // ── Fine ─────────────────────────────────────────────────
+  await pausa(500);
+  if(_voc._stopped)return;
+  await riproduciAudio("salvata");
+  await pausa(1000);
 }
 
 // ─── LOGIN VOCALE ─────────────────────────────────────────
