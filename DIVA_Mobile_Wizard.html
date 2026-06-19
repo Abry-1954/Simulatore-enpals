@@ -3088,6 +3088,22 @@ function pausa(ms){
   return new Promise(function(r){setTimeout(r,ms);});
 }
 
+// Errore speciale per uscita vocale
+var _ANNULLA_VOCALE = "ANNULLA_VOCALE";
+
+function vocaleIsAnnulla(testo){
+  var t=testo.toLowerCase();
+  return t.includes("annulla")||t.includes("esci")||t.includes("stop")||
+         t.includes("abbandona")||t.includes("cancella")||t.includes("basta")||
+         t.includes("esci")||t.includes("termina");
+}
+
+async function vocaleEsci(){
+  window.speechSynthesis&&window.speechSynthesis.cancel();
+  await sintesiVocale("Operazione annullata. Torno al menu.");
+  showScreen("s-home");
+}
+
 function riproduciAudio(id){
   return new Promise(function(resolve){
     var b64=_vocAudio[id];
@@ -3135,6 +3151,7 @@ function ascoltaVoce(timeout){
     r.onresult=function(e){
       clearTimeout(timer);
       var testo=e.results[0][0].transcript.trim();
+      if(vocaleIsAnnulla(testo)){reject(_ANNULLA_VOCALE);return;}
       resolve(testo);
     };
     r.onerror=function(e){
@@ -3213,7 +3230,7 @@ async function vocaleChiediERispondi(step){
     try{
       risposta=await ascoltaVoce(12000);
     }catch(e){
-      // Timeout o errore - riproduci "riprovo" e riparti
+      if(e===_ANNULLA_VOCALE){await vocaleEsci();return "";}
       await riproduciAudio("riprovo");
       await pausa(500);
       continue;
@@ -3234,7 +3251,7 @@ async function vocaleChiediERispondi(step){
     try{
       conferma=await ascoltaVoce(8000);
     }catch(e){
-      // Timeout su conferma - riproduci "non ho capito" e richiedi
+      if(e===_ANNULLA_VOCALE){await vocaleEsci();return "";}
       await riproduciAudio("nonHoCapito");
       await pausa(500);
       continue;
@@ -3271,7 +3288,8 @@ async function vocaleGestisciAzienda(){
       await sintesiVocale(trovate[0].ragione_sociale);
       await pausa(300);
       var conferma=await ascoltaVoce(8000).catch(function(){return "si";});
-      if(conferma.toLowerCase().includes("si")||conferma.toLowerCase().includes("ok")){
+      var _cf=conferma.toLowerCase();
+      if(_cf.includes("si")||_cf.includes("yes")||_cf.includes("ok")||_cf.includes("confermo")||_cf.includes("corretto")||_cf.includes("giusto")||_cf.includes("esatto")||_cf.includes("vai")||_cf.includes("avanti")||_cf.includes("perfetto")||_cf.includes("bene")){
         trovata=true;
       }
     }else if(trovate.length>1){
@@ -3289,7 +3307,8 @@ async function vocaleGestisciAzienda(){
       await riproduciAudio("nonTrovata");
       await pausa(300);
       var aggiungi=await ascoltaVoce(8000).catch(function(){return "no";});
-      if(aggiungi.toLowerCase().includes("aggiungi")||aggiungi.toLowerCase().includes("si")){
+      var _ag=aggiungi.toLowerCase();
+      if(_ag.includes("si")||_ag.includes("yes")||_ag.includes("ok")||_ag.includes("confermo")||_ag.includes("corretto")||_ag.includes("giusto")||_ag.includes("esatto")||_ag.includes("vai")||_ag.includes("avanti")||_ag.includes("perfetto")||_ag.includes("bene")||_ag.includes("aggiungi")){
         await vocaleNuovaAzienda();trovata=true;
       }else{
         trovata=true; // Senza azienda
@@ -3337,7 +3356,8 @@ async function vocaleFlussoFattura(){
 
   // Step 0: Vuoi fare una fattura?
   var rispVuoi=await vocaleChiediERispondi(_vocSteps[0]);
-  if(!rispVuoi.toLowerCase().includes("si")&&!rispVuoi.toLowerCase().includes("yes")){
+  var _rv=rispVuoi.toLowerCase();
+  if(!(_rv.includes("si")||_rv.includes("yes")||_rv.includes("ok")||_rv.includes("confermo")||_rv.includes("corretto")||_rv.includes("giusto")||_rv.includes("esatto")||_rv.includes("vai")||_rv.includes("avanti")||_rv.includes("perfetto")||_rv.includes("bene"))){
     await sintesiVocale("Ok, torno al menu principale");
     showScreen("s-home");return;
   }
@@ -3387,7 +3407,8 @@ async function vocaleFlussoFattura(){
     // Step 9: Altra data?
     _voc.step=9;
     var altraData=await vocaleChiediERispondi(_vocSteps[9]);
-    if(!altraData.toLowerCase().includes("si")&&!altraData.toLowerCase().includes("yes")){
+    var _ad=altraData.toLowerCase();
+    if(!(_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("confermo")||_ad.includes("corretto")||_ad.includes("giusto")||_ad.includes("esatto")||_ad.includes("vai")||_ad.includes("avanti")||_ad.includes("perfetto")||_ad.includes("bene"))){
       continuaDate=false;
     }else{
       // Reset solo data/titolo/turni/righe - mantieni tipo/attivita/lavorazione
@@ -3415,7 +3436,8 @@ async function vocaleCompilaSalva(){
   await riproduciAudio("salvata");
   await pausa(300);
   var risposta=await ascoltaVoce(8000).catch(function(){return "si";});
-  if(risposta.toLowerCase().includes("si")||risposta.toLowerCase().includes("yes")){
+  var _rs=risposta.toLowerCase();
+  if(_rs.includes("si")||_rs.includes("yes")||_rs.includes("ok")||_rs.includes("confermo")||_rs.includes("corretto")||_rs.includes("giusto")||_rs.includes("esatto")||_rs.includes("vai")||_rs.includes("avanti")||_rs.includes("perfetto")||_rs.includes("bene")){
     showScreen("s-home");
   }else{
     showScreen("s-home");
