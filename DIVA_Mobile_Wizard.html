@@ -3223,12 +3223,13 @@ async function vocaleChiediERispondi(step){
     await pausa(300);
     // 5) Riproduci "Ho capito"
     await riproduciAudio("hoCapito");
-    await pausa(200);
+    await pausa(300);
     // 6) Sintesi legge la risposta
     await sintesiVocale(risposta);
-    await pausa(400);
+    await pausa(1000);
     // 7) Ascolta conferma Si/No
     vocaleSetStato("Di' SI per confermare o NO per ripetere");
+    await pausa(500);
     var conferma="";
     try{
       conferma=await ascoltaVoce(8000);
@@ -3239,12 +3240,15 @@ async function vocaleChiediERispondi(step){
       continue;
     }
     var siNo=conferma.toLowerCase();
-    if(siNo.includes("si")||siNo.includes("yes")||siNo.includes("ok")||siNo.includes("giusto")||siNo.includes("corretto")){
+    if(siNo.includes("si")||siNo.includes("yes")||siNo.includes("ok")||siNo.includes("giusto")||siNo.includes("corretto")||siNo.includes("esatto")||siNo.includes("vai")||siNo.includes("avanti")||siNo.includes("perfetto")||siNo.includes("bene")||siNo.includes("confermo")||siNo.includes("giusto")){
       confermato=true;
       _voc.rispostaCorrente=risposta;
-    }else{
-      // No - riproduci "riprovo" e ripete la domanda
+    }else if(siNo.includes("no")||siNo.includes("ripeti")||siNo.includes("sbagliato")||siNo.includes("errato")||siNo.includes("sbaglia")||siNo.includes("ricomincia")||siNo.includes("riprova")||siNo.includes("negativo")||siNo.includes("nope")||siNo.includes("falso")){
       await riproduciAudio("riprovo");
+      await pausa(500);
+    }else{
+      // Non capito - riascolta
+      await riproduciAudio("nonHoCapito");
       await pausa(500);
     }
   }
@@ -3446,14 +3450,15 @@ async function avviaLoginVocale(){
     try{username=await ascoltaVoce(12000);}
     catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
     vocaleSetRisposta(username);
-    await riproduciAudio("hoCapito");await pausa(200);
-    await sintesiVocale(username);await pausa(400);
+    await riproduciAudio("hoCapito");await pausa(300);
+    await sintesiVocale(username);await pausa(1000);
     vocaleSetStato("Di' SI per confermare o NO per ripetere");
+    await pausa(500);
     try{
       var cfm=await ascoltaVoce(8000);
-      if(cfm.toLowerCase().includes("si")||cfm.toLowerCase().includes("ok")) confUser=true;
-      else {await riproduciAudio("riprovo");await pausa(500);}
-    }catch(e){await riproduciAudio("nonHoCapito");await pausa(500);}
+      if(cfm.toLowerCase().includes("si")||cfm.toLowerCase().includes("ok")||cfm.toLowerCase().includes("yes")||cfm.toLowerCase().includes("confermo")||cfm.toLowerCase().includes("corretto")||cfm.toLowerCase().includes("giusto")||cfm.toLowerCase().includes("esatto")||cfm.toLowerCase().includes("vai")||cfm.toLowerCase().includes("avanti")||cfm.toLowerCase().includes("perfetto")||cfm.toLowerCase().includes("bene")) confUser=true;
+      else {await riproduciAudio("riprovo");await pausa(800);}
+    }catch(e){await riproduciAudio("nonHoCapito");await pausa(800);}
   }
 
   // Password
@@ -3471,14 +3476,15 @@ async function avviaLoginVocale(){
     catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
     // Per la password mostra asterischi (privacy)
     vocaleSetRisposta("••••••••");
-    await riproduciAudio("hoCapito");await pausa(200);
-    await sintesiVocale("password ricevuta");await pausa(400);
+    await riproduciAudio("hoCapito");await pausa(300);
+    await sintesiVocale("password ricevuta");await pausa(1000);
     vocaleSetStato("Di' SI per confermare o NO per ripetere");
+    await pausa(500);
     try{
       var cfm2=await ascoltaVoce(8000);
-      if(cfm2.toLowerCase().includes("si")||cfm2.toLowerCase().includes("ok")) confPass=true;
-      else {await riproduciAudio("riprovo");await pausa(500);}
-    }catch(e){await riproduciAudio("nonHoCapito");await pausa(500);}
+      if(cfm2.toLowerCase().includes("si")||cfm2.toLowerCase().includes("ok")||cfm2.toLowerCase().includes("yes")||cfm2.toLowerCase().includes("confermo")||cfm2.toLowerCase().includes("corretto")||cfm2.toLowerCase().includes("giusto")||cfm2.toLowerCase().includes("esatto")||cfm2.toLowerCase().includes("vai")||cfm2.toLowerCase().includes("avanti")||cfm2.toLowerCase().includes("perfetto")||cfm2.toLowerCase().includes("bene")) confPass=true;
+      else {await riproduciAudio("riprovo");await pausa(800);}
+    }catch(e){await riproduciAudio("nonHoCapito");await pausa(800);}
   }
 
   // Login
