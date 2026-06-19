@@ -3244,36 +3244,45 @@ function vocaleAggiornaRiepilogo(){
 
 async function vocaleChiediERispondi(step){
   var confermato=false;
+  var rispostaConfermata=""; // Salva solo quando confermata
   while(!confermato){
+    if(_voc._stopped)return "";
     // 1) Mostra scheda colorata
     vocaleSetScheda(step);
     await pausa(400);
+    if(_voc._stopped)return "";
     // 2) Riproduci MP3 domanda
     await riproduciAudio(step.audio);
     await pausa(300);
+    if(_voc._stopped)return "";
     // 3) Ascolta risposta
     vocaleSetStato("Sto ascoltando... parla ora!");
-    var risposta="";
+    var rispostaTentativo="";
     try{
-      risposta=await ascoltaVoce(12000);
+      rispostaTentativo=await ascoltaVoce(12000);
     }catch(e){
       if(e===_ANNULLA_VOCALE){await vocaleEsci();return "";}
       await riproduciAudio("riprovo");
       await pausa(500);
-      continue;
+      continue; // Riprova dalla domanda
     }
+    if(_voc._stopped)return "";
     // 4) Mostra risposta ricevuta
-    vocaleSetRisposta(risposta);
+    vocaleSetRisposta(rispostaTentativo);
     await pausa(300);
+    if(_voc._stopped)return "";
     // 5) Riproduci "Ho capito"
     await riproduciAudio("hoCapito");
     await pausa(300);
+    if(_voc._stopped)return "";
     // 6) Sintesi legge la risposta
-    await sintesiVocale(risposta);
+    await sintesiVocale(rispostaTentativo);
     await pausa(1000);
-    // 7) Ascolta conferma Si/No
-    vocaleSetStato("Di' SI per confermare o NO per ripetere");
+    if(_voc._stopped)return "";
+    // 7) Ascolta SOLO conferma Si/No — NON aggiorna la risposta
+    vocaleSetStato("Conferma con CONFERMO o ripeti con NEGATIVO");
     await pausa(500);
+    if(_voc._stopped)return "";
     var conferma="";
     try{
       conferma=await ascoltaVoce(8000);
@@ -3281,22 +3290,33 @@ async function vocaleChiediERispondi(step){
       if(e===_ANNULLA_VOCALE){await vocaleEsci();return "";}
       await riproduciAudio("nonHoCapito");
       await pausa(500);
-      continue;
+      continue; // Riprova dalla domanda
     }
+    if(_voc._stopped)return "";
     var siNo=conferma.toLowerCase();
-    if(siNo.includes("si")||siNo.includes("yes")||siNo.includes("ok")||siNo.includes("giusto")||siNo.includes("corretto")||siNo.includes("esatto")||siNo.includes("vai")||siNo.includes("avanti")||siNo.includes("perfetto")||siNo.includes("bene")||siNo.includes("confermo")||siNo.includes("giusto")){
+    if(siNo.includes("si")||siNo.includes("yes")||siNo.includes("ok")||
+       siNo.includes("giusto")||siNo.includes("corretto")||siNo.includes("esatto")||
+       siNo.includes("vai")||siNo.includes("avanti")||siNo.includes("perfetto")||
+       siNo.includes("bene")||siNo.includes("confermo")){
+      // Confermato! Salva la risposta del TENTATIVO, non la parola di conferma
+      rispostaConfermata=rispostaTentativo;
       confermato=true;
-      _voc.rispostaCorrente=risposta;
-    }else if(siNo.includes("no")||siNo.includes("ripeti")||siNo.includes("sbagliato")||siNo.includes("errato")||siNo.includes("sbaglia")||siNo.includes("ricomincia")||siNo.includes("riprova")||siNo.includes("negativo")||siNo.includes("nope")||siNo.includes("falso")){
+    }else if(siNo.includes("no")||siNo.includes("ripeti")||siNo.includes("sbagliato")||
+             siNo.includes("errato")||siNo.includes("ricomincia")||siNo.includes("riprova")||
+             siNo.includes("negativo")||siNo.includes("nope")||siNo.includes("falso")){
+      // Negativo - riparti dalla domanda
       await riproduciAudio("riprovo");
       await pausa(500);
+      // NON aggiornare rispostaConfermata - riparti dal while
     }else{
-      // Non capito - riascolta
+      // Non capito - riascolta conferma
       await riproduciAudio("nonHoCapito");
       await pausa(500);
+      // Riascolta solo la conferma, non tutta la domanda
+      continue;
     }
   }
-  return _voc.rispostaCorrente;
+  return rispostaConfermata; // Restituisce SOLO la risposta confermata
 }
 
 // ─── GESTIONE AZIENDA ────────────────────────────────────
@@ -3368,6 +3388,33 @@ async function vocaleNuovaAzienda(){
 
 // ─── CONVERSIONE DATA ─────────────────────────────────────
 
+// Converte numeri in lettere in cifre
+function vocaleConvertiNumero(testo){
+  var t=testo.toLowerCase().trim();
+  var numeri={
+    "zero":0,"uno":1,"due":2,"tre":3,"quattro":4,"cinque":5,
+    "sei":6,"sette":7,"otto":8,"nove":9,"dieci":10,
+    "undici":11,"dodici":12,"tredici":13,"quattordici":14,"quindici":15,
+    "sedici":16,"diciassette":17,"diciotto":18,"diciannove":19,"venti":20,
+    "ventuno":21,"ventidue":22,"ventitre":23,"ventiquattro":24,"venticinque":25,
+    "ventisei":26,"ventisette":27,"ventotto":28,"ventinove":29,"trenta":30,
+    "trentuno":31,"trentadue":32,"trentatre":33,"trentaquattro":34,"trentacinque":35,
+    "trentasei":36,"trentasette":37,"trentotto":38,"trentanove":39,"quaranta":40,
+    "cinquanta":50,"sessanta":60,"settanta":70,"ottanta":80,"novanta":90,"cento":100
+  };
+  // Prima prova se e' gia un numero
+  var n=parseInt(t);
+  if(!isNaN(n))return n;
+  // Cerca corrispondenza esatta
+  if(numeri[t]!==undefined)return numeri[t];
+  // Cerca parola numerica nel testo
+  var keys=Object.keys(numeri).sort(function(a,b){return b.length-a.length;});
+  for(var i=0;i<keys.length;i++){
+    if(t.includes(keys[i]))return numeri[keys[i]];
+  }
+  return parseInt(t)||1;
+}
+
 function vocaleConvertiData(testo){
   var mesi={gennaio:"01",febbraio:"02",marzo:"03",aprile:"04",maggio:"05",giugno:"06",luglio:"07",agosto:"08",settembre:"09",ottobre:"10",novembre:"11",dicembre:"12"};
   var t=testo.toLowerCase(),anno=new Date().getFullYear(),mese="06",giorno="01";
@@ -3414,12 +3461,12 @@ async function vocaleFlussoFattura(){
 
     // Step 5: Turni
     _voc.step=5;
-    _voc.rigaCorrente.turni=parseInt(await vocaleChiediERispondi(_vocSteps[5]))||1;
+    _voc.rigaCorrente.turni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
     vocaleAggiornaRiepilogo();
 
     // Step 6: Righe
     _voc.step=6;
-    _voc.rigaCorrente.righe=parseInt(await vocaleChiediERispondi(_vocSteps[6]))||1;
+    _voc.rigaCorrente.righe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
     vocaleAggiornaRiepilogo();
 
     // Step 7: Titolo
