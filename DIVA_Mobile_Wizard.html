@@ -504,6 +504,8 @@ tr:nth-child(even) td{background:#f5f7ff;}
   .fat-sum-row.total .sv{font-size:12pt;}
   .fat-sum-row.netto .sv{font-size:13pt;}
 }
+  @keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.7);}70%{box-shadow:0 0 0 20px rgba(239,68,68,0);}}
+  .mic-listening{animation:mic-pulse 1.2s ease-in-out infinite !important;}
 </style>
 </head>
 <body>
@@ -3062,9 +3064,11 @@ function _vocLoginAvviaRiconoscimento(){
   var r=new SR();
   r.lang="it-IT";r.continuous=false;r.interimResults=true;r.maxAlternatives=3;
   r.onstart=function(){
+    _voc.inAscolto=true;
+    _voc._loginRetry=0;
     var btn=document.getElementById("voc-mic-btn");
-    if(btn){btn.style.background="rgba(239,68,68,0.4)";btn.style.borderColor="#ef4444";}
-    document.getElementById("voc-mic-stato").textContent="Sto ascoltando...";
+    if(btn){btn.style.background="rgba(239,68,68,0.5)";btn.style.borderColor="#ef4444";btn.classList.add("mic-listening");}
+    document.getElementById("voc-mic-stato").textContent="Sto ascoltando... parla ora!";
   };
   r.onresult=function(e){
     // Mostra interim results in tempo reale
@@ -3120,14 +3124,20 @@ function _vocLoginAvviaRiconoscimento(){
     setTimeout(_vocLoginAvviaRiconoscimento,1000);
   };
   var _vocGotResult=false;
-  r.onresult=r.onresult||(function(){_vocGotResult=true;});
-  var _origOnResult=r.onresult;
   r.onend=function(){
     _voc.inAscolto=false;
-    // Se non ha ricevuto nulla riavvia automaticamente
+    var btn=document.getElementById("voc-mic-btn");
+    if(btn){btn.style.background="rgba(255,255,255,0.1)";btn.style.borderColor="rgba(255,255,255,0.3)";btn.classList.remove("mic-listening");}
+    // Se non ha ricevuto nulla attendi 2 secondi e riprova (max 5 volte)
     if(!_vocGotResult){
-      document.getElementById("voc-mic-stato").textContent="Non ho sentito nulla, riprovo...";
-      setTimeout(_vocLoginAvviaRiconoscimento,800);
+      _voc._loginRetry=(_voc._loginRetry||0)+1;
+      if(_voc._loginRetry<=5){
+        document.getElementById("voc-mic-stato").textContent="Parla quando il microfono e rosso (tentativo "+_voc._loginRetry+"/5)";
+        setTimeout(_vocLoginAvviaRiconoscimento,2000);
+      }else{
+        _voc._loginRetry=0;
+        document.getElementById("voc-mic-stato").textContent="Tocca il microfono per riprovare";
+      }
     }
   };
   r.start();
