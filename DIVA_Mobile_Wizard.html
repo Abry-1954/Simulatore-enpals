@@ -2751,7 +2751,7 @@ function dialogAvviaPercorso(tipo){
     // Inietta CSS temporaneo per forzare layout desktop nel PDF (sovrascrive media query mobile)
     const _pdfStyle = document.createElement('style');
     _pdfStyle.id = '_pdf_override';
-    _pdfStyle.textContent = '.fat-header-row{flex-direction:row !important;flex-wrap:wrap !important;} .fat-col{min-width:220px !important;width:auto !important;flex:1 !important;}';
+    _pdfStyle.textContent = '.fat-header-row{flex-direction:row !important;flex-wrap:wrap !important;} .fat-col{min-width:220px !important;width:auto !important;flex:1 !important;} .riepilogo{flex-direction:row !important;flex-wrap:wrap !important;} .riepilogo>div{flex:1 !important;min-width:200px !important;}';
     document.head.appendChild(_pdfStyle);
 
     const rifNbr = window._lastRifNbr || document.title || 'fattura';
@@ -2829,9 +2829,10 @@ function dialogAvviaPercorso(tipo){
           if(saveErr.name!=='AbortError') console.warn('Salvataggio locale:',saveErr.message);
         }
         // Riproduci "fattura salvata"
-        if(typeof riproduciAudio==='function') riproduciAudio('salvata');
+        if(typeof riproduciAudio==="function") riproduciAudio("salvata");
+        rilasciaWakeLock();
         // Torna alla home dopo 3 secondi
-        setTimeout(function(){ showScreen('s-home'); }, 3000);
+        setTimeout(function(){ showScreen("s-home"); }, 3000);
       } else {
         // Modalità manuale: comportamento normale
         window.print();
@@ -3142,6 +3143,26 @@ function pausa(ms){
 // Errore speciale per uscita vocale
 var _ANNULLA_VOCALE = "ANNULLA_VOCALE";
 
+// ─── WAKE LOCK (impedisce schermo spento durante flusso vocale) ──
+var _wakeLock = null;
+async function attivaWakeLock(){
+  try{
+    if("wakeLock" in navigator){
+      _wakeLock = await navigator.wakeLock.request("screen");
+      console.log("Wake Lock attivo");
+    }
+  }catch(e){ console.warn("Wake Lock non supportato:", e.message); }
+}
+function rilasciaWakeLock(){
+  if(_wakeLock){ _wakeLock.release(); _wakeLock=null; console.log("Wake Lock rilasciato"); }
+}
+// Riattiva automaticamente se l'utente torna sulla tab
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState==="visible" && _voc && (_voc._running||_voc.step>0) && !_wakeLock){
+    attivaWakeLock();
+  }
+});
+
 function vocaleIsAnnulla(testo){
   var t=testo.toLowerCase();
   return t.includes("annulla")||t.includes("esci")||t.includes("stop")||
@@ -3151,6 +3172,7 @@ function vocaleIsAnnulla(testo){
 
 async function vocaleEsci(){
   // Ferma tutto e resetta
+  rilasciaWakeLock();
   _voc._stopped=true;
   window.speechSynthesis&&window.speechSynthesis.cancel();
   if(_voc.recognition){try{_voc.recognition.stop();}catch(e){}}
@@ -3377,7 +3399,7 @@ async function vocaleRiepilogoFinale(){
     }
     var c=conf.toLowerCase();
     var cNo=c.includes("non confermo")||c.includes("no")||c.includes("negativo");
-    var cSi=!cNo&&(c.includes("confermo")||c.includes("si")||c.includes("yes")||c.includes("ok")||c.includes("perfetto")||c.includes("bene"));
+    var cSi=!cNo&&(c.includes("confermo")||c.includes("conferma")||c.includes("si")||c.includes("yes")||c.includes("ok")||c.includes("perfetto")||c.includes("bene")||c.includes("giusto")||c.includes("esatto")||c.includes("corretto"));
 
     if(cSi){
       confermato=true;
@@ -3488,7 +3510,7 @@ async function vocaleNuovaAzienda(){
 function vocaleConvertiNumero(testo){
   var t=testo.toLowerCase().trim();
   var numeri={
-    "zero":0,"uno":1,"due":2,"tre":3,"quattro":4,"cinque":5,
+    "zero":0,"uno":1,"due":2,"tre":3,"tre.":3,"tré":3,"quattro":4,"cinque":5,
     "sei":6,"sette":7,"otto":8,"nove":9,"dieci":10,
     "undici":11,"dodici":12,"tredici":13,"quattordici":14,"quindici":15,
     "sedici":16,"diciassette":17,"diciotto":18,"diciannove":19,"venti":20,
@@ -3669,12 +3691,13 @@ function vocaleMapTipoLav(testo){
 // Mappa testo vocale → codice TIPI_OPERA
 function vocaleMapTipoOpera(testo){
   var t=testo.toLowerCase();
-  if(t.includes("soap"))                             return TIPI_OPERA.find(function(x){return x.cod==="SOAP";});
-  if(t.includes("telefilm"))                         return TIPI_OPERA.find(function(x){return x.cod==="TELEFILM";});
-  if(t.includes("carton"))                           return TIPI_OPERA.find(function(x){return x.cod==="CARTONI";});
-  if(t.includes("tvmovie")||t.includes("tv movie"))  return TIPI_OPERA.find(function(x){return x.cod==="TVMOVIE";});
-  if(t.includes("doc")&&t.includes("sync"))          return TIPI_OPERA.find(function(x){return x.cod==="DOC NO SYNC";});
-  if(t.includes("doc"))                              return TIPI_OPERA.find(function(x){return x.cod==="DOC";});
+  if(t.includes("soap"))                                                    return TIPI_OPERA.find(function(x){return x.cod==="SOAP";});
+  if(t.includes("telefilm"))                                                return TIPI_OPERA.find(function(x){return x.cod==="TELEFILM";});
+  if(t.includes("carton"))                                                  return TIPI_OPERA.find(function(x){return x.cod==="CARTONI";});
+  if(t.includes("tvmovie")||t.includes("tv movie")||t.includes("ti vi"))   return TIPI_OPERA.find(function(x){return x.cod==="TVMOVIE";});
+  if((t.includes("doc")||t.includes("documentario"))&&
+     (t.includes("sync")||t.includes("sinc")||t.includes("senza")||t.includes("no sync"))) return TIPI_OPERA.find(function(x){return x.cod==="DOC NO SYNC";});
+  if(t.includes("doc")||t.includes("documentario"))                         return TIPI_OPERA.find(function(x){return x.cod==="DOC";});
   return TIPI_OPERA.find(function(x){return x.cod==="FILM";}); // default film
 }
 
@@ -3783,11 +3806,8 @@ async function vocaleCompilaSalva(){
   }
   return; // Il resto viene eseguito nella callback di goStampa
 
-  // ── Fine ─────────────────────────────────────────────────
-  await pausa(500);
-  if(_voc._stopped)return;
-  await riproduciAudio("salvata");
-  await pausa(1000);
+  // ── Fine: riproduce "fattura salvata" e torna alla home ────
+  // (il ritorno alla home è gestito dentro _vocaleMode in salvaSuDB)
 }
 
 // ─── LOGIN VOCALE ─────────────────────────────────────────
@@ -3879,6 +3899,7 @@ function avviaModalitaVocale(){
   _voc.dati={azienda:null,righe:[]};
   _voc.rigaCorrente={tipo:"",attivita:"",lavorazione:"",data:"",titolo:"",righe:0,turni:0};
   _voc.rispostaCorrente="";
+  attivaWakeLock(); // Impedisce allo schermo di spegnersi
   showScreen("s-vocale");
   vocaleAggiornaRiepilogo();
   vocaleFlussoFattura();
