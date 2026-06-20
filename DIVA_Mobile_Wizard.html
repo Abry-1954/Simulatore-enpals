@@ -3272,7 +3272,7 @@ async function vocaleChiediERispondi(step){
     await pausa(300);
     if(_voc._stopped)return "";
     // 5) Sintesi "La tua scelta e'"
-    await sintesiVocale("La tua scelta e'");
+    await sintesiVocale("Confermi che la tua scelta e'");
     await pausa(200);
     if(_voc._stopped)return "";
     // 6) Sintesi legge la risposta
@@ -3294,16 +3294,18 @@ async function vocaleChiediERispondi(step){
     }
     if(_voc._stopped)return "";
     var siNo=conferma.toLowerCase();
-    if(siNo.includes("si")||siNo.includes("yes")||siNo.includes("ok")||
-       siNo.includes("giusto")||siNo.includes("corretto")||siNo.includes("esatto")||
-       siNo.includes("vai")||siNo.includes("avanti")||siNo.includes("perfetto")||
-       siNo.includes("bene")||siNo.includes("confermo")){
+    var _isNo=siNo.includes("non confermo")||siNo.includes("no")||siNo.includes("negativo")||
+              siNo.includes("ripeti")||siNo.includes("sbagliato")||siNo.includes("errato")||
+              siNo.includes("ricomincia")||siNo.includes("riprova")||siNo.includes("nope")||siNo.includes("falso");
+    var _isSi=!_isNo&&(siNo.includes("confermo")||siNo.includes("si")||siNo.includes("yes")||
+       siNo.includes("ok")||siNo.includes("giusto")||siNo.includes("corretto")||
+       siNo.includes("esatto")||siNo.includes("vai")||siNo.includes("avanti")||
+       siNo.includes("perfetto")||siNo.includes("bene"));
+    if(_isSi){
       // Confermato! Salva la risposta del TENTATIVO, non la parola di conferma
       rispostaConfermata=rispostaTentativo;
       confermato=true;
-    }else if(siNo.includes("no")||siNo.includes("ripeti")||siNo.includes("sbagliato")||
-             siNo.includes("errato")||siNo.includes("ricomincia")||siNo.includes("riprova")||
-             siNo.includes("negativo")||siNo.includes("nope")||siNo.includes("falso")){
+    }else if(_isNo){
       // Negativo - riparti dalla domanda
       await riproduciAudio("riprovo");
       await pausa(500);
@@ -3431,7 +3433,8 @@ async function vocaleFlussoFattura(){
   // Step 0: Vuoi fare una fattura?
   var rispVuoi=await vocaleChiediERispondi(_vocSteps[0]);
   var _rv=rispVuoi.toLowerCase();
-  if(!(_rv.includes("si")||_rv.includes("yes")||_rv.includes("ok")||_rv.includes("confermo")||_rv.includes("corretto")||_rv.includes("giusto")||_rv.includes("esatto")||_rv.includes("vai")||_rv.includes("avanti")||_rv.includes("perfetto")||_rv.includes("bene"))){
+  var _rvNo=_rv.includes("non confermo")||_rv.includes("no")||_rv.includes("negativo");
+  if(_rvNo||!(_rv.includes("confermo")||_rv.includes("si")||_rv.includes("yes")||_rv.includes("ok")||_rv.includes("giusto")||_rv.includes("esatto")||_rv.includes("perfetto")||_rv.includes("bene"))){
     await sintesiVocale("Ok, torno al menu principale");
     showScreen("s-home");return;
   }
@@ -3482,7 +3485,8 @@ async function vocaleFlussoFattura(){
     _voc.step=9;
     var altraData=await vocaleChiediERispondi(_vocSteps[9]);
     var _ad=altraData.toLowerCase();
-    if(!(_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("confermo")||_ad.includes("corretto")||_ad.includes("giusto")||_ad.includes("esatto")||_ad.includes("vai")||_ad.includes("avanti")||_ad.includes("perfetto")||_ad.includes("bene"))){
+    var _adNo=_ad.includes("non confermo")||_ad.includes("no")||_ad.includes("negativo");
+    if(_adNo||!(_ad.includes("confermo")||_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("giusto")||_ad.includes("esatto")||_ad.includes("perfetto")||_ad.includes("bene"))){
       continuaDate=false;
     }else{
       // Reset solo data/titolo/turni/righe - mantieni tipo/attivita/lavorazione
@@ -3662,13 +3666,15 @@ async function avviaLoginVocale(){
     try{username=await ascoltaVoce(12000);}
     catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
     vocaleSetRisposta(username);
-    await sintesiVocale("La tua scelta e'");await pausa(200);
+    await sintesiVocale("Confermi che la tua scelta e'");await pausa(200);
     await sintesiVocale(username);await pausa(1000);
     vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
     await pausa(500);
     try{
       var cfm=await ascoltaVoce(8000);
-      if(cfm.toLowerCase().includes("si")||cfm.toLowerCase().includes("ok")||cfm.toLowerCase().includes("yes")||cfm.toLowerCase().includes("confermo")||cfm.toLowerCase().includes("corretto")||cfm.toLowerCase().includes("giusto")||cfm.toLowerCase().includes("esatto")||cfm.toLowerCase().includes("vai")||cfm.toLowerCase().includes("avanti")||cfm.toLowerCase().includes("perfetto")||cfm.toLowerCase().includes("bene")) confUser=true;
+      var _cfm=cfm.toLowerCase();
+      var _cfmNo=_cfm.includes("non confermo")||_cfm.includes("no")||_cfm.includes("negativo")||_cfm.includes("riprova")||_cfm.includes("ripeti");
+      if(!_cfmNo&&(_cfm.includes("confermo")||_cfm.includes("si")||_cfm.includes("ok")||_cfm.includes("yes")||_cfm.includes("giusto")||_cfm.includes("esatto")||_cfm.includes("perfetto")||_cfm.includes("bene"))) confUser=true;
       else {await riproduciAudio("riprovo");await pausa(800);}
     }catch(e){await riproduciAudio("nonHoCapito");await pausa(800);}
   }
@@ -3688,13 +3694,15 @@ async function avviaLoginVocale(){
     catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
     // Mostra la password come le altre risposte
     vocaleSetRisposta(password);
-    await sintesiVocale("La tua scelta e'");await pausa(200);
+    await sintesiVocale("Confermi che la tua scelta e'");await pausa(200);
     await sintesiVocale(password);await pausa(1000);
     vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
     await pausa(500);
     try{
       var cfm2=await ascoltaVoce(8000);
-      if(cfm2.toLowerCase().includes("si")||cfm2.toLowerCase().includes("ok")||cfm2.toLowerCase().includes("yes")||cfm2.toLowerCase().includes("confermo")||cfm2.toLowerCase().includes("corretto")||cfm2.toLowerCase().includes("giusto")||cfm2.toLowerCase().includes("esatto")||cfm2.toLowerCase().includes("vai")||cfm2.toLowerCase().includes("avanti")||cfm2.toLowerCase().includes("perfetto")||cfm2.toLowerCase().includes("bene")) confPass=true;
+      var _cfm2=cfm2.toLowerCase();
+      var _cfm2No=_cfm2.includes("non confermo")||_cfm2.includes("no")||_cfm2.includes("negativo")||_cfm2.includes("riprova")||_cfm2.includes("ripeti");
+      if(!_cfm2No&&(_cfm2.includes("confermo")||_cfm2.includes("si")||_cfm2.includes("ok")||_cfm2.includes("yes")||_cfm2.includes("giusto")||_cfm2.includes("esatto")||_cfm2.includes("perfetto")||_cfm2.includes("bene"))) confPass=true;
       else {await riproduciAudio("riprovo");await pausa(800);}
     }catch(e){await riproduciAudio("nonHoCapito");await pausa(800);}
   }
