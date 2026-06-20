@@ -2828,11 +2828,16 @@ function dialogAvviaPercorso(tipo){
         }catch(saveErr){
           if(saveErr.name!=='AbortError') console.warn('Salvataggio locale:',saveErr.message);
         }
-        // Riproduci "fattura salvata"
-        if(typeof riproduciAudio==="function") riproduciAudio("salvata");
-        rilasciaWakeLock();
-        // Torna alla home dopo 3 secondi
-        setTimeout(function(){ showScreen("s-home"); }, 3000);
+        // Sintesi "Fattura salvata" senza domande
+        if(typeof sintesiVocale==="function"){
+          sintesiVocale("Fattura salvata correttamente.").then(function(){
+            rilasciaWakeLock();
+            setTimeout(function(){ showScreen("s-home"); }, 1000);
+          });
+        } else {
+          rilasciaWakeLock();
+          setTimeout(function(){ showScreen("s-home"); }, 2000);
+        }
       } else {
         // Modalità manuale: comportamento normale
         window.print();
@@ -3120,7 +3125,7 @@ var _vocSteps=[
   {id:"vuoiFattura", domanda:"Vuoi fare una fattura?",         sottotitolo:"Rispondi Si o No",                    audio:"vuoiFattura",  icona:"🎤", colore:"linear-gradient(155deg,#2e1065,#4c1d95)"},
   {id:"tipo",        domanda:"Che tipo di fattura?",           sottotitolo:"Ordinario, Agevolato, Ricevuta...",   audio:"tipoFattura",  icona:"📄", colore:"linear-gradient(155deg,#1e3a8a,#1d4ed8)"},
   {id:"attivita",    domanda:"Che tipo di prestazione?",       sottotitolo:"Doppiatore, Direttore, Adattatore...",audio:"prestazione",  icona:"👤", colore:"linear-gradient(155deg,#1d4ed8,#2563eb)"},
-  {id:"lavorazione", domanda:"Che tipo di lavorazione?",       sottotitolo:"Film, TvMovie, Telefilm, Cartoni...", audio:"lavorazione",  icona:"🎬", colore:"linear-gradient(155deg,#0e7490,#0891b2)"},
+  {id:"lavorazione", domanda:"Che tipo di lavorazione?",       sottotitolo:"Film, TvMovie, Telefilm, Cartoni, Soap, Doc, Doc Senza Sincronizzazione", audio:"lavorazione",  icona:"🎬", colore:"linear-gradient(155deg,#0e7490,#0891b2)"},
   {id:"data",        domanda:"Data di lavoro?",                sottotitolo:"Es: venticinque giugno 2026",         audio:"dataLavoro",   icona:"📅", colore:"linear-gradient(155deg,#065f46,#047857)"},
   {id:"turni",       domanda:"Quanti turni?",                  sottotitolo:"Numero di turni",                     audio:"quantiTurni",  icona:"🔄", colore:"linear-gradient(155deg,#16a34a,#15803d)"},
   {id:"righe",       domanda:"Quante righe?",                  sottotitolo:"Numero di righe",                     audio:"quanteRighe",  icona:"📊", colore:"linear-gradient(155deg,#4d7c0f,#65a30d)"},
@@ -3354,7 +3359,8 @@ async function vocaleRiepilogoFinale(){
   var riepilogo="Sto per elaborare la fattura con questi dati. ";
   riepilogo+="Tipo: "+(_voc.rigaCorrente.tipo||"non specificato")+". ";
   riepilogo+="Prestazione: "+(_voc.rigaCorrente.attivita||"non specificata")+". ";
-  riepilogo+="Lavorazione: "+(_voc.rigaCorrente.lavorazione||"non specificata")+". ";
+  var _lavDesc=(_voc.rigaCorrente.lavorazione||"non specificata").replace("DOC NO SYNC","Doc Senza Sincronizzazione");
+  riepilogo+="Lavorazione: "+_lavDesc+". ";
   riepilogo+="Azienda: "+az+". ";
   riepilogo+="Numero di date: "+righe.length+". ";
   if(righe.length>0){
@@ -3510,7 +3516,7 @@ async function vocaleNuovaAzienda(){
 function vocaleConvertiNumero(testo){
   var t=testo.toLowerCase().trim();
   var numeri={
-    "zero":0,"uno":1,"due":2,"tre":3,"tre.":3,"tré":3,"quattro":4,"cinque":5,
+    "zero":0,"uno":1,"due":2,"tre":3,"tre.":3,"tré":3,"3":3,"terzo":3,"tri":3,"quattro":4,"cinque":5,
     "sei":6,"sette":7,"otto":8,"nove":9,"dieci":10,
     "undici":11,"dodici":12,"tredici":13,"quattordici":14,"quindici":15,
     "sedici":16,"diciassette":17,"diciotto":18,"diciannove":19,"venti":20,
@@ -3520,9 +3526,12 @@ function vocaleConvertiNumero(testo){
     "trentasei":36,"trentasette":37,"trentotto":38,"trentanove":39,"quaranta":40,
     "cinquanta":50,"sessanta":60,"settanta":70,"ottanta":80,"novanta":90,"cento":100
   };
-  // Prima prova se e' gia un numero
+  // Prima prova se e' gia un numero (anche "3", "03", ecc)
   var n=parseInt(t);
-  if(!isNaN(n))return n;
+  if(!isNaN(n)&&n>=0)return n;
+  // Cerca cifra nel testo (es. "turni 3", "numero 3")
+  var soloNum=t.match(/(\d+)/);
+  if(soloNum)return parseInt(soloNum[1]);
   // Cerca corrispondenza esatta
   if(numeri[t]!==undefined)return numeri[t];
   // Cerca parola numerica nel testo
