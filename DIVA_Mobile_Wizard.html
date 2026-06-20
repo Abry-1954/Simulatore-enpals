@@ -2793,18 +2793,47 @@ function dialogAvviaPercorso(tipo){
         }
       }
 
-      // Aggiorna messaggio e apri stampa
+      // Aggiorna messaggio
       if(step2b){
         const titolo = step2b.querySelector('div');
         if(titolo) titolo.textContent = 'PDF salvato ✅';
       }
-      // Apri dialog stampa per copia locale
-      window.print();
-      // Mostra step3
-      if(step2b) step2b.style.display='none';
-      document.getElementById('salva-step3').style.display='block';
-      const msg = document.getElementById('salva-step3-msg');
-      if(msg) msg.textContent='PDF salvato su archivio ✅';
+
+      if(window._vocaleMode){
+        // Modalità vocale: salva PDF locale automaticamente senza dialog
+        window._vocaleMode = false;
+        try{
+          const pdfBlob = new Blob([new Uint8Array(buffer)], {type:'application/pdf'});
+          if(window.showSaveFilePicker){
+            const fh = await window.showSaveFilePicker({
+              suggestedName: rifNbr+'.pdf',
+              types:[{description:'PDF',accept:{'application/pdf':['.pdf']}}]
+            });
+            const writable = await fh.createWritable();
+            await writable.write(pdfBlob);
+            await writable.close();
+          } else {
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href=url; a.download=rifNbr+'.pdf';
+            document.body.appendChild(a); a.click();
+            setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},3000);
+          }
+        }catch(saveErr){
+          if(saveErr.name!=='AbortError') console.warn('Salvataggio locale:',saveErr.message);
+        }
+        // Riproduci "fattura salvata"
+        if(typeof riproduciAudio==='function') riproduciAudio('salvata');
+        // Torna alla home dopo 3 secondi
+        setTimeout(function(){ showScreen('s-home'); }, 3000);
+      } else {
+        // Modalità manuale: comportamento normale
+        window.print();
+        if(step2b) step2b.style.display='none';
+        document.getElementById('salva-step3').style.display='block';
+        const msg = document.getElementById('salva-step3-msg');
+        if(msg) msg.textContent='PDF salvato su archivio ✅';
+      }
 
     }).catch(function(e){
       console.warn('html2pdf errore:', e);
@@ -3252,83 +3281,132 @@ function vocaleAggiornaRiepilogo(){
 
 // ─── CICLO DOMANDA/RISPOSTA ──────────────────────────────
 
+// Acquisizione diretta senza conferma per ogni campo
 async function vocaleChiediERispondi(step){
-  var confermato=false;
-  var rispostaConfermata=""; // Salva solo quando confermata
-  while(!confermato){
-    if(_voc._stopped)return "";
-    // 1) Mostra scheda colorata
-    vocaleSetScheda(step);
-    await pausa(400);
-    if(_voc._stopped)return "";
-    // 2) Riproduci MP3 domanda
-    await riproduciAudio(step.audio);
-    await pausa(300);
-    if(_voc._stopped)return "";
-    // 3) Ascolta risposta
-    vocaleSetStato("Sto ascoltando... parla ora!");
-    var rispostaTentativo="";
+  if(_voc._stopped)return "";
+  // 1) Mostra scheda colorata
+  vocaleSetScheda(step);
+  await pausa(400);
+  if(_voc._stopped)return "";
+  // 2) Riproduci MP3 domanda
+  await riproduciAudio(step.audio);
+  await pausa(300);
+  if(_voc._stopped)return "";
+  // 3) Ascolta risposta - max 2 tentativi se non capisce
+  vocaleSetStato("Sto ascoltando... parla ora!");
+  var risposta="";
+  var tentativi=0;
+  while(tentativi<3){
     try{
-      rispostaTentativo=await ascoltaVoce(12000);
+      risposta=await ascoltaVoce(12000);
+      break; // risposta ricevuta
     }catch(e){
       if(e===_ANNULLA_VOCALE){await vocaleEsci();return "";}
-      await riproduciAudio("riprovo");
-      await pausa(500);
-      continue; // Riprova dalla domanda
-    }
-    if(_voc._stopped)return "";
-    // 4) Mostra risposta ricevuta
-    vocaleSetRisposta(rispostaTentativo);
-    await pausa(300);
-    if(_voc._stopped)return "";
-    // 5) Sintesi "La tua scelta e'"
-    await sintesiVocale("Confermi che la tua scelta e'");
-    await pausa(200);
-    if(_voc._stopped)return "";
-    // 6) Sintesi legge la risposta
-    await sintesiVocale(rispostaTentativo);
-    await pausa(1000);
-    if(_voc._stopped)return "";
-    // 7) Ascolta SOLO conferma Si/No — NON aggiorna la risposta
-    vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
-    await pausa(500);
-    if(_voc._stopped)return "";
-    var conferma="";
-    try{
-      conferma=await ascoltaVoce(8000);
-    }catch(e){
-      if(e===_ANNULLA_VOCALE){await vocaleEsci();return "";}
-      await riproduciAudio("nonHoCapito");
-      await pausa(500);
-      continue; // Riprova dalla domanda
-    }
-    if(_voc._stopped)return "";
-    var siNo=conferma.toLowerCase();
-    var _isNo=siNo.includes("non confermo")||siNo.includes("no")||siNo.includes("negativo")||
-              siNo.includes("ripeti")||siNo.includes("sbagliato")||siNo.includes("errato")||
-              siNo.includes("ricomincia")||siNo.includes("riprova")||siNo.includes("nope")||siNo.includes("falso");
-    var _isSi=!_isNo&&(siNo.includes("confermo")||siNo.includes("si")||siNo.includes("yes")||
-       siNo.includes("ok")||siNo.includes("giusto")||siNo.includes("corretto")||
-       siNo.includes("esatto")||siNo.includes("vai")||siNo.includes("avanti")||
-       siNo.includes("perfetto")||siNo.includes("bene"));
-    if(_isSi){
-      // Confermato! Salva la risposta del TENTATIVO, non la parola di conferma
-      rispostaConfermata=rispostaTentativo;
-      confermato=true;
-    }else if(_isNo){
-      // Negativo - riparti dalla domanda
-      await riproduciAudio("riprovo");
-      await pausa(500);
-      // NON aggiornare rispostaConfermata - riparti dal while
-    }else{
-      // Non capito - riascolta conferma
-      await riproduciAudio("nonHoCapito");
-      await pausa(500);
-      // Riascolta solo la conferma, non tutta la domanda
-      continue;
+      tentativi++;
+      if(tentativi<3){
+        await riproduciAudio("riprovo");
+        await pausa(500);
+      }
     }
   }
-  return rispostaConfermata; // Restituisce SOLO la risposta confermata
+  if(_voc._stopped)return "";
+  // 4) Mostra risposta e vai avanti subito
+  vocaleSetRisposta(risposta);
+  await pausa(300);
+  return risposta;
+}
+
+// Riepilogo finale con unica conferma
+async function vocaleRiepilogoFinale(){
+  if(_voc._stopped)return false;
+
+  // Costruisci testo riepilogo
+  var righe=_voc.dati.righe;
+  var az=(_voc.dati.azienda||{}).ragione_sociale||"nessuna azienda";
+  var riepilogo="Sto per elaborare la fattura con questi dati. ";
+  riepilogo+="Tipo: "+(_voc.rigaCorrente.tipo||"non specificato")+". ";
+  riepilogo+="Prestazione: "+(_voc.rigaCorrente.attivita||"non specificata")+". ";
+  riepilogo+="Lavorazione: "+(_voc.rigaCorrente.lavorazione||"non specificata")+". ";
+  riepilogo+="Azienda: "+az+". ";
+  riepilogo+="Numero di date: "+righe.length+". ";
+  if(righe.length>0){
+    righe.forEach(function(r,i){
+      riepilogo+="Data "+(i+1)+": "+r.data+", turni "+r.turni+", righe "+r.righe+", titolo: "+r.titolo+". ";
+    });
+  }
+  riepilogo+="Confermi?";
+
+  // Mostra riepilogo sullo schermo
+  var schermo=document.getElementById("s-vocale");
+  if(schermo) schermo.style.background="linear-gradient(155deg,#134e4a,#0f766e)";
+  var icona=document.getElementById("voc-icona");
+  if(icona) icona.textContent="📋";
+  document.getElementById("voc-domanda").textContent="Riepilogo fattura";
+  document.getElementById("voc-sottotitolo").textContent=az+" | "+righe.length+" date";
+  document.getElementById("voc-risposta-box").style.display="none";
+  document.getElementById("voc-bottoni").style.display="none";
+  var badge=document.getElementById("voc-step-badge");
+  if(badge) badge.textContent="Conferma finale";
+
+  // Leggi riepilogo ad alta voce
+  await sintesiVocale(riepilogo);
+  await pausa(800);
+  if(_voc._stopped)return false;
+
+  // Ascolta conferma
+  vocaleSetStato("Di' CONFERMO per salvare o NON CONFERMO per modificare");
+  await pausa(500);
+
+  var confermato=false;
+  while(!confermato){
+    if(_voc._stopped)return false;
+    var conf="";
+    try{
+      conf=await ascoltaVoce(12000);
+    }catch(e){
+      if(e===_ANNULLA_VOCALE){await vocaleEsci();return false;}
+      await riproduciAudio("nonHoCapito");
+      await pausa(500);
+      continue;
+    }
+    var c=conf.toLowerCase();
+    var cNo=c.includes("non confermo")||c.includes("no")||c.includes("negativo");
+    var cSi=!cNo&&(c.includes("confermo")||c.includes("si")||c.includes("yes")||c.includes("ok")||c.includes("perfetto")||c.includes("bene"));
+
+    if(cSi){
+      confermato=true;
+      return true;
+    }else if(cNo){
+      // Chiedi quale campo modificare
+      await sintesiVocale("Quale campo vuoi modificare? Tipo, Prestazione, Lavorazione, Data, Turni, Righe, Titolo, o Azienda?");
+      await pausa(500);
+      var campo="";
+      try{
+        campo=await ascoltaVoce(10000);
+      }catch(e){
+        if(e===_ANNULLA_VOCALE){await vocaleEsci();return false;}
+        continue;
+      }
+      var cam=campo.toLowerCase();
+      // Torna allo step corretto
+      if(cam.includes("tipo"))       return "tipo";
+      if(cam.includes("prestaz")||cam.includes("attiv")) return "attivita";
+      if(cam.includes("lavoraz"))    return "lavorazione";
+      if(cam.includes("data"))       return "data";
+      if(cam.includes("turni"))      return "turni";
+      if(cam.includes("righe")||cam.includes("righe")) return "righe";
+      if(cam.includes("titolo"))     return "titolo";
+      if(cam.includes("azienda"))    return "azienda";
+      // Non capito
+      await riproduciAudio("nonHoCapito");
+      await sintesiVocale(riepilogo);
+      await pausa(500);
+    }else{
+      await riproduciAudio("nonHoCapito");
+      await pausa(500);
+    }
+  }
+  return false;
 }
 
 // ─── GESTIONE AZIENDA ────────────────────────────────────
@@ -3442,76 +3520,125 @@ async function vocaleFlussoFattura(){
 
   // Step 0: Vuoi fare una fattura?
   var rispVuoi=await vocaleChiediERispondi(_vocSteps[0]);
+  if(_voc._stopped)return;
   var _rv=rispVuoi.toLowerCase();
   var _rvNo=_rv.includes("non confermo")||_rv.includes("no")||_rv.includes("negativo");
-  if(_rvNo||!(_rv.includes("confermo")||_rv.includes("si")||_rv.includes("yes")||_rv.includes("ok")||_rv.includes("giusto")||_rv.includes("esatto")||_rv.includes("perfetto")||_rv.includes("bene"))){
+  if(_rvNo||!(_rv.includes("confermo")||_rv.includes("si")||_rv.includes("yes")||_rv.includes("ok")||_rv.includes("perfetto")||_rv.includes("bene"))){
     await sintesiVocale("Ok, torno al menu principale");
     showScreen("s-home");return;
   }
 
-  // Step 1: Tipo fattura
-  _voc.step=1;
-  _voc.rigaCorrente.tipo=await vocaleChiediERispondi(_vocSteps[1]);
-  vocaleAggiornaRiepilogo();
+  // Acquisizione diretta senza conferma per ogni campo
+  var riparti=true;
+  while(riparti){
+    if(_voc._stopped)return;
 
-  // Step 2: Prestazione
-  _voc.step=2;
-  _voc.rigaCorrente.attivita=await vocaleChiediERispondi(_vocSteps[2]);
-  vocaleAggiornaRiepilogo();
+    // Reset dati
+    _voc.dati.righe=[];
+    _voc.rigaCorrente={tipo:"",attivita:"",lavorazione:"",data:"",titolo:"",righe:0,turni:0};
 
-  // Step 3: Lavorazione
-  _voc.step=3;
-  _voc.rigaCorrente.lavorazione=await vocaleChiediERispondi(_vocSteps[3]);
-  vocaleAggiornaRiepilogo();
-
-  // Loop date
-  var continuaDate=true;
-  while(continuaDate){
-    // Step 4: Data
-    _voc.step=4;
-    _voc.rigaCorrente.data=vocaleConvertiData(await vocaleChiediERispondi(_vocSteps[4]));
+    // Step 1: Tipo fattura
+    _voc.step=1;
+    _voc.rigaCorrente.tipo=await vocaleChiediERispondi(_vocSteps[1]);
+    if(_voc._stopped)return;
     vocaleAggiornaRiepilogo();
 
-    // Step 5: Turni
-    _voc.step=5;
-    _voc.rigaCorrente.turni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
+    // Step 2: Prestazione
+    _voc.step=2;
+    _voc.rigaCorrente.attivita=await vocaleChiediERispondi(_vocSteps[2]);
+    if(_voc._stopped)return;
     vocaleAggiornaRiepilogo();
 
-    // Step 6: Righe
-    _voc.step=6;
-    _voc.rigaCorrente.righe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
+    // Step 3: Lavorazione
+    _voc.step=3;
+    _voc.rigaCorrente.lavorazione=await vocaleChiediERispondi(_vocSteps[3]);
+    if(_voc._stopped)return;
     vocaleAggiornaRiepilogo();
 
-    // Step 7: Titolo
-    _voc.step=7;
-    _voc.rigaCorrente.titolo=await vocaleChiediERispondi(_vocSteps[7]);
+    // Loop date
+    var continuaDate=true;
+    while(continuaDate){
+      if(_voc._stopped)return;
+
+      // Step 4: Data
+      _voc.step=4;
+      _voc.rigaCorrente.data=vocaleConvertiData(await vocaleChiediERispondi(_vocSteps[4]));
+      if(_voc._stopped)return;
+      vocaleAggiornaRiepilogo();
+
+      // Step 5: Turni
+      _voc.step=5;
+      _voc.rigaCorrente.turni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
+      if(_voc._stopped)return;
+      vocaleAggiornaRiepilogo();
+
+      // Step 6: Righe
+      _voc.step=6;
+      _voc.rigaCorrente.righe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
+      if(_voc._stopped)return;
+      vocaleAggiornaRiepilogo();
+
+      // Step 7: Titolo
+      _voc.step=7;
+      _voc.rigaCorrente.titolo=await vocaleChiediERispondi(_vocSteps[7]);
+      if(_voc._stopped)return;
+      vocaleAggiornaRiepilogo();
+
+      // Salva riga corrente
+      _voc.dati.righe.push(Object.assign({},_voc.rigaCorrente));
+      vocaleAggiornaRiepilogo();
+
+      // Altra data?
+      _voc.step=9;
+      var altraData=await vocaleChiediERispondi(_vocSteps[9]);
+      if(_voc._stopped)return;
+      var _ad=altraData.toLowerCase();
+      var _adNo=_ad.includes("non confermo")||_ad.includes("no")||_ad.includes("negativo");
+      if(_adNo||!(_ad.includes("confermo")||_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("perfetto")||_ad.includes("bene"))){
+        continuaDate=false;
+      }else{
+        _voc.rigaCorrente.data="";_voc.rigaCorrente.titolo="";
+        _voc.rigaCorrente.turni=0;_voc.rigaCorrente.righe=0;
+      }
+    }
+
+    // Azienda
+    _voc.step=8;
+    await vocaleGestisciAzienda();
+    if(_voc._stopped)return;
     vocaleAggiornaRiepilogo();
 
-    // Salva riga
-    _voc.dati.righe.push(Object.assign({},_voc.rigaCorrente));
-    vocaleAggiornaRiepilogo();
+    // RIEPILOGO FINALE - unica conferma
+    var esito=await vocaleRiepilogoFinale();
+    if(_voc._stopped)return;
 
-    // Step 9: Altra data?
-    _voc.step=9;
-    var altraData=await vocaleChiediERispondi(_vocSteps[9]);
-    var _ad=altraData.toLowerCase();
-    var _adNo=_ad.includes("non confermo")||_ad.includes("no")||_ad.includes("negativo");
-    if(_adNo||!(_ad.includes("confermo")||_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("giusto")||_ad.includes("esatto")||_ad.includes("perfetto")||_ad.includes("bene"))){
-      continuaDate=false;
-    }else{
-      // Reset solo data/titolo/turni/righe - mantieni tipo/attivita/lavorazione
+    if(esito===true){
+      // Confermato - salva
+      riparti=false;
+      await vocaleCompilaSalva();
+    }else if(esito==="tipo"){
+      _voc.step=1;
+      _voc.rigaCorrente.tipo=await vocaleChiediERispondi(_vocSteps[1]);
+    }else if(esito==="attivita"){
+      _voc.step=2;
+      _voc.rigaCorrente.attivita=await vocaleChiediERispondi(_vocSteps[2]);
+    }else if(esito==="lavorazione"){
+      _voc.step=3;
+      _voc.rigaCorrente.lavorazione=await vocaleChiediERispondi(_vocSteps[3]);
+    }else if(esito==="azienda"){
+      _voc.dati.azienda=null;
+      await vocaleGestisciAzienda();
+    }else if(esito==="data"||esito==="turni"||esito==="righe"||esito==="titolo"){
+      // Per modifiche alle righe, riparte dal loop date
+      _voc.dati.righe=[];
       _voc.rigaCorrente.data="";_voc.rigaCorrente.titolo="";
       _voc.rigaCorrente.turni=0;_voc.rigaCorrente.righe=0;
+      // Riepilogo di nuovo
+    }else{
+      // Annullato o errore - torna alla home
+      riparti=false;
     }
   }
-
-  // Step 8: Azienda
-  _voc.step=8;
-  await vocaleGestisciAzienda();
-  vocaleAggiornaRiepilogo();
-
-  // Fine - salva
-  await vocaleCompilaSalva();
 }
 
 // Mappa testo vocale → codice TIPI_FATT
@@ -3623,6 +3750,7 @@ async function vocaleCompilaSalva(){
   console.log("S.anzianita:", S.anzianita);
 
   // ── Popola #s-fattura PRIMA di salvaSuDB (serve per html2pdf) ──
+  window._vocaleMode = true; // Flag: salta dialog manuale, salva tutto automaticamente
   try{
     // goStampa inietta l'HTML nel div #s-fattura con tutti gli stili
     goStampa(false, async function(){
