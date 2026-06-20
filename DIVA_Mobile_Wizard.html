@@ -2741,6 +2741,13 @@ function dialogAvviaPercorso(tipo){
   if(tipo==='pdf'){
     // Genera PDF con html2pdf, carica su Supabase, poi apre stampa
     const fatDiv = document.querySelector('#s-fattura .fat-body') || document.querySelector('#s-fattura .fattura-wrap') || document.getElementById('s-fattura');
+
+    // Inietta CSS temporaneo per forzare layout desktop nel PDF (sovrascrive media query mobile)
+    const _pdfStyle = document.createElement('style');
+    _pdfStyle.id = '_pdf_override';
+    _pdfStyle.textContent = '.fat-header-row{flex-direction:row !important;flex-wrap:wrap !important;} .fat-col{min-width:220px !important;width:auto !important;flex:1 !important;}';
+    document.head.appendChild(_pdfStyle);
+
     const rifNbr = window._lastRifNbr || document.title || 'fattura';
     const recNbr = window._lastRecNbr || null;
     const SERVER = 'https://enpals-server.onrender.com';
@@ -2764,6 +2771,9 @@ function dialogAvviaPercorso(tipo){
     };
 
     html2pdf().set(opt).from(fatDiv).outputPdf('arraybuffer').then(async function(buffer){
+      // Rimuovi CSS temporaneo
+      const _ps = document.getElementById('_pdf_override');
+      if(_ps) _ps.remove();
       // Converti in base64
       const bytes = new Uint8Array(buffer);
       let binary = '';
