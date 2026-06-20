@@ -2723,6 +2723,12 @@ async function salvaSuDB(){
   mostraDialogDopoSalvataggio(rif_nbr);
 }
 function mostraDialogDopoSalvataggio(rif_nbr){
+  // In modalità vocale salta il dialog — il PDF viene generato automaticamente
+  if(window._vocaleMode){
+    // Avvia subito la generazione PDF senza mostrare il dialog
+    setTimeout(function(){ dialogAvviaPercorso('pdf'); }, 100);
+    return;
+  }
   const d = document.getElementById('salva-dialog');
   const r = document.getElementById('salva-dialog-rif');
   if(r) r.textContent = rif_nbr;
