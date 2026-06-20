@@ -3616,6 +3616,14 @@ async function vocaleCompilaSalva(){
   try{
     // goStampa inietta l'HTML nel div #s-fattura con tutti gli stili
     goStampa(false, async function(){
+      // Override CSS mobile per forzare layout a due colonne nel PDF
+      var fatDiv=document.querySelector('#s-fattura .fat-body')||document.getElementById('s-fattura');
+      if(fatDiv){
+        var rows=fatDiv.querySelectorAll('.fat-header-row');
+        rows.forEach(function(r){r.style.flexDirection='row';r.style.flexWrap='wrap';});
+        var cols=fatDiv.querySelectorAll('.fat-col');
+        cols.forEach(function(c){c.style.minWidth='220px';c.style.width='auto';});
+      }
       // Callback: div e' pronto, ora salva
       try{
         await salvaSuDB();
