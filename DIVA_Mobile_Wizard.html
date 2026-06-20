@@ -3479,16 +3479,12 @@ async function vocaleGestisciAzienda(){
         _voc.dati.azienda=trovate[idx];trovata=true;
       }
     }else{
-      // Non trovata
+      // Non trovata - campo azienda resta vuoto, si va avanti
       await riproduciAudio("nonTrovata");
-      await pausa(300);
-      var aggiungi=await ascoltaVoce(8000).catch(function(){return "no";});
-      var _ag=aggiungi.toLowerCase();
-      if(_ag.includes("si")||_ag.includes("yes")||_ag.includes("ok")||_ag.includes("confermo")||_ag.includes("corretto")||_ag.includes("giusto")||_ag.includes("esatto")||_ag.includes("vai")||_ag.includes("avanti")||_ag.includes("perfetto")||_ag.includes("bene")||_ag.includes("aggiungi")){
-        await vocaleNuovaAzienda();trovata=true;
-      }else{
-        trovata=true; // Senza azienda
-      }
+      await pausa(200);
+      await sintesiVocale("Il campo azienda restera vuoto. Continuo.");
+      await pausa(500);
+      trovata=true;
     }
   }
 }
@@ -3842,6 +3838,7 @@ async function vocaleCompilaSalva(){
 // ─── LOGIN VOCALE ─────────────────────────────────────────
 
 async function avviaLoginVocale(){
+  // Se gia loggato salta direttamente al flusso vocale
   var saved=sessionStorage.getItem("enpals_auth");
   if(saved&&(saved==="1"||saved.startsWith("tok:"))){
     avviaModalitaVocale();return;
@@ -3854,33 +3851,26 @@ async function avviaLoginVocale(){
   document.getElementById("voc-step-badge").textContent="Login vocale";
   await pausa(300);
 
-  // Benvenuto + username
+  // 1) Benvenuto + ascolta username (senza conferma)
   document.getElementById("voc-domanda").textContent="Benvenuto in DIVA. Dimmi il tuo username";
   document.getElementById("voc-sottotitolo").textContent="Pronuncia il tuo nome utente";
   await riproduciAudio("benvenuto");
   await pausa(300);
 
   var username="";
-  var confUser=false;
-  while(!confUser){
+  while(!username){
     vocaleSetStato("Sto ascoltando...");
-    try{username=await ascoltaVoce(12000);}
-    catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
-    vocaleSetRisposta(username);
-    await sintesiVocale("Confermi che la tua scelta e'");await pausa(200);
-    await sintesiVocale(username);await pausa(1000);
-    vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
-    await pausa(500);
     try{
-      var cfm=await ascoltaVoce(8000);
-      var _cfm=cfm.toLowerCase();
-      var _cfmNo=_cfm.includes("non confermo")||_cfm.includes("no")||_cfm.includes("negativo")||_cfm.includes("riprova")||_cfm.includes("ripeti");
-      if(!_cfmNo&&(_cfm.includes("confermo")||_cfm.includes("si")||_cfm.includes("ok")||_cfm.includes("yes")||_cfm.includes("giusto")||_cfm.includes("esatto")||_cfm.includes("perfetto")||_cfm.includes("bene"))) confUser=true;
-      else {await riproduciAudio("riprovo");await pausa(800);}
-    }catch(e){await riproduciAudio("nonHoCapito");await pausa(800);}
+      username=await ascoltaVoce(12000);
+      vocaleSetRisposta(username);
+    }catch(e){
+      if(e===_ANNULLA_VOCALE){await vocaleEsci();return;}
+      await riproduciAudio("riprovo");await pausa(500);
+    }
   }
+  await pausa(300);
 
-  // Password
+  // 2) Password (senza conferma)
   document.getElementById("voc-domanda").textContent="Dimmi la password";
   document.getElementById("voc-sottotitolo").textContent="Pronuncia la tua password";
   document.getElementById("voc-risposta-box").style.display="none";
@@ -3888,27 +3878,19 @@ async function avviaLoginVocale(){
   await pausa(300);
 
   var password="";
-  var confPass=false;
-  while(!confPass){
+  while(!password){
     vocaleSetStato("Sto ascoltando...");
-    try{password=await ascoltaVoce(12000);}
-    catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
-    // Mostra la password come le altre risposte
-    vocaleSetRisposta(password);
-    await sintesiVocale("Confermi che la tua scelta e'");await pausa(200);
-    await sintesiVocale(password);await pausa(1000);
-    vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
-    await pausa(500);
     try{
-      var cfm2=await ascoltaVoce(8000);
-      var _cfm2=cfm2.toLowerCase();
-      var _cfm2No=_cfm2.includes("non confermo")||_cfm2.includes("no")||_cfm2.includes("negativo")||_cfm2.includes("riprova")||_cfm2.includes("ripeti");
-      if(!_cfm2No&&(_cfm2.includes("confermo")||_cfm2.includes("si")||_cfm2.includes("ok")||_cfm2.includes("yes")||_cfm2.includes("giusto")||_cfm2.includes("esatto")||_cfm2.includes("perfetto")||_cfm2.includes("bene"))) confPass=true;
-      else {await riproduciAudio("riprovo");await pausa(800);}
-    }catch(e){await riproduciAudio("nonHoCapito");await pausa(800);}
+      password=await ascoltaVoce(12000);
+      vocaleSetRisposta(password);
+    }catch(e){
+      if(e===_ANNULLA_VOCALE){await vocaleEsci();return;}
+      await riproduciAudio("riprovo");await pausa(500);
+    }
   }
+  await pausa(300);
 
-  // Login
+  // 3) Login diretto - se fallisce torna a chiedere
   document.getElementById("voc-domanda").textContent="Accesso in corso...";
   document.getElementById("voc-risposta-box").style.display="none";
   await riproduciAudio("accessoInCorso");
