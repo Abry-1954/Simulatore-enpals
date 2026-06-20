@@ -3005,7 +3005,7 @@ if('serviceWorker' in navigator){
 
   <!-- Risposta riconosciuta -->
   <div id="voc-risposta-box" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:16px;margin-bottom:1.5rem;min-height:50px;display:none;">
-    <div style="font-size:11px;color:#c4b5fd;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Ho capito:</div>
+    <div style="font-size:11px;color:#c4b5fd;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">La tua scelta è:</div>
     <div id="voc-risposta-testo" style="font-size:18px;font-weight:700;color:#fff;"></div>
   </div>
 
@@ -3271,16 +3271,16 @@ async function vocaleChiediERispondi(step){
     vocaleSetRisposta(rispostaTentativo);
     await pausa(300);
     if(_voc._stopped)return "";
-    // 5) Riproduci "Ho capito"
-    await riproduciAudio("hoCapito");
-    await pausa(300);
+    // 5) Sintesi "La tua scelta e'"
+    await sintesiVocale("La tua scelta e'");
+    await pausa(200);
     if(_voc._stopped)return "";
     // 6) Sintesi legge la risposta
     await sintesiVocale(rispostaTentativo);
     await pausa(1000);
     if(_voc._stopped)return "";
     // 7) Ascolta SOLO conferma Si/No — NON aggiorna la risposta
-    vocaleSetStato("Conferma con CONFERMO o ripeti con NEGATIVO");
+    vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
     await pausa(500);
     if(_voc._stopped)return "";
     var conferma="";
@@ -3550,54 +3550,82 @@ async function vocaleCompilaSalva(){
   // Tipo lavorazione e opera (uguali per tutti i record)
   var tl=vocaleMapTipoLav(_voc.rigaCorrente.attivita||"");
   var to=vocaleMapTipoOpera(_voc.rigaCorrente.lavorazione||"");
-  S.tipoLav=tl?tl.cod:"DOPP";
-  S.tipoLavLabel=tl?tl.label:"Doppiatore";
-  S.tipoOpera=to?to.cod:"FILM";
-  S.tipoOperaLabel=to?to.label:"Film";
+  S.tipoLav     = (tl&&tl.cod)  ? tl.cod   : "DOPP";
+  S.tipoLavLabel= (tl&&tl.label)? tl.label : "Doppiatore";
+  S.tipoOpera   = (to&&to.cod)  ? to.cod   : "FILM";
+  S.tipoOperaLabel=(to&&to.label)?to.label : "Film";
   S.nPrevisti=_voc.dati.righe.length;
+  console.log("VOCALE compilaSalva → tipoLav="+S.tipoLav+" tipoOpera="+S.tipoOpera+" nRighe="+S.nPrevisti);
 
-  // Azienda
+  // Azienda — usa esattamente i nomi di campo che salvaSuDB() si aspetta
   if(_voc.dati.azienda){
+    var az=_voc.dati.azienda;
     S.soc={
-      ragione_sociale: _voc.dati.azienda.ragione_sociale||"",
-      indirizzo:       _voc.dati.azienda.indirizzo||"",
-      cap:             _voc.dati.azienda.cap||"",
-      comune:          _voc.dati.azienda.citta||"",
-      piva:            _voc.dati.azienda.piva||_voc.dati.azienda.partita_iva||"",
-      cod_fiscale:     _voc.dati.azienda.cf||_voc.dati.azienda.cod_fiscale||"",
-      cod_dest:        _voc.dati.azienda.cod_dest||""
+      ragione_sociale:  az.ragione_sociale||"",
+      via:              az.via||az.indirizzo||"",
+      cap:              az.cap||"",
+      comune:           az.comune||az.citta||"",
+      piva_cf:          az.piva_cf||az.piva||az.partita_iva||az.cf||az.cod_fiscale||"",
+      cod_destinatario: az.cod_destinatario||az.cod_dest||""
     };
   }
 
-  // Righe/record
+  // Righe/record — simula salvaRigo() popolando i campi del form
+  S.rigoIdx=0;
+  // Blocca temporaneamente alert e showScreen per evitare interruzioni
+  var _origAlert=window.alert;
+  var _origShowScreen=window.showScreen;
+  window.alert=function(){};
+  window.showScreen=function(){};
   for(var i=0;i<_voc.dati.righe.length;i++){
     var r=_voc.dati.righe[i];
     var datafatt=new Date().toISOString().split("T")[0];
-    var imp=calcImp(S.tipoLav,S.tipoOpera,r.turni||1,r.righe||1);
-    S.righi.push({
-      n:          i+1,
-      tipoLav:    S.tipoLav,
-      tipoLavLabel:S.tipoLavLabel,
-      tipoOpera:  S.tipoOpera,
-      tipoOperaLabel:S.tipoOperaLabel,
-      titolo:     r.titolo||"",
-      datalav:    r.data||datafatt,
-      datafatt:   datafatt,
-      turni:      r.turni||1,
-      righe:      r.righe||1,
-      imp:        imp
-    });
+    var inpTitolo=document.getElementById("inp-titolo");
+    var inpDatalav=document.getElementById("inp-datalav");
+    var inpDatafatt=document.getElementById("inp-datafatt");
+    var inpTurni=document.getElementById("inp-turni");
+    var inpRighe=document.getElementById("inp-righe");
+    if(inpTitolo)  inpTitolo.value  = r.titolo||"Titolo";
+    if(inpDatalav) inpDatalav.value = r.data||datafatt;
+    if(inpDatafatt)inpDatafatt.value= datafatt;
+    if(inpTurni)   inpTurni.value   = r.turni||1;
+    if(inpRighe)   inpRighe.value   = r.righe||1;
+    salvaRigo();
   }
-  S.rigoIdx=S.righi.length;
+  // Ripristina alert e showScreen
+  window.alert=_origAlert;
+  window.showScreen=_origShowScreen;
+  // Mostra debug visibile sullo schermo
+  var _dbgImp=(S.righi[0]||{}).imp||0;
+  var _dbgMsg="Righe:"+S.righi.length+" | Lav:"+S.tipoLav+" | Opera:"+S.tipoOpera+" | Imp:"+_dbgImp;
+  document.getElementById("voc-sottotitolo").textContent=_dbgMsg;
+  console.log("VOCALE "+_dbgMsg);
 
-  // ── Salva su DB ─────────────────────────────────────────
+  // ── DEBUG: log stato S prima di goStampa ──────────────────
+  console.log("S.lav:", JSON.stringify(S.lav));
+  console.log("S.soc:", JSON.stringify(S.soc));
+  console.log("S.tipoFatt:", JSON.stringify(S.tipoFatt));
+  console.log("S.righi:", JSON.stringify(S.righi));
+  console.log("S.anzianita:", S.anzianita);
+
+  // ── Popola #s-fattura PRIMA di salvaSuDB (serve per html2pdf) ──
   try{
-    await salvaSuDB();
+    // goStampa inietta l'HTML nel div #s-fattura con tutti gli stili
+    goStampa(false, async function(){
+      // Callback: div e' pronto, ora salva
+      try{
+        await salvaSuDB();
+      }catch(e){
+        console.warn("vocaleCompilaSalva errore:", e);
+        await sintesiVocale("Errore nel salvataggio. Riprova.");
+      }
+    });
   }catch(e){
-    console.warn("vocaleCompilaSalva errore:", e);
-    await sintesiVocale("Errore nel salvataggio. Riprova.");
+    console.warn("goStampa errore:", e);
+    await sintesiVocale("Errore nella generazione fattura. Riprova.");
     return;
   }
+  return; // Il resto viene eseguito nella callback di goStampa
 
   // ── Fine ─────────────────────────────────────────────────
   await pausa(500);
@@ -3634,9 +3662,9 @@ async function avviaLoginVocale(){
     try{username=await ascoltaVoce(12000);}
     catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
     vocaleSetRisposta(username);
-    await riproduciAudio("hoCapito");await pausa(300);
+    await sintesiVocale("La tua scelta e'");await pausa(200);
     await sintesiVocale(username);await pausa(1000);
-    vocaleSetStato("Di' SI per confermare o NO per ripetere");
+    vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
     await pausa(500);
     try{
       var cfm=await ascoltaVoce(8000);
@@ -3658,11 +3686,11 @@ async function avviaLoginVocale(){
     vocaleSetStato("Sto ascoltando...");
     try{password=await ascoltaVoce(12000);}
     catch(e){await riproduciAudio("riprovo");await pausa(500);continue;}
-    // Per la password mostra asterischi (privacy)
-    vocaleSetRisposta("••••••••");
-    await riproduciAudio("hoCapito");await pausa(300);
-    await sintesiVocale("password ricevuta");await pausa(1000);
-    vocaleSetStato("Di' SI per confermare o NO per ripetere");
+    // Mostra la password come le altre risposte
+    vocaleSetRisposta(password);
+    await sintesiVocale("La tua scelta e'");await pausa(200);
+    await sintesiVocale(password);await pausa(1000);
+    vocaleSetStato("Di' CONFERMO per confermare, o NON CONFERMO se quello che ho capito non e' corretto");
     await pausa(500);
     try{
       var cfm2=await ascoltaVoce(8000);
