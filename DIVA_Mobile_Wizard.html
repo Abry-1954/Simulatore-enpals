@@ -2834,7 +2834,8 @@ function dialogAvviaPercorso(tipo){
         }catch(saveErr){
           if(saveErr.name!=='AbortError') console.warn('Salvataggio locale:',saveErr.message);
         }
-        // Riproduci MP3 "Fattura salvata sul cloud"
+        // Ferma qualsiasi audio in corso e riproduci "Fattura salvata sul cloud"
+        window.speechSynthesis&&window.speechSynthesis.cancel();
         var _audioSalvata = new Audio("data:audio/mp3;base64,"+(_vocAudio.salvata||""));
         _audioSalvata.onended = function(){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); };
         _audioSalvata.onerror = function(){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); };
@@ -3733,8 +3734,8 @@ async function vocaleCompilaSalva(){
   if(_voc._stopped)return;
   vocaleSetStato("Elaborazione fattura...");
   document.getElementById("voc-domanda").textContent="Fattura completata!";
-  await riproduciAudio("fatturaCompletata");
-  await pausa(500);
+  // fatturaCompletata rimosso - il messaggio finale è nel MP3 "salvata"
+  await pausa(300);
   if(_voc._stopped)return;
 
   // ── Popola S con i dati vocali ──────────────────────────
