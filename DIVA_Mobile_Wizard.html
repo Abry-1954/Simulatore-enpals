@@ -3359,13 +3359,17 @@ async function vocaleRiepilogoFinale(){
 
   // Costruisci testo riepilogo
   var righe=_voc.dati.righe;
-  var az=(_voc.dati.azienda||{}).ragione_sociale||"nessuna azienda";
+  var _azNome=(_voc.dati.azienda||{}).ragione_sociale||"";
   var riepilogo="Sto per elaborare la fattura con questi dati. ";
   riepilogo+="Tipo: "+(_voc.rigaCorrente.tipo||"non specificato")+". ";
   riepilogo+="Prestazione: "+(_voc.rigaCorrente.attivita||"non specificata")+". ";
   var _lavDesc=(_voc.rigaCorrente.lavorazione||"non specificata").replace(/DOC NO SYNC/gi,"Doc Senza Sincronizzazione");
   riepilogo+="Lavorazione: "+_lavDesc+". ";
-  riepilogo+="Azienda: "+az+". ";
+  if(_azNome){
+    riepilogo+="Azienda: "+_azNome+". ";
+  }else{
+    riepilogo+="Azienda mancante: la fattura verra emessa senza intestazione azienda. ";
+  }
   riepilogo+="Numero di date: "+righe.length+". ";
   if(righe.length>0){
     righe.forEach(function(r,i){
@@ -3454,36 +3458,20 @@ async function vocaleGestisciAzienda(){
   var trovata=false;
   while(!trovata){
     var risposta=await vocaleChiediERispondi(_vocSteps.find(function(s){return s.id==="azienda";}));
+    if(!risposta||_voc._stopped)return;
     var trovate=(_AZIENDE_DB||[]).filter(function(a){
       return a.ragione_sociale.toLowerCase().includes(risposta.toLowerCase());
     });
-    if(trovate.length===1){
+    if(trovate.length>=1){
+      // Trovata (anche se multipla prende la prima)
       _voc.dati.azienda=trovate[0];
       await riproduciAudio("trovata");
-      await pausa(200);
-      await sintesiVocale(trovate[0].ragione_sociale);
       await pausa(300);
-      var conferma=await ascoltaVoce(8000).catch(function(){return "si";});
-      var _cf=conferma.toLowerCase();
-      if(_cf.includes("si")||_cf.includes("yes")||_cf.includes("ok")||_cf.includes("confermo")||_cf.includes("corretto")||_cf.includes("giusto")||_cf.includes("esatto")||_cf.includes("vai")||_cf.includes("avanti")||_cf.includes("perfetto")||_cf.includes("bene")){
-        trovata=true;
-      }
-    }else if(trovate.length>1){
-      // Leggi le prime 3 opzioni
-      var opzioni=trovate.slice(0,3).map(function(a,i){return (i+1)+". "+a.ragione_sociale;}).join(". ");
-      await sintesiVocale("Ho trovato: "+opzioni+". Dici Prima, Seconda o Terza");
-      await pausa(300);
-      var scelta=await ascoltaVoce(8000).catch(function(){return "";});
-      var idx=scelta.toLowerCase().includes("prima")?0:scelta.toLowerCase().includes("seconda")?1:scelta.toLowerCase().includes("terza")?2:-1;
-      if(idx>=0&&trovate[idx]){
-        _voc.dati.azienda=trovate[idx];trovata=true;
-      }
+      trovata=true;
     }else{
-      // Non trovata - campo azienda resta vuoto, si va avanti
+      // Non trovata - vai avanti senza azienda
       await riproduciAudio("nonTrovata");
-      await pausa(200);
-      await sintesiVocale("Il campo azienda restera vuoto. Continuo.");
-      await pausa(500);
+      await pausa(300);
       trovata=true;
     }
   }
