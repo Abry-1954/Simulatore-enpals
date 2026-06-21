@@ -3462,12 +3462,40 @@ async function vocaleGestisciAzienda(){
     var trovate=(_AZIENDE_DB||[]).filter(function(a){
       return a.ragione_sociale.toLowerCase().includes(risposta.toLowerCase());
     });
-    if(trovate.length>=1){
-      // Trovata (anche se multipla prende la prima)
+    if(trovate.length===1){
+      // Trovata - una sola corrispondenza
       _voc.dati.azienda=trovate[0];
       await riproduciAudio("trovata");
       await pausa(300);
       trovata=true;
+    }else if(trovate.length>1){
+      // Multiple - elenca e chiedi scelta
+      var numNomi=["","Prima","Seconda","Terza","Quarta","Quinta"];
+      var n=Math.min(trovate.length,5);
+      var msg="Ho trovato "+n+" aziende. ";
+      for(var i=0;i<n;i++){
+        msg+="La "+numNomi[i+1]+": "+trovate[i].ragione_sociale+". ";
+      }
+      msg+="Quale vuoi";
+      for(var i=0;i<n;i++){
+        msg+=(i===0?", la ":"la ")+numNomi[i+1].toLowerCase()+(i<n-1?", ":"?");
+      }
+      await sintesiVocale(msg);
+      await pausa(500);
+      var scelta=await ascoltaVoce(10000).catch(function(){return "";});
+      var sc=scelta.toLowerCase();
+      var idx=sc.includes("prima")||sc.includes("uno")||sc.includes("1")?0:
+              sc.includes("seconda")||sc.includes("due")||sc.includes("2")?1:
+              sc.includes("terza")||sc.includes("tre")||sc.includes("3")?2:
+              sc.includes("quarta")||sc.includes("quattro")||sc.includes("4")?3:
+              sc.includes("quinta")||sc.includes("cinque")||sc.includes("5")?4:-1;
+      if(idx>=0&&trovate[idx]){
+        _voc.dati.azienda=trovate[idx];
+        await riproduciAudio("trovata");
+        await pausa(300);
+        trovata=true;
+      }
+      // Se non capisce ripete la domanda (while continua)
     }else{
       // Non trovata - vai avanti senza azienda
       await riproduciAudio("nonTrovata");
