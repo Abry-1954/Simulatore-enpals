@@ -3385,7 +3385,7 @@ async function vocaleRiepilogoFinale(){
   var icona=document.getElementById("voc-icona");
   if(icona) icona.textContent="📋";
   document.getElementById("voc-domanda").textContent="Riepilogo fattura";
-  document.getElementById("voc-sottotitolo").textContent=az+" | "+righe.length+" date";
+  document.getElementById("voc-sottotitolo").textContent=(_azNome||"Nessuna azienda")+" | "+righe.length+" date";
   document.getElementById("voc-risposta-box").style.display="none";
   document.getElementById("voc-bottoni").style.display="none";
   var badge=document.getElementById("voc-step-badge");
@@ -3493,7 +3493,7 @@ async function vocaleGestisciAzienda(){
         _voc.dati.azienda=trovate[idx];
         trovata=true; // Scelta fatta, nessuna conferma
       }
-      // Se non capisce ripete la domanda (while continua)
+      // Se idx=-1 non capisce → while ripete la domanda
     }else{
       // Non trovata - vai avanti senza azienda
       await riproduciAudio("nonTrovata");
