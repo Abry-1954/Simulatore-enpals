@@ -3394,7 +3394,9 @@ async function vocaleChiediERispondi(step){
   await riproduciAudio(step.audio);
   await pausa(300);
   if(_voc._stopped)return "";
-  // 3) Ascolta risposta - max 2 tentativi se non capisce
+  // 3) Sintesi "Parla ora" poi microfono
+  await sintesiVocale("Parla ora");
+  await pausa(200);
   vocaleSetStato("Sto ascoltando... parla ora!");
   var risposta="";
   var tentativi=0;
@@ -3467,8 +3469,10 @@ async function vocaleRiepilogoFinale(){
   if(_voc._stopped)return false;
 
   // Ascolta conferma
+  await sintesiVocale("Parla ora");
+  await pausa(200);
   vocaleSetStato("Di' CONFERMO per salvare o NON CONFERMO per modificare");
-  await pausa(500);
+  await pausa(300);
 
   var confermato=false;
   while(!confermato){
@@ -3968,6 +3972,8 @@ async function avviaLoginVocale(){
 
   var username="";
   while(!username){
+    await sintesiVocale("Parla ora");
+    await pausa(200);
     vocaleSetStato("Sto ascoltando...");
     try{
       username=await ascoltaVoce(12000);
@@ -3988,6 +3994,8 @@ async function avviaLoginVocale(){
 
   var password="";
   while(!password){
+    await sintesiVocale("Parla ora");
+    await pausa(200);
     vocaleSetStato("Sto ascoltando...");
     try{
       password=await ascoltaVoce(12000);
