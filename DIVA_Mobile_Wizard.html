@@ -3491,9 +3491,7 @@ async function vocaleGestisciAzienda(){
               sc.includes("quinta")||sc.includes("cinque")||sc.includes("5")?4:-1;
       if(idx>=0&&trovate[idx]){
         _voc.dati.azienda=trovate[idx];
-        await riproduciAudio("trovata");
-        await pausa(300);
-        trovata=true;
+        trovata=true; // Scelta fatta, nessuna conferma
       }
       // Se non capisce ripete la domanda (while continua)
     }else{
