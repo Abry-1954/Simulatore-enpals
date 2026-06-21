@@ -3515,37 +3515,35 @@ async function vocaleGestisciAzienda(){
     var trovate=(_AZIENDE_DB||[]).filter(function(a){
       return a.ragione_sociale.toLowerCase().includes(risposta.toLowerCase());
     });
+
     if(trovate.length===1){
-      // Trovata - una sola corrispondenza
+      // CASO 2: trovata una sola - nessun messaggio, vai al riepilogo
       _voc.dati.azienda=trovate[0];
-      await riproduciAudio("trovata");
-      await pausa(200);
-      await riproduciNomeAzienda(trovate[0]);
-      await pausa(300);
       trovata=true;
+
     }else if(trovate.length>1){
-      // Multiple - elenca e chiedi scelta
-      var numNomi=["","Prima","Seconda","Terza","Quarta","Quinta"];
+      // CASO 3: trovate piu' di una - elenca con MP3 e chiedi scelta
+      var numNomi=["","prima","seconda","terza","quarta","quinta"];
       var n=Math.min(trovate.length,5);
-      var msg="Ho trovato "+n+" aziende. ";
-      await sintesiVocale(msg);
-      await pausa(200);
+      // Leggi quante trovate
+      await sintesiVocale("Trovate "+n+" aziende.");
+      await pausa(300);
+      // Elenca: MP3 nome + sintesi "la prima" ecc
       for(var i=0;i<n;i++){
-        await sintesiVocale("La "+numNomi[i+1]+": ");
-        await pausa(100);
         await riproduciNomeAzienda(trovate[i]);
+        await pausa(150);
+        await sintesiVocale("la "+numNomi[i+1]);
         await pausa(200);
       }
-      msg="";  // reset msg - gia' letto vocalmente
-      for(var i=0;i<n;i++){
-        msg+="La "+numNomi[i+1]+": "+trovate[i].ragione_sociale+". ";
+      // Chiede scelta
+      var domScelta="La "+numNomi[1];
+      for(var i=1;i<n;i++){
+        domScelta+=(i<n-1?", la ":" o la ")+numNomi[i+1];
       }
-      msg+="Quale vuoi";
-      for(var i=0;i<n;i++){
-        msg+=(i===0?", la ":"la ")+numNomi[i+1].toLowerCase()+(i<n-1?", ":"?");
-      }
-      await sintesiVocale(msg);
+      domScelta+="?";
+      await sintesiVocale(domScelta);
       await pausa(500);
+      // Ascolta risposta
       var scelta=await ascoltaVoce(10000).catch(function(){return "";});
       var sc=scelta.toLowerCase();
       var idx=sc.includes("prima")||sc.includes("uno")||sc.includes("1")?0:
@@ -3555,11 +3553,12 @@ async function vocaleGestisciAzienda(){
               sc.includes("quinta")||sc.includes("cinque")||sc.includes("5")?4:-1;
       if(idx>=0&&trovate[idx]){
         _voc.dati.azienda=trovate[idx];
-        trovata=true; // Scelta fatta, nessuna conferma
+        trovata=true; // Scelta fatta, vai al riepilogo
       }
-      // Se idx=-1 non capisce → while ripete la domanda
+      // Se non capisce ripete tutto dall'inizio
+
     }else{
-      // Non trovata - vai avanti senza azienda
+      // CASO 1: non trovata - solo MP3 "non trovata", poi riepilogo
       await riproduciAudio("nonTrovata");
       await pausa(300);
       trovata=true;
