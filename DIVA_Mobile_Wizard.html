@@ -1904,6 +1904,23 @@ function calcolaFascia(impGG){
   return FASCE[FASCE.length-1].c;
 }
 function fmtData(d){if(!d)return'';const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;}
+function fmtDataNascita(d){
+  if(!d)return'';
+  // Se e' un numero seriale Excel (es. 22829)
+  var n=parseInt(d);
+  if(!isNaN(n)&&String(d).trim()===String(n)&&n>10000&&n<100000){
+    // Converti da seriale Excel (base 1 gennaio 1900)
+    var dt=new Date((n-25569)*86400*1000);
+    var gg=String(dt.getUTCDate()).padStart(2,'0');
+    var mm=String(dt.getUTCMonth()+1).padStart(2,'0');
+    var yyyy=dt.getUTCFullYear();
+    return gg+'/'+mm+'/'+yyyy;
+  }
+  // Se e' gia' in formato DD/MM/YYYY o simile
+  if(d.includes('/'))return d;
+  // Se e' in formato YYYY-MM-DD
+  return fmtData(d);
+}
 
 // ════════════════════════════════════════════
 // CALCOLO IMPONIBILE
@@ -2490,14 +2507,14 @@ function goStampa(autoPrint, onReady){
 
   const fatHtml=`<div class="page">
 
-<div class="doc-title"><h1>ENPALS &mdash; FATTURAZIONE</h1><h2>${esc(tf.labelLong)}</h2></div>
+<div class="doc-title"><h1>DIVA &mdash; FATTURAZIONE</h1><h2>${esc(tf.labelLong)}</h2></div>
 <div class="fat-header-row">
   <div class="fat-col"><div class="fat-col-title">Lavoratore</div>
     <div class="row"><span class="lbl">Nominativo</span><span class="val"><strong>${esc(lav.nominativo)}</strong></span></div>
     <div class="row"><span class="lbl">Indirizzo</span><span class="val">${esc(lav.via)}</span></div>
     <div class="row"><span class="lbl">CAP / Citt&agrave;</span><span class="val">${esc(lav.cap)} ${esc(lav.comune)}</span></div>
     <div class="row"><span class="lbl">Luogo nascita</span><span class="val">${esc(lav.luogo_nascita)}</span></div>
-    <div class="row"><span class="lbl">Data nascita</span><span class="val">${esc(lav.data_nascita)}</span></div>
+    <div class="row"><span class="lbl">Data nascita</span><span class="val">${esc(fmtDataNascita(lav.data_nascita))}</span></div>
     <div class="row"><span class="lbl">Cod. Fiscale</span><span class="val">${esc(lav.cod_fiscale)}</span></div>
     <div class="row"><span class="lbl">P.IVA</span><span class="val">${esc(lav.piva||'&mdash;')}</span></div>
     <div class="row"><span class="lbl">Matr. ENPALS</span><span class="val">${esc(lav.matricola_enpals)}</span></div>
@@ -3738,35 +3755,49 @@ async function vocaleFlussoFattura(){
     if(_voc._stopped)return;
     vocaleAggiornaRiepilogo();
 
-    // RIEPILOGO FINALE - unica conferma
-    var esito=await vocaleRiepilogoFinale();
-    if(_voc._stopped)return;
+    // RIEPILOGO FINALE - loop separato per correzioni
+    // Non torna mai all'acquisizione iniziale, solo al riepilogo
+    var confermato=false;
+    while(!confermato){
+      if(_voc._stopped)return;
+      var esito=await vocaleRiepilogoFinale();
+      if(_voc._stopped)return;
 
-    if(esito===true){
-      // Confermato - salva
-      riparti=false;
-      await vocaleCompilaSalva();
-    }else if(esito==="tipo"){
-      _voc.step=1;
-      _voc.rigaCorrente.tipo=await vocaleChiediERispondi(_vocSteps[1]);
-    }else if(esito==="attivita"){
-      _voc.step=2;
-      _voc.rigaCorrente.attivita=await vocaleChiediERispondi(_vocSteps[2]);
-    }else if(esito==="lavorazione"){
-      _voc.step=3;
-      _voc.rigaCorrente.lavorazione=await vocaleChiediERispondi(_vocSteps[3]);
-    }else if(esito==="azienda"){
-      _voc.dati.azienda=null;
-      await vocaleGestisciAzienda();
-    }else if(esito==="data"||esito==="turni"||esito==="righe"||esito==="titolo"){
-      // Per modifiche alle righe, riparte dal loop date
-      _voc.dati.righe=[];
-      _voc.rigaCorrente.data="";_voc.rigaCorrente.titolo="";
-      _voc.rigaCorrente.turni=0;_voc.rigaCorrente.righe=0;
-      // Riepilogo di nuovo
-    }else{
-      // Annullato o errore - torna alla home
-      riparti=false;
+      if(esito===true){
+        // Confermato - salva
+        confermato=true;
+        riparti=false;
+        await vocaleCompilaSalva();
+      }else if(esito==="tipo"){
+        _voc.step=1;
+        _voc.rigaCorrente.tipo=await vocaleChiediERispondi(_vocSteps[1]);
+      }else if(esito==="attivita"){
+        _voc.step=2;
+        _voc.rigaCorrente.attivita=await vocaleChiediERispondi(_vocSteps[2]);
+      }else if(esito==="lavorazione"){
+        _voc.step=3;
+        _voc.rigaCorrente.lavorazione=await vocaleChiediERispondi(_vocSteps[3]);
+      }else if(esito==="azienda"){
+        _voc.dati.azienda=null;
+        await vocaleGestisciAzienda();
+      }else if(esito==="data"){
+        var nuovaData=await vocaleChiediERispondi(_vocSteps[4]);
+        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.data=vocaleConvertiData(nuovaData);});
+      }else if(esito==="turni"){
+        var nuoviTurni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
+        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.turni=nuoviTurni;});
+      }else if(esito==="righe"){
+        var nuoveRighe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
+        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.righe=nuoveRighe;});
+      }else if(esito==="titolo"){
+        var nuovoTitolo=await vocaleChiediERispondi(_vocSteps[7]);
+        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.titolo=nuovoTitolo;});
+      }else{
+        // Annullato - torna alla home
+        confermato=true;
+        riparti=false;
+      }
+      // Dopo ogni correzione torna automaticamente al riepilogo (while continua)
     }
   }
 }
@@ -3858,10 +3889,11 @@ async function vocaleCompilaSalva(){
     var inpTurni=document.getElementById("inp-turni");
     var inpRighe=document.getElementById("inp-righe");
     if(inpTitolo)  inpTitolo.value  = r.titolo||"Titolo";
-    if(inpDatalav) inpDatalav.value = r.data||datafatt;
+    if(inpDatalav) inpDatalav.value = r.data||datafatt;  // data specifica per questo rigo
     if(inpDatafatt)inpDatafatt.value= datafatt;
     if(inpTurni)   inpTurni.value   = r.turni||1;
     if(inpRighe)   inpRighe.value   = r.righe||1;
+    // Aggiorna anche S.tipoLav e S.tipoOpera per ogni rigo (potrebbero variare)
     salvaRigo();
   }
   // Ripristina alert e showScreen
