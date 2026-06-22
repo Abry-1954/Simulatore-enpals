@@ -3804,7 +3804,7 @@ async function vocaleFlussoFattura(){
       _voc.dati.righe.push(Object.assign({},_voc.rigaCorrente));
       vocaleAggiornaRiepilogo();
 
-      // Altra data? (= nuovo record, stessa attività ma lavorazione potenzialmente diversa)
+      // Altra data?
       _voc.step=9;
       var altraData=await vocaleChiediERispondi(_vocSteps[9]);
       if(_voc._stopped)return;
@@ -3813,14 +3813,8 @@ async function vocaleFlussoFattura(){
       if(_adNo||!(_ad.includes("confermo")||_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("perfetto")||_ad.includes("bene"))){
         continuaDate=false;
       }else{
-        // Nuovo record: resetta tutto tranne tipo e attività, richiede lavorazione da capo
-        _voc.rigaCorrente.lavorazione="";_voc.rigaCorrente.data="";
-        _voc.rigaCorrente.titolo="";_voc.rigaCorrente.turni=0;_voc.rigaCorrente.righe=0;
-        // Chiede la lavorazione da capo (potrebbe essere diversa)
-        _voc.step=3;
-        _voc.rigaCorrente.lavorazione=await vocaleChiediERispondi(_vocSteps[3]);
-        if(_voc._stopped)return;
-        vocaleAggiornaRiepilogo();
+        _voc.rigaCorrente.data="";_voc.rigaCorrente.titolo="";
+        _voc.rigaCorrente.turni=0;_voc.rigaCorrente.righe=0;
       }
     }
 
@@ -3964,11 +3958,17 @@ async function vocaleCompilaSalva(){
     var inpTurni=document.getElementById("inp-turni");
     var inpRighe=document.getElementById("inp-righe");
     if(inpTitolo)  inpTitolo.value  = r.titolo||"Titolo";
-    if(inpDatalav) inpDatalav.value = r.data||datafatt;  // data specifica per questo rigo
+    if(inpDatalav) inpDatalav.value = r.data||datafatt;
     if(inpDatafatt)inpDatafatt.value= datafatt;
     if(inpTurni)   inpTurni.value   = r.turni||1;
     if(inpRighe)   inpRighe.value   = r.righe||1;
-    // Aggiorna anche S.tipoLav e S.tipoOpera per ogni rigo (potrebbero variare)
+    // Aggiorna S.tipoLav e S.tipoOpera specifici per QUESTO record
+    var _tl=vocaleMapTipoLav(r.attivita||"");
+    var _to=vocaleMapTipoOpera(r.lavorazione||"");
+    S.tipoLav      = (_tl&&_tl.cod)  ? _tl.cod   : "DOPP";
+    S.tipoLavLabel = (_tl&&_tl.label)? _tl.label : "Doppiatore";
+    S.tipoOpera    = (_to&&_to.cod)  ? _to.cod   : "FILM";
+    S.tipoOperaLabel=(_to&&_to.label)?_to.label  : "Film";
     salvaRigo();
   }
   // Ripristina alert e showScreen
