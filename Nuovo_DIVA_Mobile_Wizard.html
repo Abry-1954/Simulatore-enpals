@@ -2243,6 +2243,17 @@ function doLogout(){
   document.getElementById('inp-user').value='';
   document.getElementById('inp-pass').value='';
 }
+function doLogoutSilenzioso(){
+  // Logout automatico dopo fattura vocale — nessun confirm, nessun log
+  sessionStorage.removeItem('enpals_auth');
+  sessionStorage.removeItem('enpals_cu');
+  sessionStorage.removeItem('enpals_cp');
+  sessionStorage.removeItem('enpals_ruolo');
+  S = { lav:{}, righi:[], soc:{}, tipoFatt:{}, anzianita:'SY', user:'' };
+  document.getElementById('inp-user').value='';
+  document.getElementById('inp-pass').value='';
+  showScreen('s-login');
+}
 
 // ════════════════════════════════════════════
 // AZIENDE_DB — caricate da Supabase al login (vedi doLogin)
@@ -2869,9 +2880,9 @@ function dialogAvviaPercorso(tipo){
         // Ferma qualsiasi audio in corso e riproduci "Fattura salvata sul cloud"
         window.speechSynthesis&&window.speechSynthesis.cancel();
         var _audioSalvata = new Audio("data:audio/mp3;base64,"+(_vocAudio.salvata||""));
-        _audioSalvata.onended = function(){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); };
-        _audioSalvata.onerror = function(){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); };
-        try{ _audioSalvata.play(); }catch(e){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); }
+        _audioSalvata.onended = function(){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); };
+        _audioSalvata.onerror = function(){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); };
+        try{ _audioSalvata.play(); }catch(e){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); }
       } else {
         // Modalità manuale: comportamento normale
         window.print();
