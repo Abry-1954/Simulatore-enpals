@@ -3253,8 +3253,7 @@ var _vocSteps=[
   {id:"righe",       domanda:"Quante righe?",                  sottotitolo:"Numero di righe",                     audio:"quanteRighe",  icona:"📊", colore:"linear-gradient(155deg,#4d7c0f,#65a30d)"},
   {id:"titolo",      domanda:"Titolo dell'opera?",             sottotitolo:"Il titolo del programma o film",      audio:"titolo",       icona:"🎭", colore:"linear-gradient(155deg,#92400e,#b45309)"},
   {id:"azienda",     domanda:"Per quale azienda?",             sottotitolo:"Pronuncia il nome dell'azienda",      audio:"azienda",      icona:"🏢", colore:"linear-gradient(155deg,#c2410c,#ea580c)"},
-  {id:"altraData",   domanda:"Vuoi aggiungere un'altra data?",   sottotitolo:"Stessa lavorazione, data diversa — Rispondi Si o No", audio:"altraData", icona:"➕", colore:"linear-gradient(155deg,#3730a3,#4338ca)"},
-  {id:"altroRecord", domanda:"Vuoi aggiungere un altro record?", sottotitolo:"Lavorazione diversa — Rispondi Si o No",              audio:"altraData", icona:"📋", colore:"linear-gradient(155deg,#1e3a8a,#1d4ed8)"}
+  {id:"altraData",   domanda:"Vuoi aggiungere un'altra data?", sottotitolo:"Rispondi Si o No",                    audio:"altraData",    icona:"➕", colore:"linear-gradient(155deg,#3730a3,#4338ca)"}
 ];
 
 // ─── UTILITIES ───────────────────────────────────────────
@@ -3772,76 +3771,52 @@ async function vocaleFlussoFattura(){
     if(_voc._stopped)return;
     vocaleAggiornaRiepilogo();
 
-    // Loop record: ogni iterazione = una lavorazione con possibilmente più date
-    var continuaRecords=true;
-    while(continuaRecords){
+    // Loop date
+    var continuaDate=true;
+    while(continuaDate){
       if(_voc._stopped)return;
 
-      // Loop date per questa lavorazione (stessa attività/lavorazione, date diverse)
-      var continuaDate=true;
-      while(continuaDate){
-        if(_voc._stopped)return;
-
-        // Step 4: Data
-        _voc.step=4;
-        _voc.rigaCorrente.data=vocaleConvertiData(await vocaleChiediERispondi(_vocSteps[4]));
-        if(_voc._stopped)return;
-        vocaleAggiornaRiepilogo();
-
-        // Step 5: Turni
-        _voc.step=5;
-        _voc.rigaCorrente.turni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
-        if(_voc._stopped)return;
-        vocaleAggiornaRiepilogo();
-
-        // Step 6: Righe
-        _voc.step=6;
-        _voc.rigaCorrente.righe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
-        if(_voc._stopped)return;
-        vocaleAggiornaRiepilogo();
-
-        // Step 7: Titolo
-        _voc.step=7;
-        _voc.rigaCorrente.titolo=await vocaleChiediERispondi(_vocSteps[7]);
-        if(_voc._stopped)return;
-        vocaleAggiornaRiepilogo();
-
-        // Salva riga corrente
-        _voc.dati.righe.push(Object.assign({},_voc.rigaCorrente));
-        vocaleAggiornaRiepilogo();
-
-        // Altra data? (stessa lavorazione, data diversa)
-        _voc.step=9;
-        var altraData=await vocaleChiediERispondi(_vocSteps[9]);
-        if(_voc._stopped)return;
-        var _ad=altraData.toLowerCase();
-        var _adNo=_ad.includes("non confermo")||_ad.includes("no")||_ad.includes("negativo");
-        if(_adNo||!(_ad.includes("confermo")||_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("perfetto")||_ad.includes("bene"))){
-          continuaDate=false;
-        }else{
-          // Stessa lavorazione, nuova data: resetta solo data/quantità
-          _voc.rigaCorrente.data="";_voc.rigaCorrente.titolo="";
-          _voc.rigaCorrente.turni=0;_voc.rigaCorrente.righe=0;
-        }
-      }
-
-      // Altro record con lavorazione/attività diversa?
-      _voc.step=10;
-      var altroRec=await vocaleChiediERispondi(_vocSteps[10]);
+      // Step 4: Data
+      _voc.step=4;
+      _voc.rigaCorrente.data=vocaleConvertiData(await vocaleChiediERispondi(_vocSteps[4]));
       if(_voc._stopped)return;
-      var _ar=altroRec.toLowerCase();
-      var _arNo=_ar.includes("non confermo")||_ar.includes("no")||_ar.includes("negativo");
-      if(_arNo||!(_ar.includes("confermo")||_ar.includes("si")||_ar.includes("yes")||_ar.includes("ok")||_ar.includes("perfetto")||_ar.includes("bene"))){
-        continuaRecords=false;
+      vocaleAggiornaRiepilogo();
+
+      // Step 5: Turni
+      _voc.step=5;
+      _voc.rigaCorrente.turni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
+      if(_voc._stopped)return;
+      vocaleAggiornaRiepilogo();
+
+      // Step 6: Righe
+      _voc.step=6;
+      _voc.rigaCorrente.righe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
+      if(_voc._stopped)return;
+      vocaleAggiornaRiepilogo();
+
+      // Step 7: Titolo
+      _voc.step=7;
+      _voc.rigaCorrente.titolo=await vocaleChiediERispondi(_vocSteps[7]);
+      if(_voc._stopped)return;
+      vocaleAggiornaRiepilogo();
+
+      // Salva riga corrente
+      _voc.dati.righe.push(Object.assign({},_voc.rigaCorrente));
+      vocaleAggiornaRiepilogo();
+
+      // Altra data? (= nuovo record, stessa attività ma lavorazione potenzialmente diversa)
+      _voc.step=9;
+      var altraData=await vocaleChiediERispondi(_vocSteps[9]);
+      if(_voc._stopped)return;
+      var _ad=altraData.toLowerCase();
+      var _adNo=_ad.includes("non confermo")||_ad.includes("no")||_ad.includes("negativo");
+      if(_adNo||!(_ad.includes("confermo")||_ad.includes("si")||_ad.includes("yes")||_ad.includes("ok")||_ad.includes("perfetto")||_ad.includes("bene"))){
+        continuaDate=false;
       }else{
-        // Nuovo record: resetta attività e lavorazione, mantieni tipo fattura
-        _voc.rigaCorrente={tipo:_voc.rigaCorrente.tipo, attivita:"", lavorazione:"", data:"", titolo:"", righe:0, turni:0};
-        // Step 2: Prestazione (da capo)
-        _voc.step=2;
-        _voc.rigaCorrente.attivita=await vocaleChiediERispondi(_vocSteps[2]);
-        if(_voc._stopped)return;
-        vocaleAggiornaRiepilogo();
-        // Step 3: Lavorazione (da capo)
+        // Nuovo record: resetta tutto tranne tipo e attività, richiede lavorazione da capo
+        _voc.rigaCorrente.lavorazione="";_voc.rigaCorrente.data="";
+        _voc.rigaCorrente.titolo="";_voc.rigaCorrente.turni=0;_voc.rigaCorrente.righe=0;
+        // Chiede la lavorazione da capo (potrebbe essere diversa)
         _voc.step=3;
         _voc.rigaCorrente.lavorazione=await vocaleChiediERispondi(_vocSteps[3]);
         if(_voc._stopped)return;
