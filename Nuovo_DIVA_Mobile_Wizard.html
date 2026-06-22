@@ -2243,17 +2243,6 @@ function doLogout(){
   document.getElementById('inp-user').value='';
   document.getElementById('inp-pass').value='';
 }
-function doLogoutSilenzioso(){
-  // Logout automatico dopo fattura vocale — nessun confirm, nessun log
-  sessionStorage.removeItem('enpals_auth');
-  sessionStorage.removeItem('enpals_cu');
-  sessionStorage.removeItem('enpals_cp');
-  sessionStorage.removeItem('enpals_ruolo');
-  S = { lav:{}, righi:[], soc:{}, tipoFatt:{}, anzianita:'SY', user:'' };
-  document.getElementById('inp-user').value='';
-  document.getElementById('inp-pass').value='';
-  showScreen('s-login');
-}
 
 // ════════════════════════════════════════════
 // AZIENDE_DB — caricate da Supabase al login (vedi doLogin)
@@ -2880,9 +2869,9 @@ function dialogAvviaPercorso(tipo){
         // Ferma qualsiasi audio in corso e riproduci "Fattura salvata sul cloud"
         window.speechSynthesis&&window.speechSynthesis.cancel();
         var _audioSalvata = new Audio("data:audio/mp3;base64,"+(_vocAudio.salvata||""));
-        _audioSalvata.onended = function(){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); };
-        _audioSalvata.onerror = function(){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); };
-        try{ _audioSalvata.play(); }catch(e){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); }
+        _audioSalvata.onended = function(){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); };
+        _audioSalvata.onerror = function(){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); };
+        try{ _audioSalvata.play(); }catch(e){ rilasciaWakeLock(); setTimeout(function(){ showScreen("s-home"); }, 500); }
       } else {
         // Modalità manuale: comportamento normale
         window.print();
@@ -3106,15 +3095,10 @@ if('serviceWorker' in navigator){
     })
     .catch(function(err){ console.log('SW errore:', err); });
 
-    // 4) Quando il nuovo SW prende controllo → ricarica UNA SOLA VOLTA
-    // Usa sessionStorage per evitare loop (il flag JS si resetta ad ogni reload)
+    // 4) Quando il nuovo SW prende controllo → ricarica
     navigator.serviceWorker.addEventListener('controllerchange', function(){
-      if(sessionStorage.getItem('sw_reloading')) return;
-      sessionStorage.setItem('sw_reloading', '1');
       window.location.reload();
     });
-    // Pulisce il flag appena la pagina è caricata
-    sessionStorage.removeItem('sw_reloading');
 
   });
 }
@@ -3387,8 +3371,11 @@ function ascoltaVoce(timeout){
     }
     var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     var r=new SR();
-    r.lang="it-IT";r.continuous=false;r.interimResults=false;r.maxAlternatives=1;
-    var timer=setTimeout(function(){try{r.stop();}catch(e){}reject("timeout");},timeout);
+    // continuous=true evita che il riconoscimento si chiuda subito su PC desktop
+    r.lang="it-IT";r.continuous=true;r.interimResults=false;r.maxAlternatives=1;
+    var _resolved=false;
+    var timer=setTimeout(function(){try{r.stop();}catch(e){}if(!_resolved){_resolved=true;reject("timeout");}},timeout);
+    _voc.recognition=r;
     r.onstart=function(){
       _voc._running=true;
       var btn=document.getElementById("voc-mic-btn");
@@ -3396,23 +3383,32 @@ function ascoltaVoce(timeout){
       document.getElementById("voc-mic-stato").textContent="Sto ascoltando... parla ora!";
     };
     r.onresult=function(e){
+      if(_resolved)return;
+      _resolved=true;
       clearTimeout(timer);
-      var testo=e.results[0][0].transcript.trim();
+      try{r.stop();}catch(ex){}
+      var testo=e.results[e.results.length-1][0].transcript.trim();
       if(vocaleIsAnnulla(testo)){reject(_ANNULLA_VOCALE);return;}
       resolve(testo);
     };
     r.onerror=function(e){
+      if(_resolved)return;
       clearTimeout(timer);
       _voc._running=false;
       var btn=document.getElementById("voc-mic-btn");
       if(btn){btn.style.background="rgba(255,255,255,0.1)";btn.style.borderColor="rgba(255,255,255,0.3)";btn.classList.remove("mic-listening");}
-      reject(e.error||"error");
+      // Mostra errore visibile sullo schermo per debug
+      var statoEl=document.getElementById("voc-mic-stato");
+      if(statoEl) statoEl.textContent="ERRORE MIC: "+(e.error||"sconosciuto");
+      var sottoEl=document.getElementById("voc-sottotitolo");
+      if(sottoEl) sottoEl.textContent="Errore: "+(e.error||"sconosciuto")+" | "+e.message;
+      if(!_resolved){_resolved=true;reject(e.error||"error");}
     };
     r.onend=function(){
       _voc._running=false;
       var btn=document.getElementById("voc-mic-btn");
       if(btn){btn.classList.remove("mic-listening");btn.style.background="rgba(255,255,255,0.1)";btn.style.borderColor="rgba(255,255,255,0.3)";}
-      document.getElementById("voc-mic-stato").textContent="Tocca il microfono per riprovare";
+      if(!_resolved){document.getElementById("voc-mic-stato").textContent="Tocca il microfono per riprovare";}
     };
     r.start();
   });
