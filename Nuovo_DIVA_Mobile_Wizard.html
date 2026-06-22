@@ -3055,36 +3055,51 @@ function nuovaFattura(){
 }
 </script>
 <script>
-// Registrazione Service Worker per PWA — con rilevamento aggiornamenti automatico
+// ── SERVICE WORKER: cancella tutto e re-registra sempre ──────
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('service-worker.js?v=4', { updateViaCache: 'none' })
-      .then(function(reg){
-        console.log('SW registrato:', reg.scope);
 
-        // Controlla subito se c'è un aggiornamento disponibile
-        reg.update();
+    // 1) Cancella TUTTI i SW registrati e TUTTA la cache
+    navigator.serviceWorker.getRegistrations().then(function(registrations){
+      var unregPromises = registrations.map(function(reg){
+        return reg.unregister();
+      });
+      // Cancella anche tutte le cache
+      var cachePromise = caches.keys().then(function(keys){
+        return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+      });
+      return Promise.all(unregPromises.concat([cachePromise]));
+    })
+    .then(function(){
+      // 2) Re-registra il SW fresco (updateViaCache:none = non casha mai il file SW)
+      return navigator.serviceWorker.register('service-worker.js?v=4', {
+        updateViaCache: 'none'
+      });
+    })
+    .then(function(reg){
+      console.log('SW re-registrato:', reg.scope);
 
-        // Ascolta nuovi SW in fase di installazione
-        reg.addEventListener('updatefound', function(){
-          var newWorker = reg.installing;
-          if(!newWorker) return;
-          newWorker.addEventListener('statechange', function(){
-            // Nuovo SW pronto MA ancora non attivo (quello vecchio sta girando)
-            if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
-              // Mostra banner aggiornamento
-              var banner = document.getElementById('diva-update-banner');
-              if(banner) banner.style.display = 'flex';
-            }
-          });
+      // 3) Forza attivazione immediata
+      if(reg.waiting) { reg.waiting.postMessage({type:'SKIP_WAITING'}); }
+
+      reg.addEventListener('updatefound', function(){
+        var newWorker = reg.installing;
+        if(!newWorker) return;
+        newWorker.addEventListener('statechange', function(){
+          if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
+            var banner = document.getElementById('diva-update-banner');
+            if(banner) banner.style.display = 'flex';
+          }
         });
-      })
-      .catch(function(err){ console.log('SW errore:', err); });
+      });
+    })
+    .catch(function(err){ console.log('SW errore:', err); });
 
-    // Quando il nuovo SW prende il controllo → ricarica automaticamente
+    // 4) Quando il nuovo SW prende controllo → ricarica
     navigator.serviceWorker.addEventListener('controllerchange', function(){
       window.location.reload();
     });
+
   });
 }
 </script>
