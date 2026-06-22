@@ -1,6 +1,6 @@
-const CACHE_NAME = 'diva-mobile-v2';
+const CACHE_NAME = 'diva-mobile-v3';
 const ASSETS = [
-  '/Simulatore-enpals/DIVA_Mobile_Wizard.html',
+  '/Simulatore-enpals/Nuovo_DIVA_Mobile_Wizard.html',
   '/Simulatore-enpals/gestione.html'
 ];
 
