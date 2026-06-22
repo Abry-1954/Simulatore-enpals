@@ -3107,12 +3107,14 @@ if('serviceWorker' in navigator){
     .catch(function(err){ console.log('SW errore:', err); });
 
     // 4) Quando il nuovo SW prende controllo → ricarica UNA SOLA VOLTA
-    var _reloading = false;
+    // Usa sessionStorage per evitare loop (il flag JS si resetta ad ogni reload)
     navigator.serviceWorker.addEventListener('controllerchange', function(){
-      if(_reloading) return;
-      _reloading = true;
+      if(sessionStorage.getItem('sw_reloading')) return;
+      sessionStorage.setItem('sw_reloading', '1');
       window.location.reload();
     });
+    // Pulisce il flag appena la pagina è caricata
+    sessionStorage.removeItem('sw_reloading');
 
   });
 }
