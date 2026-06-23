@@ -2252,7 +2252,10 @@ function doLogoutSilenzioso(){
   S = { lav:{}, righi:[], soc:{}, tipoFatt:{}, anzianita:'SY', user:'' };
   document.getElementById('inp-user').value='';
   document.getElementById('inp-pass').value='';
-  showScreen('s-login');
+  // Tenta di chiudere la scheda (funziona se aperta da link)
+  // Fallback dopo 1 secondo: ricarica la pagina (funziona su PWA)
+  try{ window.close(); }catch(e){}
+  setTimeout(function(){ window.location.reload(); }, 1000);
 }
 
 // ════════════════════════════════════════════
@@ -3750,9 +3753,13 @@ function vocaleDatePerSintesi(dataISO){
 
 function vocaleConvertiData(testo){
   var mesi={gennaio:"01",febbraio:"02",marzo:"03",aprile:"04",maggio:"05",giugno:"06",luglio:"07",agosto:"08",settembre:"09",ottobre:"10",novembre:"11",dicembre:"12"};
-  var t=testo.toLowerCase(),anno=new Date().getFullYear(),mese="06",giorno="01";
+  // Sostituisce "primo" con "1" prima di fare qualsiasi altra analisi
+  var t=testo.toLowerCase().replace(/\bprimo\b/g,"1");
+  var anno=new Date().getFullYear(),mese="06",giorno="01";
   Object.keys(mesi).forEach(function(m){if(t.includes(m))mese=mesi[m];});
   var n=t.match(/[0-9]+/g);if(n&&n[0])giorno=n[0].padStart(2,"0");
+  // Se il testo contiene un anno a 4 cifre, usalo
+  var annoMatch=t.match(/\b(20[0-9]{2})\b/);if(annoMatch)anno=parseInt(annoMatch[1]);
   return anno+"-"+mese+"-"+giorno;
 }
 
