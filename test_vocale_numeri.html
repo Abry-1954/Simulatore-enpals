@@ -25,28 +25,47 @@
     background: #7c3aed;
     border: none; cursor: pointer;
     font-size: 3rem;
-    box-shadow: 0 0 0 0 rgba(124,58,237,0.5);
-    transition: transform 0.1s;
+    transition: background 0.3s, box-shadow 0.3s;
     display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 0 rgba(124,58,237,0.5);
   }
-  #btnAscolta:hover { background: #6d28d9; }
-  #btnAscolta.ascolto {
-    background: #dc2626;
-    animation: pulse 1s infinite;
+  #btnAscolta:disabled { cursor: not-allowed; opacity: 0.8; }
+
+  #btnAscolta.viola  { background: #7c3aed; box-shadow: 0 0 0 0 rgba(124,58,237,0.4); }
+  #btnAscolta.giallo { background: #d97706; animation: pulseGiallo 0.6s infinite; }
+  #btnAscolta.verde  { background: #16a34a; animation: pulseVerde 1s infinite; }
+  #btnAscolta.rosso  { background: #dc2626; animation: pulseRosso 0.8s infinite; }
+
+  @keyframes pulseGiallo {
+    0%,100% { box-shadow: 0 0 0 0 rgba(217,119,6,0.6); }
+    50%      { box-shadow: 0 0 0 18px rgba(217,119,6,0); }
   }
-  @keyframes pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.6); }
-    70%  { box-shadow: 0 0 0 20px rgba(220,38,38,0); }
-    100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+  @keyframes pulseVerde {
+    0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.6); }
+    50%      { box-shadow: 0 0 0 22px rgba(22,163,74,0); }
   }
+  @keyframes pulseRosso {
+    0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.6); }
+    50%      { box-shadow: 0 0 0 18px rgba(220,38,38,0); }
+  }
+
+  #legenda {
+    display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center;
+  }
+  .leg { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #94a3b8; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .dot.v  { background: #7c3aed; }
+  .dot.g  { background: #d97706; }
+  .dot.gr { background: #16a34a; }
+  .dot.r  { background: #dc2626; }
 
   #stato {
     margin-top: 20px;
     font-size: 1rem;
     color: #94a3b8;
     min-height: 24px;
+    text-align: center;
   }
-
   #risultato {
     margin-top: 16px;
     font-size: 3rem;
@@ -73,9 +92,9 @@
     font-size: 0.95rem;
   }
   #lista li:last-child { border-bottom: none; }
-  #lista li .num { color: #a78bfa; font-weight: bold; }
-  #lista li .trascritto { color: #34d399; }
-  #lista li .niente { color: #ef4444; }
+  .num { color: #a78bfa; font-weight: bold; }
+  .trascritto { color: #34d399; }
+  .niente { color: #ef4444; }
 
   #btnReset {
     margin-top: 16px;
@@ -93,9 +112,15 @@
 <body>
 
 <h1>🎤 TEST VOCALE NUMERI</h1>
-<p class="sub">Premi il pulsante, di' un numero, vedi il risultato</p>
 
-<button id="btnAscolta" onclick="avviaAscolto()">🎤</button>
+<div id="legenda">
+  <div class="leg"><div class="dot v"></div> Premi per avviare</div>
+  <div class="leg"><div class="dot g"></div> Attivazione mic...</div>
+  <div class="leg"><div class="dot gr"></div> Parla ora!</div>
+  <div class="leg"><div class="dot r"></div> Timeout / errore</div>
+</div>
+
+<button id="btnAscolta" class="viola" onclick="avviaAscolto()">🎤</button>
 
 <div id="stato">Premi il microfono e parla</div>
 <div id="risultato"></div>
@@ -108,61 +133,79 @@
 
 <script>
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let rec = null;
   let tentativo = 1;
+  let inAscolto = false;
+
+  function setBtn(stato) {
+    const btn = document.getElementById('btnAscolta');
+    btn.className = stato;
+    if (stato === 'viola')  { btn.textContent = '🎤'; btn.disabled = false; }
+    if (stato === 'giallo') { btn.textContent = '⏳'; btn.disabled = true; }
+    if (stato === 'verde')  { btn.textContent = '🟢'; btn.disabled = true; }
+    if (stato === 'rosso')  { btn.textContent = '🔴'; btn.disabled = true; }
+  }
 
   function avviaAscolto() {
+    if (inAscolto) return;
     if (!SpeechRecognition) {
       document.getElementById('stato').textContent = '❌ Browser non supportato — usa Chrome';
       return;
     }
 
-    const btn = document.getElementById('btnAscolta');
     const stato = document.getElementById('stato');
     const risultato = document.getElementById('risultato');
-
-    rec = new SpeechRecognition();
-    rec.lang = 'it-IT';
-    rec.interimResults = false;
-    rec.maxAlternatives = 3;
-
-    btn.classList.add('ascolto');
-    btn.textContent = '🔴';
-    stato.textContent = '🎙️ Sto ascoltando... parla ora!';
+    inAscolto = true;
     risultato.textContent = '';
 
-    rec.onresult = (e) => {
-      const trascritto = e.results[0][0].transcript.trim();
-      const confidenza = Math.round(e.results[0][0].confidence * 100);
-      risultato.textContent = '"' + trascritto + '"';
-      stato.textContent = '✅ Sentito! Confidenza: ' + confidenza + '%';
-      aggiungiStorico(trascritto, confidenza);
-      resetBtn();
-    };
+    // FASE 1: GIALLO — attivazione
+    setBtn('giallo');
+    stato.textContent = '⏳ Attivazione microfono...';
 
-    rec.onerror = (e) => {
-      stato.textContent = '❌ Errore: ' + e.error;
-      risultato.textContent = '(nessun risultato)';
-      aggiungiStoricoVuoto();
-      resetBtn();
-    };
+    setTimeout(() => {
+      // FASE 2: VERDE — ascolta
+      setBtn('verde');
+      stato.textContent = '🟢 Parla ora!';
 
-    rec.onend = () => {
-      resetBtn();
-      if (stato.textContent.includes('ascoltando')) {
-        stato.textContent = '⚠️ Nessun suono rilevato';
-        risultato.textContent = '(silenzio)';
+      const rec = new SpeechRecognition();
+      rec.lang = 'it-IT';
+      rec.interimResults = false;
+      rec.maxAlternatives = 3;
+
+      rec.onresult = (e) => {
+        const trascritto = e.results[0][0].transcript.trim();
+        const confidenza = Math.round(e.results[0][0].confidence * 100);
+        risultato.textContent = '"' + trascritto + '"';
+        stato.textContent = '✅ Sentito! Confidenza: ' + confidenza + '%';
+        aggiungiStorico(trascritto, confidenza);
+        fine('viola');
+      };
+
+      rec.onerror = (e) => {
+        stato.textContent = '❌ Errore: ' + e.error;
+        risultato.textContent = '(nessun risultato)';
         aggiungiStoricoVuoto();
-      }
-    };
+        fine('rosso');
+      };
 
-    rec.start();
+      rec.onend = () => {
+        if (inAscolto) {
+          if (stato.textContent.includes('Parla')) {
+            stato.textContent = '🔴 Timeout — nessun suono rilevato';
+            risultato.textContent = '(silenzio)';
+            aggiungiStoricoVuoto();
+            fine('rosso');
+          }
+        }
+      };
+
+      rec.start();
+
+    }, 1000); // 1 secondo di attesa giallo
   }
 
-  function resetBtn() {
-    const btn = document.getElementById('btnAscolta');
-    btn.classList.remove('ascolto');
-    btn.textContent = '🎤';
+  function fine(colore) {
+    inAscolto = false;
+    setTimeout(() => setBtn('viola'), colore === 'rosso' ? 1500 : 500);
   }
 
   function aggiungiStorico(testo, conf) {
