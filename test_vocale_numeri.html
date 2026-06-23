@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Vocale Numeri</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 6px; color: #a78bfa; letter-spacing: 1px; }
+  p.sub { font-size: 0.85rem; color: #888; margin-bottom: 30px; }
+
+  #btnAscolta {
+    width: 140px; height: 140px; border-radius: 50%;
+    background: #7c3aed;
+    border: none; cursor: pointer;
+    font-size: 3rem;
+    box-shadow: 0 0 0 0 rgba(124,58,237,0.5);
+    transition: transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #btnAscolta:hover { background: #6d28d9; }
+  #btnAscolta.ascolto {
+    background: #dc2626;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.6); }
+    70%  { box-shadow: 0 0 0 20px rgba(220,38,38,0); }
+    100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+  }
+
+  #stato {
+    margin-top: 20px;
+    font-size: 1rem;
+    color: #94a3b8;
+    min-height: 24px;
+  }
+
+  #risultato {
+    margin-top: 16px;
+    font-size: 3rem;
+    font-weight: bold;
+    color: #34d399;
+    min-height: 60px;
+    text-align: center;
+  }
+
+  #storico {
+    margin-top: 30px;
+    width: 100%;
+    max-width: 400px;
+    background: #0f172a;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  #storico h2 { font-size: 0.85rem; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  #lista { list-style: none; }
+  #lista li {
+    display: flex; justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #1e293b;
+    font-size: 0.95rem;
+  }
+  #lista li:last-child { border-bottom: none; }
+  #lista li .num { color: #a78bfa; font-weight: bold; }
+  #lista li .trascritto { color: #34d399; }
+  #lista li .niente { color: #ef4444; }
+
+  #btnReset {
+    margin-top: 16px;
+    background: none;
+    border: 1px solid #334155;
+    color: #64748b;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  #btnReset:hover { border-color: #64748b; color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<h1>🎤 TEST VOCALE NUMERI</h1>
+<p class="sub">Premi il pulsante, di' un numero, vedi il risultato</p>
+
+<button id="btnAscolta" onclick="avviaAscolto()">🎤</button>
+
+<div id="stato">Premi il microfono e parla</div>
+<div id="risultato"></div>
+
+<div id="storico">
+  <h2>Storico tentativi</h2>
+  <ul id="lista"></ul>
+  <button id="btnReset" onclick="resetStorico()">Cancella storico</button>
+</div>
+
+<script>
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null;
+  let tentativo = 1;
+
+  function avviaAscolto() {
+    if (!SpeechRecognition) {
+      document.getElementById('stato').textContent = '❌ Browser non supportato — usa Chrome';
+      return;
+    }
+
+    const btn = document.getElementById('btnAscolta');
+    const stato = document.getElementById('stato');
+    const risultato = document.getElementById('risultato');
+
+    rec = new SpeechRecognition();
+    rec.lang = 'it-IT';
+    rec.interimResults = false;
+    rec.maxAlternatives = 3;
+
+    btn.classList.add('ascolto');
+    btn.textContent = '🔴';
+    stato.textContent = '🎙️ Sto ascoltando... parla ora!';
+    risultato.textContent = '';
+
+    rec.onresult = (e) => {
+      const trascritto = e.results[0][0].transcript.trim();
+      const confidenza = Math.round(e.results[0][0].confidence * 100);
+      risultato.textContent = '"' + trascritto + '"';
+      stato.textContent = '✅ Sentito! Confidenza: ' + confidenza + '%';
+      aggiungiStorico(trascritto, confidenza);
+      resetBtn();
+    };
+
+    rec.onerror = (e) => {
+      stato.textContent = '❌ Errore: ' + e.error;
+      risultato.textContent = '(nessun risultato)';
+      aggiungiStoricoVuoto();
+      resetBtn();
+    };
+
+    rec.onend = () => {
+      resetBtn();
+      if (stato.textContent.includes('ascoltando')) {
+        stato.textContent = '⚠️ Nessun suono rilevato';
+        risultato.textContent = '(silenzio)';
+        aggiungiStoricoVuoto();
+      }
+    };
+
+    rec.start();
+  }
+
+  function resetBtn() {
+    const btn = document.getElementById('btnAscolta');
+    btn.classList.remove('ascolto');
+    btn.textContent = '🎤';
+  }
+
+  function aggiungiStorico(testo, conf) {
+    const lista = document.getElementById('lista');
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="num">#${tentativo++}</span> <span class="trascritto">"${testo}"</span> <span style="color:#64748b;font-size:0.8rem">${conf}%</span>`;
+    lista.prepend(li);
+  }
+
+  function aggiungiStoricoVuoto() {
+    const lista = document.getElementById('lista');
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="num">#${tentativo++}</span> <span class="niente">— nessun risultato —</span>`;
+    lista.prepend(li);
+  }
+
+  function resetStorico() {
+    document.getElementById('lista').innerHTML = '';
+    tentativo = 1;
+  }
+</script>
+</body>
+</html>
