@@ -3888,18 +3888,40 @@ async function vocaleFlussoFattura(){
       }else if(esito==="azienda"){
         _voc.dati.azienda=null;
         await vocaleGestisciAzienda();
-      }else if(esito==="data"){
-        var nuovaData=await vocaleChiediERispondi(_vocSteps[4]);
-        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.data=vocaleConvertiData(nuovaData);});
-      }else if(esito==="turni"){
-        var nuoviTurni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
-        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.turni=nuoviTurni;});
-      }else if(esito==="righe"){
-        var nuoveRighe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
-        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.righe=nuoveRighe;});
-      }else if(esito==="titolo"){
-        var nuovoTitolo=await vocaleChiediERispondi(_vocSteps[7]);
-        if(!_voc._stopped) _voc.dati.righe.forEach(function(r){r.titolo=nuovoTitolo;});
+      }else if(esito==="data"||esito==="turni"||esito==="righe"||esito==="titolo"){
+        // Determina quale record correggere (in caso di multi-data chiede quale)
+        var _idxCorr=0;
+        if(_voc.dati.righe.length>1){
+          var _numNomi=["","prima","seconda","terza","quarta","quinta","sesta","settima","ottava","nona","decima"];
+          var _domQuale="Quale data vuoi correggere? ";
+          for(var _qi=0;_qi<Math.min(_voc.dati.righe.length,10);_qi++){
+            _domQuale+=(_qi>0?" o ":"")+"la "+(_numNomi[_qi+1]||(_qi+1));
+          }
+          _domQuale+="?";
+          await sintesiVocale(_domQuale);
+          await pausa(500);
+          var _sceltaDate="";
+          try{ _sceltaDate=await ascoltaVoce(8000); }catch(e){ _sceltaDate="prima"; }
+          var _sc=_sceltaDate.toLowerCase();
+          _idxCorr=_sc.includes("second")||_sc.includes("due")||_sc.includes("2")?1:
+                   _sc.includes("terz")||_sc.includes("tre")||_sc.includes("3")?2:
+                   _sc.includes("quart")||_sc.includes("quattro")||_sc.includes("4")?3:
+                   _sc.includes("quint")||_sc.includes("cinque")||_sc.includes("5")?4:0;
+          if(_idxCorr>=_voc.dati.righe.length) _idxCorr=0;
+        }
+        if(esito==="data"){
+          var nuovaData=await vocaleChiediERispondi(_vocSteps[4]);
+          if(!_voc._stopped) _voc.dati.righe[_idxCorr].data=vocaleConvertiData(nuovaData);
+        }else if(esito==="turni"){
+          var nuoviTurni=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[5]));
+          if(!_voc._stopped) _voc.dati.righe[_idxCorr].turni=nuoviTurni;
+        }else if(esito==="righe"){
+          var nuoveRighe=vocaleConvertiNumero(await vocaleChiediERispondi(_vocSteps[6]));
+          if(!_voc._stopped) _voc.dati.righe[_idxCorr].righe=nuoveRighe;
+        }else if(esito==="titolo"){
+          var nuovoTitolo=await vocaleChiediERispondi(_vocSteps[7]);
+          if(!_voc._stopped) _voc.dati.righe[_idxCorr].titolo=nuovoTitolo;
+        }
       }else{
         // Annullato - torna alla home
         confermato=true;
@@ -4088,6 +4110,7 @@ async function avviaLoginVocale(){
     try{
       username=await ascoltaVoce(12000);
       vocaleSetRisposta(username);
+      await pausa(2000);
     }catch(e){
       if(e===_ANNULLA_VOCALE){await vocaleEsci();return;}
       await riproduciAudio("riprovo");await pausa(500);
@@ -4110,6 +4133,7 @@ async function avviaLoginVocale(){
     try{
       password=await ascoltaVoce(12000);
       vocaleSetRisposta(password);
+      await pausa(2000);
     }catch(e){
       if(e===_ANNULLA_VOCALE){await vocaleEsci();return;}
       await riproduciAudio("riprovo");await pausa(500);
