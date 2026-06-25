@@ -3579,7 +3579,7 @@ async function vocaleRiepilogoFinale(){
       return true;
     }else if(cNo){
       // Chiedi quale campo modificare
-      await sintesiVocale("Quale campo vuoi modificare? Tipo, Prestazione, Lavorazione, Data, Turni, Righe, Titolo, o Azienda?");
+      await riproduciAudio("Quale_campo_vuoi_modificare");
       await pausa(500);
       var campo="";
       try{
