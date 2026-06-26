@@ -3762,7 +3762,7 @@ async function vocaleFlussoFattura(){
   var _rv=rispVuoi.toLowerCase();
   var _rvNo=_rv.includes("non confermo")||_rv.includes("no")||_rv.includes("negativo");
   if(_rvNo||!(_rv.includes("confermo")||_rv.includes("si")||_rv.includes("yes")||_rv.includes("ok")||_rv.includes("perfetto")||_rv.includes("bene"))){
-    await sintesiVocale("Ok, torno al menu principale");
+    await riproduciAudio("torno_menu");
     showScreen("s-home");return;
   }
 
@@ -4055,12 +4055,12 @@ async function vocaleCompilaSalva(){
         await salvaSuDB();
       }catch(e){
         console.warn("vocaleCompilaSalva errore:", e);
-        await sintesiVocale("Errore nel salvataggio. Riprova.");
+        await riproduciAudio("errore_salvataggio");
       }
     });
   }catch(e){
     console.warn("goStampa errore:", e);
-    await sintesiVocale("Errore nella generazione fattura. Riprova.");
+    await riproduciAudio("errore_fattura");
     return;
   }
   return; // Il resto viene eseguito nella callback di goStampa
