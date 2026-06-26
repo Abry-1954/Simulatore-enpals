@@ -538,6 +538,37 @@ function divaNotifica(evento, dettagli){
   }).catch(function(err){ console.warn('DIVA Monitor:', err); });
 }
 </script>
+
+<style id="diva-ai-css">
+#diva-ai-btn {
+  position: fixed; bottom: 22px; right: 22px; z-index: 9999;
+  width: 56px; height: 56px; border-radius: 50%;
+  display: none; /* mostrato solo dopo login */
+  align-items: center; justify-content: center;
+  border: none; cursor: pointer;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  box-shadow: 0 4px 15px rgba(34,197,94,0.4);
+  transition: background 0.4s, box-shadow 0.4s;
+}
+#diva-ai-btn.stato-ascolto  { background: linear-gradient(135deg,#16a34a,#22c55e); box-shadow: 0 4px 15px rgba(34,197,94,0.5); }
+#diva-ai-btn.stato-wakeword { background: linear-gradient(135deg,#7c3aed,#a855f7); box-shadow: 0 4px 15px rgba(139,92,246,0.5); }
+#diva-ai-btn.stato-risposta { background: linear-gradient(135deg,#1d4ed8,#3b82f6); box-shadow: 0 4px 15px rgba(59,130,246,0.5); }
+#diva-ai-btn.stato-negato   { background: linear-gradient(135deg,#b91c1c,#ef4444); box-shadow: 0 4px 15px rgba(239,68,68,0.4); animation: none !important; }
+#diva-ai-btn svg { width: 26px; height: 26px; fill: white; pointer-events: none; }
+.diva-ai-pulse { position: absolute; border-radius: 50%; background: rgba(34,197,94,0.2); width: 56px; height: 56px; animation: diva-pulse 2s ease-out infinite; }
+.diva-ai-pulse:nth-child(2) { animation-delay: 0.6s; }
+.stato-wakeword .diva-ai-pulse { background: rgba(139,92,246,0.2); }
+.stato-risposta .diva-ai-pulse { background: rgba(59,130,246,0.2); }
+.stato-negato   .diva-ai-pulse { display: none; }
+@keyframes diva-pulse { 0%{transform:scale(1);opacity:0.8;} 100%{transform:scale(2.2);opacity:0;} }
+#diva-ai-label {
+  position: fixed; bottom: 84px; right: 14px; z-index: 9999;
+  background: rgba(15,23,42,0.92); color: #e2e8f0;
+  font-size: 11px; padding: 5px 10px; border-radius: 20px;
+  display: none; max-width: 200px; text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+</style>
 </head>
 <body>
 
@@ -2232,6 +2263,8 @@ async function doLogin(){
   if(btn){ btn.disabled=false; }
   const benvenuto = document.getElementById('home-benvenuto');
   if(benvenuto) benvenuto.textContent = 'Ciao, ' + (S.lav.nominativo||u).split(' ')[0];
+  // ── DIVA AI: mostra microfono ──
+  divaAiMostra();
   // ── DIVA MONITOR: notifica login ──
   divaNotifica('🔐 LOGIN', S.lav.nominativo || u);
   // Se login avviato da modalita vocale, salta direttamente al flusso vocale
@@ -2262,6 +2295,7 @@ function goMieFatture(){
 }
 
 function doLogout(){
+  divaAiNascondi();
   if(!confirm('Vuoi uscire?')) return;
   // LOG LOGOUT
   try {
@@ -4235,5 +4269,169 @@ function vocaleConferma(){}
 function vocaleAvviaRiconoscimento(){}
 function vocaleImpostaStep(){}
 function vocaleAggiornaBadge(){}
+</script>
+
+<!-- DIVA AI — Microfono fisso -->
+<div id="diva-ai-label"></div>
+<button id="diva-ai-btn" class="stato-ascolto" onclick="divaAiClick()" title="DIVA AI — di' 'Ciao DIVA aiutami'">
+  <div class="diva-ai-pulse"></div>
+  <div class="diva-ai-pulse"></div>
+  <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-2 14.93A7 7 0 0 0 19 9h-2a5 5 0 0 1-10 0H5a7 7 0 0 0 7 6.93V19H9v2h6v-2h-3v-3.07z"/></svg>
+</button>
+
+<script id="diva-ai-script">
+// ════════════════════════════════════════════════
+// DIVA AI — Assistente vocale con wake word
+// Wake word: "CIAO DIVA AIUTAMI"
+// ════════════════════════════════════════════════
+var _divaAI = {
+  attivo: false,
+  statoCorrente: 'ascolto', // ascolto | wakeword | risposta | negato
+  recognition: null,
+  inAscolto: false
+};
+
+var DIVA_AI_WAKE_WORD = 'ciao diva aiutami';
+
+function divaAiMostra(){
+  var btn = document.getElementById('diva-ai-btn');
+  if(btn) btn.style.display = 'flex';
+  _divaAI.attivo = true;
+  divaAiAvviaAscolto();
+}
+
+function divaAiNascondi(){
+  var btn = document.getElementById('diva-ai-btn');
+  if(btn) btn.style.display = 'none';
+  _divaAI.attivo = false;
+  if(_divaAI.recognition){ try{_divaAI.recognition.stop();}catch(e){} }
+}
+
+function divaAiStato(stato, label){
+  _divaAI.statoCorrente = stato;
+  var btn = document.getElementById('diva-ai-btn');
+  var lbl = document.getElementById('diva-ai-label');
+  if(!btn) return;
+  btn.className = 'stato-' + stato;
+  btn.style.display = 'flex';
+  if(lbl && label){
+    lbl.textContent = label;
+    lbl.style.display = 'block';
+    setTimeout(function(){ lbl.style.display = 'none'; }, 4000);
+  }
+}
+
+function divaAiAvviaAscolto(){
+  if(!_divaAI.attivo) return;
+  if(!window.SpeechRecognition && !window.webkitSpeechRecognition) return;
+  try{
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    _divaAI.recognition = new SR();
+    _divaAI.recognition.lang = 'it-IT';
+    _divaAI.recognition.continuous = false;
+    _divaAI.recognition.interimResults = false;
+    _divaAI.recognition.maxAlternatives = 3;
+
+    _divaAI.recognition.onresult = function(e){
+      var testo = '';
+      for(var i=0;i<e.results[0].length;i++){
+        testo = e.results[0][i].transcript.toLowerCase().trim();
+        if(testo.includes('ciao diva aiutami') || testo.includes('diva aiutami') || testo.includes('ciao diva')){
+          divaAiAttivaComando();
+          return;
+        }
+      }
+      // Nessuna wake word — riprendi ascolto
+      if(_divaAI.attivo) setTimeout(divaAiAvviaAscolto, 300);
+    };
+
+    _divaAI.recognition.onerror = function(e){
+      if(_divaAI.attivo) setTimeout(divaAiAvviaAscolto, 1000);
+    };
+
+    _divaAI.recognition.onend = function(){
+      if(_divaAI.attivo && _divaAI.statoCorrente === 'ascolto'){
+        setTimeout(divaAiAvviaAscolto, 300);
+      }
+    };
+
+    divaAiStato('ascolto');
+    _divaAI.recognition.start();
+  }catch(e){
+    console.warn('DIVA AI ascolto errore:', e);
+  }
+}
+
+async function divaAiAttivaComando(){
+  // Wake word riconosciuta!
+  divaAiStato('wakeword', '🟣 Ti ascolto...');
+  if(_divaAI.recognition){ try{_divaAI.recognition.stop();}catch(e){} }
+
+  // Ascolta la domanda dell'utente
+  var domanda = await divaAiAscoltaDomanda();
+  if(!domanda){
+    divaAiStato('ascolto');
+    setTimeout(divaAiAvviaAscolto, 500);
+    return;
+  }
+
+  // Chiama il server Render → Claude
+  divaAiStato('risposta', '🔵 Sto pensando...');
+  try{
+    var authH = sessionStorage.getItem('enpals_auth') || '';
+    var resp = await fetch(SERVER + '/ai?q=' + encodeURIComponent(domanda), {
+      headers: { 'Authorization': 'Bearer ' + authH }
+    });
+    var data = await resp.json();
+
+    if(data.risposta){
+      // Controlla se è risposta negata
+      if(data.risposta.includes('Posso aiutarti solo')){
+        divaAiStato('negato', '🔴 Fuori contesto');
+        await saraVocale(data.risposta);
+      } else {
+        divaAiStato('risposta', '🔵 ' + data.risposta.substring(0,40) + '...');
+        await saraVocale(data.risposta);
+      }
+    }
+  }catch(e){
+    console.warn('DIVA AI errore:', e);
+    divaAiStato('negato', '🔴 Errore connessione');
+  }
+
+  // Torna in ascolto
+  setTimeout(function(){
+    divaAiStato('ascolto');
+    divaAiAvviaAscolto();
+  }, 1500);
+}
+
+function divaAiAscoltaDomanda(){
+  return new Promise(function(resolve){
+    if(!window.SpeechRecognition && !window.webkitSpeechRecognition){ resolve(''); return; }
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var rec = new SR();
+    rec.lang = 'it-IT';
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    var timeout = setTimeout(function(){ try{rec.stop();}catch(e){} resolve(''); }, 8000);
+    rec.onresult = function(e){
+      clearTimeout(timeout);
+      resolve(e.results[0][0].transcript.trim());
+    };
+    rec.onerror = function(){ clearTimeout(timeout); resolve(''); };
+    rec.onend = function(){ clearTimeout(timeout); };
+    try{ rec.start(); }catch(e){ resolve(''); }
+  });
+}
+
+// Click manuale sul bottone — attiva subito senza wake word
+function divaAiClick(){
+  if(_divaAI.statoCorrente === 'ascolto'){
+    if(_divaAI.recognition){ try{_divaAI.recognition.stop();}catch(e){} }
+    divaAiAttivaComando();
+  }
+}
 </script>
 </body>
