@@ -3343,6 +3343,73 @@ function riproduciAudio(id){
   });
 }
 
+
+// ════════════════════════════════════════════
+// SARA TTS — tts.ai API (Kokoro / if_sara)
+// ════════════════════════════════════════════
+async function saraVocale(testo){
+  if(!testo||testo.trim()===''){return;}
+  if(_voc&&_voc._stopped){return;}
+  try{
+    // STEP 1 — Richiedi generazione
+    var resp = await fetch('https://api.tts.ai/v1/tts/',{
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer sk-tts-4a1ec72e577a47b99f16eacbbc9cebb5',
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        model:'kokoro',
+        voice:'if_sara',
+        language:'it',
+        speed:0.90,
+        format:'mp3',
+        text:testo
+      })
+    });
+    var data = await resp.json();
+    if(!data.uuid){throw new Error('No UUID');}
+    
+    // Se cached, riproduci subito
+    if(data.result_url){
+      await new Promise(function(resolve){
+        var a=new Audio(data.result_url);
+        a.onended=resolve;a.onerror=resolve;
+        a.play().catch(resolve);
+      });
+      return;
+    }
+
+    // STEP 2 — Polling fino a completed (max 15 tentativi)
+    var uuid = data.uuid;
+    var result_url = null;
+    for(var i=0;i<15;i++){
+      await new Promise(r=>setTimeout(r,800));
+      var r2 = await fetch('https://api.tts.ai/v1/speech/results/?uuid='+uuid,{
+        headers:{'Authorization':'Bearer sk-tts-4a1ec72e577a47b99f16eacbbc9cebb5'}
+      });
+      var d2 = await r2.json();
+      if(d2.status==='completed'&&d2.result_url){
+        result_url=d2.result_url;
+        break;
+      }
+    }
+
+    // STEP 3 — Riproduci
+    if(result_url){
+      await new Promise(function(resolve){
+        var a=new Audio(result_url);
+        a.onended=resolve;a.onerror=resolve;
+        a.play().catch(resolve);
+      });
+    }
+  }catch(e){
+    console.warn('Sara TTS fallback:', e);
+    // Fallback alla sintesi browser
+    return sintesiVocale(testo);
+  }
+}
+
 function sintesiVocale(testo){
   return new Promise(function(resolve){
     if(_voc&&_voc._stopped){resolve();return;}
@@ -3543,7 +3610,7 @@ async function vocaleRiepilogoFinale(){
   if(badge) badge.textContent="Conferma finale";
 
   // Leggi riepilogo ad alta voce
-  await sintesiVocale(riepilogo);
+  await saraVocale(riepilogo);
   // Se c'e' azienda con MP3, riproducila chiaramente
   if(_voc.dati.azienda){
     await pausa(300);
@@ -3600,7 +3667,7 @@ async function vocaleRiepilogoFinale(){
       if(cam.includes("azienda"))    return "azienda";
       // Non capito
       await riproduciAudio("nonHoCapito");
-      await sintesiVocale(riepilogo);
+      await saraVocale(riepilogo);
       await pausa(500);
     }else{
       await riproduciAudio("nonHoCapito");
@@ -3631,13 +3698,13 @@ async function vocaleGestisciAzienda(){
       var numNomi=["","prima","seconda","terza","quarta","quinta"];
       var n=Math.min(trovate.length,5);
       // Leggi quante trovate
-      await sintesiVocale("Trovate "+n+" aziende.");
+      await saraVocale("Trovate "+n+" aziende.");
       await pausa(300);
       // Elenca: MP3 nome + sintesi "la prima" ecc
       for(var i=0;i<n;i++){
         await riproduciNomeAzienda(trovate[i]);
         await pausa(150);
-        await sintesiVocale("la "+numNomi[i+1]);
+        await saraVocale("la "+numNomi[i+1]);
         await pausa(200);
       }
       // Chiede scelta
@@ -3646,7 +3713,7 @@ async function vocaleGestisciAzienda(){
         domScelta+=(i<n-1?", la ":" o la ")+numNomi[i+1];
       }
       domScelta+="?";
-      await sintesiVocale(domScelta);
+      await saraVocale(domScelta);
       await pausa(500);
       // Ascolta risposta
       var scelta=await ascoltaVoce(10000).catch(function(){return "";});
@@ -3688,7 +3755,7 @@ async function vocaleNuovaAzienda(){
     var val=await ascoltaVoce(12000).catch(function(){return "";});
     nuovaAz[c.campo]=val;
     await riproduciAudio("hoCapito");await pausa(200);
-    await sintesiVocale(val);await pausa(400);
+    await saraVocale(val);await pausa(400);
   }
   _voc.dati.azienda={ragione_sociale:nuovaAz.ragione_sociale,indirizzo:nuovaAz.indirizzo,cap:nuovaAz.cap,citta:nuovaAz.citta,piva:nuovaAz.piva,cf:nuovaAz.cf,cod_dest:nuovaAz.cod_dest};
 }
@@ -3887,7 +3954,7 @@ async function vocaleFlussoFattura(){
             _domQuale+=(_qi>0?" o ":"")+"la "+(_numNomi[_qi+1]||(_qi+1));
           }
           _domQuale+="?";
-          await sintesiVocale(_domQuale);
+          await saraVocale(_domQuale);
           await pausa(500);
           var _sceltaDate="";
           try{ _sceltaDate=await ascoltaVoce(8000); }catch(e){ _sceltaDate="prima"; }
