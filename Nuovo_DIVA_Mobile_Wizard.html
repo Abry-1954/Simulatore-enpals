@@ -4378,7 +4378,7 @@ async function divaAiAttivaComando(){
   // Chiama il server Render → Claude
   divaAiStato('risposta', '🔵 Sto pensando...');
   try{
-    var authH = sessionStorage.getItem('enpals_auth') || '';
+    var authH = window._authToken || sessionStorage.getItem('enpals_auth') || '';
     var _aiServer = (typeof SERVER !== 'undefined') ? SERVER : 'https://enpals-server.onrender.com';
     var resp = await fetch(_aiServer + '/ai?q=' + encodeURIComponent(domanda), {
       headers: { 'Authorization': 'Bearer ' + authH }
