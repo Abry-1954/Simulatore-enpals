@@ -4297,8 +4297,9 @@ function divaAiMostra(){
   var btn = document.getElementById('diva-ai-btn');
   if(btn) btn.style.display = 'flex';
   _divaAI.attivo = true;
-  riproduciAudio('Assistente_in_ascolto');
+  // Prima avvia microfono, poi riproduci audio (non bloccante)
   divaAiAvviaAscolto();
+  setTimeout(function(){ riproduciAudio('Assistente_in_ascolto'); }, 300);
 }
 
 function divaAiDisattiva(){
@@ -4325,8 +4326,8 @@ function divaAiRiattiva(){
     btn.querySelectorAll('.diva-ai-pulse').forEach(function(el){ el.style.display=''; });
   }
   _divaAI.attivo = true;
-  riproduciAudio('Assistente_in_ascolto');
   divaAiAvviaAscolto();
+  setTimeout(function(){ riproduciAudio('Assistente_in_ascolto'); }, 300);
 }
 
 function divaAiNascondi(){
