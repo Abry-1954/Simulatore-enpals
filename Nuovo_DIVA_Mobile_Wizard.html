@@ -4379,7 +4379,8 @@ async function divaAiAttivaComando(){
   divaAiStato('risposta', '🔵 Sto pensando...');
   try{
     var authH = sessionStorage.getItem('enpals_auth') || '';
-    var resp = await fetch(SERVER + '/ai?q=' + encodeURIComponent(domanda), {
+    var _aiServer = (typeof SERVER !== 'undefined') ? SERVER : 'https://enpals-server.onrender.com';
+    var resp = await fetch(_aiServer + '/ai?q=' + encodeURIComponent(domanda), {
       headers: { 'Authorization': 'Bearer ' + authH }
     });
     var data = await resp.json();
