@@ -4367,6 +4367,9 @@ async function divaAiAttivaComando(){
   divaAiStato('wakeword', '🟣 Ti ascolto...');
   if(_divaAI.recognition){ try{_divaAI.recognition.stop();}catch(e){} }
 
+  // Suono di conferma attivazione
+  await riproduciAudio('parla_pure_ti_ascolto');
+
   // Ascolta la domanda dell'utente
   var domanda = await divaAiAscoltaDomanda();
   if(!domanda){
