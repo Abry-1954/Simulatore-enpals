@@ -4297,6 +4297,35 @@ function divaAiMostra(){
   var btn = document.getElementById('diva-ai-btn');
   if(btn) btn.style.display = 'flex';
   _divaAI.attivo = true;
+  riproduciAudio('Assistente_in_ascolto');
+  divaAiAvviaAscolto();
+}
+
+function divaAiDisattiva(){
+  // Disattiva microfono — pallino grigio
+  _divaAI.attivo = false;
+  if(_divaAI.recognition){ try{_divaAI.recognition.stop();}catch(e){} }
+  var btn = document.getElementById('diva-ai-btn');
+  if(btn){
+    btn.className = 'stato-disattivato';
+    btn.style.background = 'linear-gradient(135deg,#475569,#64748b)';
+    btn.style.boxShadow = '0 4px 15px rgba(100,116,139,0.3)';
+    // Rimuovi pulse rings
+    btn.querySelectorAll('.diva-ai-pulse').forEach(function(el){ el.style.display='none'; });
+  }
+  riproduciAudio('assistente_disattivata');
+}
+
+function divaAiRiattiva(){
+  // Riattiva dal click sul pallino grigio
+  var btn = document.getElementById('diva-ai-btn');
+  if(btn){
+    btn.style.background = '';
+    btn.style.boxShadow = '';
+    btn.querySelectorAll('.diva-ai-pulse').forEach(function(el){ el.style.display=''; });
+  }
+  _divaAI.attivo = true;
+  riproduciAudio('Assistente_in_ascolto');
   divaAiAvviaAscolto();
 }
 
@@ -4336,6 +4365,12 @@ function divaAiAvviaAscolto(){
       var testo = '';
       for(var i=0;i<e.results[0].length;i++){
         testo = e.results[0][i].transcript.toLowerCase().trim();
+        // Wake word disattivazione
+        if(testo.includes('ciao diva disattivati') || testo.includes('diva disattivati')){
+          divaAiDisattiva();
+          return;
+        }
+        // Wake word attivazione
         if(testo.includes('ciao diva aiutami') || testo.includes('diva aiutami') || testo.includes('ciao diva')){
           divaAiAttivaComando();
           return;
@@ -4379,6 +4414,7 @@ async function divaAiAttivaComando(){
   }
 
   // Chiama il server Render → Claude
+  await riproduciAudio('sto_elaborando');
   divaAiStato('risposta', '🔵 Sto pensando...');
   try{
     var authH = window._authToken || sessionStorage.getItem('enpals_auth') || '';
@@ -4441,6 +4477,11 @@ function divaAiAscoltaDomanda(){
 
 // Click manuale sul bottone — attiva subito senza wake word
 function divaAiClick(){
+  if(!_divaAI.attivo){
+    // Era disattivato — riattiva
+    divaAiRiattiva();
+    return;
+  }
   if(_divaAI.statoCorrente === 'ascolto'){
     if(_divaAI.recognition){ try{_divaAI.recognition.stop();}catch(e){} }
     divaAiAttivaComando();
