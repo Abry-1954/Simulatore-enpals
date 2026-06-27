@@ -569,6 +569,39 @@ function divaNotifica(evento, dettagli){
   border: 1px solid rgba(255,255,255,0.1);
 }
 </style>
+
+<style id="diva-pdf-list-css">
+#diva-pdf-panel {
+  position: fixed; bottom: 90px; right: 16px; z-index: 9998;
+  background: rgba(15,23,42,0.96); border: 1px solid rgba(139,92,246,0.4);
+  border-radius: 14px; padding: 16px; width: 300px;
+  display: none; flex-direction: column; gap: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  max-height: 60vh; overflow-y: auto;
+}
+#diva-pdf-panel .pdf-header {
+  color: #a78bfa; font-size: 13px; font-weight: 600;
+  margin-bottom: 4px; display: flex; justify-content: space-between;
+}
+#diva-pdf-panel .pdf-item {
+  background: #1e293b; border-radius: 8px; padding: 10px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px;
+}
+#diva-pdf-panel .pdf-info { flex:1; }
+#diva-pdf-panel .pdf-rif { color: #e2e8f0; font-size: 12px; font-weight: 600; }
+#diva-pdf-panel .pdf-data { color: #94a3b8; font-size: 11px; }
+#diva-pdf-panel .pdf-btn {
+  background: linear-gradient(135deg,#7c3aed,#a855f7);
+  color: white; border: none; border-radius: 6px;
+  padding: 6px 10px; font-size: 11px; cursor: pointer; white-space: nowrap;
+}
+#diva-pdf-panel .pdf-btn:hover { opacity: 0.85; }
+#diva-pdf-panel .pdf-close {
+  background: none; border: none; color: #64748b;
+  cursor: pointer; font-size: 16px; padding: 0;
+}
+</style>
 </head>
 <body>
 
@@ -4394,6 +4427,10 @@ async function divaAiAvviaFlusso(){
         divaAiStato('risposta', '🔵 ' + data.risposta.substring(0,40) + '...');
       }
       await saraVocale(data.risposta);
+      // Mostra lista PDF se presente
+      if(data.pdf_list && data.pdf_list.length > 0){
+        divaPdfMostra(data.pdf_list);
+      }
     }
   }catch(e){
     console.warn('DIVA AI errore:', e);
@@ -4425,6 +4462,50 @@ function divaAiAscoltaDomanda(){
     rec.onend = function(){ clearTimeout(timeout); };
     try{ rec.start(); }catch(e){ resolve(''); }
   });
+}
+</script>
+
+<!-- DIVA PDF List Panel -->
+<div id="diva-pdf-panel">
+  <div class="pdf-header">
+    <span>📄 Fatture trovate</span>
+    <button class="pdf-close" onclick="divaPdfChiudi()">✕</button>
+  </div>
+  <div id="diva-pdf-items"></div>
+</div>
+
+<script id="diva-pdf-js">
+function divaPdfMostra(pdfList) {
+  if(!pdfList || pdfList.length === 0) return;
+  var panel = document.getElementById('diva-pdf-panel');
+  var items = document.getElementById('diva-pdf-items');
+  if(!panel || !items) return;
+  
+  items.innerHTML = '';
+  pdfList.forEach(function(f) {
+    var div = document.createElement('div');
+    div.className = 'pdf-item';
+    div.innerHTML = 
+      '<div class="pdf-info">' +
+        '<div class="pdf-rif">' + (f.rif || '') + '</div>' +
+        '<div class="pdf-data">' + (f.data || '') + '</div>' +
+      '</div>' +
+      (f.url ? '<button class="pdf-btn" onclick="divaPdfApri(\'' + f.url + '\')">Apri PDF</button>' : '');
+    items.appendChild(div);
+  });
+  
+  panel.style.display = 'flex';
+  // Auto-chiudi dopo 30 secondi
+  setTimeout(divaPdfChiudi, 30000);
+}
+
+function divaPdfApri(url) {
+  window.open(url, '_blank');
+}
+
+function divaPdfChiudi() {
+  var panel = document.getElementById('diva-pdf-panel');
+  if(panel) panel.style.display = 'none';
 }
 </script>
 </body>
