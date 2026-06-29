@@ -3418,61 +3418,30 @@ async function saraVocale(testo){
   if(!testo||testo.trim()===''){return;}
   if(_voc&&_voc._stopped){return;}
   try{
-    // STEP 1 — Richiedi generazione
-    var resp = await fetch('https://api.tts.ai/v1/tts/',{
+    // Chiama il server Render — API key nascosta
+    var _server = (typeof SERVER !== 'undefined') ? SERVER : 'https://enpals-server.onrender.com';
+    var resp = await fetch(_server + '/tts', {
       method:'POST',
-      headers:{
-        'Authorization':'Bearer sk-tts-4a1ec72e577a47b99f16eacbbc9cebb5',
-        'Content-Type':'application/json'
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
+        text:testo,
         model:'kokoro',
         voice:'if_sara',
         language:'it',
         speed:0.85,
-        format:'mp3',
-        text:testo
+        format:'mp3'
       })
     });
     var data = await resp.json();
-    if(!data.uuid){throw new Error('No UUID');}
-    
-    // Se cached, riproduci subito
     if(data.result_url){
       await new Promise(function(resolve){
         var a=new Audio(data.result_url);
         a.onended=resolve;a.onerror=resolve;
         a.play().catch(resolve);
       });
-      return;
-    }
-
-    // STEP 2 — Polling fino a completed (max 15 tentativi)
-    var uuid = data.uuid;
-    var result_url = null;
-    for(var i=0;i<15;i++){
-      await new Promise(r=>setTimeout(r,800));
-      var r2 = await fetch('https://api.tts.ai/v1/speech/results/?uuid='+uuid,{
-        headers:{'Authorization':'Bearer sk-tts-4a1ec72e577a47b99f16eacbbc9cebb5'}
-      });
-      var d2 = await r2.json();
-      if(d2.status==='completed'&&d2.result_url){
-        result_url=d2.result_url;
-        break;
-      }
-    }
-
-    // STEP 3 — Riproduci
-    if(result_url){
-      await new Promise(function(resolve){
-        var a=new Audio(result_url);
-        a.onended=resolve;a.onerror=resolve;
-        a.play().catch(resolve);
-      });
     }
   }catch(e){
     console.warn('Sara TTS fallback:', e);
-    // Fallback alla sintesi browser
     return sintesiVocale(testo);
   }
 }
