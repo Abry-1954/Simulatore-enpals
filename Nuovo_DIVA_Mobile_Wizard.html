@@ -4355,6 +4355,11 @@ function divaAiClick(){
 
 async function divaAiAvviaFlusso(){
   _divaAI.occupato = true;
+  // Reset pannello PDF — sempre, ad ogni nuova richiesta
+  divaPdfChiudi();
+  if(window._divaPdfTimer) { clearTimeout(window._divaPdfTimer); window._divaPdfTimer = null; }
+  var _itemsReset = document.getElementById('diva-pdf-items');
+  if(_itemsReset) _itemsReset.innerHTML = '';
   divaAiStato('wakeword', '🟣 Ti ascolto...');
 
   // Riproduci "parla pure ti ascolto"
@@ -4445,12 +4450,18 @@ function divaAiAscoltaDomanda(){
 
 <script id="diva-pdf-js">
 function divaPdfMostra(pdfList) {
-  if(!pdfList || pdfList.length === 0) return;
   var panel = document.getElementById('diva-pdf-panel');
   var items = document.getElementById('diva-pdf-items');
   if(!panel || !items) return;
-  
+
+  // Svuota sempre, anche se la lista e' vuota — niente residui dalla chiamata precedente
   items.innerHTML = '';
+
+  if(!pdfList || pdfList.length === 0){
+    panel.style.display = 'none';
+    return;
+  }
+
   pdfList.forEach(function(f) {
     var div = document.createElement('div');
     div.className = 'pdf-item';
@@ -4462,10 +4473,11 @@ function divaPdfMostra(pdfList) {
       (f.url ? '<button class="pdf-btn" onclick="divaPdfApri(\'' + f.url + '\')">Apri PDF</button>' : '');
     items.appendChild(div);
   });
-  
+
   panel.style.display = 'flex';
-  // Auto-chiudi dopo 30 secondi
-  setTimeout(divaPdfChiudi, 30000);
+  // Un solo timer attivo alla volta
+  if(window._divaPdfTimer) clearTimeout(window._divaPdfTimer);
+  window._divaPdfTimer = setTimeout(divaPdfChiudi, 30000);
 }
 
 function divaPdfApri(url) {
