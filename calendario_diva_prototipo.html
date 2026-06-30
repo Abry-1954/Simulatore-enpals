@@ -244,7 +244,11 @@
     min-width: 0;
     text-align: center;
     padding: 8px 1px 10px;
+    cursor: pointer;
   }
+  .day-head:active { background: #f4f2f9; }
+  .day-head.single { cursor: default; }
+  .day-head.single:active { background: transparent; }
   .day-head-dow { font-size: 10px; color: #9b96a8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
   .day-head-num {
     width: 26px; height: 26px;
@@ -341,6 +345,56 @@
     font-size: 13px;
   }
   .agenda-empty i { font-size: 26px; display: block; margin-bottom: 8px; opacity: 0.5; }
+
+  /* ===== RIEPILOGO MENSILE PER AZIENDA ===== */
+  .riepilogo-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.1rem; }
+  .riepilogo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #ece9f3;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .riepilogo-bar { width: 4px; align-self: stretch; border-radius: 3px; flex-shrink: 0; }
+  .riepilogo-nome {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #2e2a3d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .riepilogo-stat {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b6678;
+    background: #f4f2f9;
+    border-radius: 7px;
+    padding: 4px 9px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .riepilogo-totale {
+    display: flex;
+    gap: 10px;
+    padding-bottom: 1.4rem;
+  }
+  .riepilogo-totale-item {
+    flex: 1;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+  }
+  .riepilogo-totale-num { font-size: 22px; font-weight: 700; color: #c2410c; line-height: 1.2; }
+  .riepilogo-totale-lbl { font-size: 11.5px; font-weight: 600; color: #9a5b2e; margin-top: 2px; }
 
   /* ===== FAB AGGIUNGI ===== */
   .fab {
@@ -648,7 +702,7 @@ function renderMese(){
     const isOther = d.getMonth()!==mese;
     const isToday = iso===OGGI_ISO;
     const evs = eventiDelGiorno(iso).slice(0,3);
-    html += '<div class="month-day '+(isOther?'other-month ':'')+(isToday?'today':'')+'" onclick="apriGiornoDaMese(\''+iso+'\')">';
+    html += '<div class="month-day '+(isOther?'other-month ':'')+(isToday?'today':'')+'" onclick="apriSettimanaDaMese(\''+iso+'\')">';
     html += '<span class="month-day-num">'+d.getDate()+'</span>';
     if(evs.length){
       html += '<div class="month-day-dots">';
@@ -659,30 +713,79 @@ function renderMese(){
   }
   html += '</div></div>';
 
-  html += '<div class="day-agenda"><div class="day-agenda-title">'+formattaGiornoLungo(dataCorrente)+'</div>';
-  html += renderAgendaList(oggiISO(dataCorrente));
+  html += renderRiepilogoMese(anno, mese);
+  return html;
+}
+
+function durataOre(inizio, fine){
+  const [hI,mI] = inizio.split(':').map(Number);
+  const [hF,mF] = fine.split(':').map(Number);
+  return ((hF*60+mF) - (hI*60+mI)) / 60;
+}
+
+function renderRiepilogoMese(anno, mese){
+  const evsMese = eventi.filter(e=>{
+    const d = new Date(e.data+'T00:00:00');
+    return d.getFullYear()===anno && d.getMonth()===mese;
+  });
+
+  let html = '<div class="day-agenda"><div class="day-agenda-title">Riepilogo '+MESI[mese]+' '+anno+'</div>';
+
+  if(!evsMese.length){
+    html += '<div class="agenda-empty"><i>—</i>Nessun appuntamento in questo mese.</div></div>';
+    return html;
+  }
+
+  const perAzienda = {};
+  const giorniImpegnati = new Set();
+  let oreTotali = 0;
+
+  evsMese.forEach(e=>{
+    const nome = e.azienda || 'Senza azienda';
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, colore:e.colore};
+    const ore = durataOre(e.inizio, e.fine);
+    perAzienda[nome].turni += 1;
+    perAzienda[nome].ore += ore;
+    oreTotali += ore;
+    giorniImpegnati.add(e.data);
+  });
+
+  const aziendeOrdinate = Object.keys(perAzienda).sort((a,b)=> perAzienda[b].ore - perAzienda[a].ore);
+
+  html += '<div class="riepilogo-list">';
+  aziendeOrdinate.forEach(nome=>{
+    const v = perAzienda[nome];
+    const c = colorOf(v.colore);
+    html += '<div class="riepilogo-row">';
+    html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
+    html += '<div class="riepilogo-nome">'+nome+'</div>';
+    html += '<div class="riepilogo-stat">'+v.turni+' '+(v.turni===1?'turno':'turni')+'</div>';
+    html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  html += '<div class="riepilogo-totale">';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+giorniImpegnati.size+'</span><span class="riepilogo-totale-lbl">'+(giorniImpegnati.size===1?'giorno':'giorni')+' impegnati</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+formattaOre(oreTotali)+'</span><span class="riepilogo-totale-lbl">ore totali</span></div>';
+  html += '</div>';
+
   html += '</div>';
   return html;
 }
 
-function formattaGiornoLungo(d){
-  return GIORNI_BREVI[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MESI[d.getMonth()];
+function formattaOre(ore){
+  const h = Math.floor(ore);
+  const m = Math.round((ore - h) * 60);
+  if(m === 0) return h + 'h';
+  return h + 'h ' + m + 'm';
 }
 
-function renderAgendaList(iso){
-  const evs = eventiDelGiorno(iso);
-  if(!evs.length) return '<div class="agenda-empty"><i>—</i>Nessun appuntamento in programma.</div>';
-  let html = '';
-  evs.forEach(e=>{
-    const c = colorOf(e.colore);
-    html += '<div class="agenda-item" onclick="apriDettaglio('+e.id+')">';
-    html += '<div class="agenda-bar" style="background:'+c.bar+'"></div>';
-    html += '<div class="agenda-time">'+e.inizio+'<br>'+e.fine+'</div>';
-    html += '<div class="agenda-info"><div class="agenda-info-title">'+e.titolo+'</div>';
-    html += '<div class="agenda-info-sub">'+(e.azienda||'Nessuna azienda')+'</div></div>';
-    html += '</div>';
-  });
-  return html;
+function apriSettimanaDaMese(iso){
+  dataCorrente = new Date(iso+'T00:00:00');
+  vistaCorrente = 'week';
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.toggle('active', t.dataset.view==='week'));
+  render();
 }
 
 function apriGiornoDaMese(iso){
@@ -710,7 +813,8 @@ function renderTimeView(modo){
   html += '</div><div class="days-scroll"><div class="days-row">';
   giorni.forEach(d=>{
     const iso = oggiISO(d);
-    html += '<div class="day-head '+(iso===OGGI_ISO?'today':'')+' '+(modo==='day'?'single':'')+'">';
+    const clickAttr = modo==='week' ? ' onclick="apriGiornoDaMese(\''+iso+'\')"' : '';
+    html += '<div class="day-head '+(iso===OGGI_ISO?'today':'')+' '+(modo==='day'?'single':'')+'"'+clickAttr+'>';
     html += '<div class="day-head-dow">'+GIORNI_BREVI[(d.getDay()+6)%7]+'</div>';
     html += '<div class="day-head-num">'+d.getDate()+'</div></div>';
   });
