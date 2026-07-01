@@ -765,6 +765,10 @@ function divaNotifica(evento, dettagli){
       <span style="font-size:28px;">🎤</span>
       <span style="text-align:left;"><div>Fattura Vocale</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Compila la fattura con la voce</div></span>
     </button>
+    <button id="home-btn-calendario" onclick="goCalendario()" style="width:100%;max-width:320px;background:linear-gradient(135deg,#ea580c,#fb923c);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(234,88,12,0.4);">
+      <span style="font-size:28px;">📅</span>
+      <span style="text-align:left;"><div>Il mio calendario</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Appuntamenti e fatture da agenda</div></span>
+    </button>
     <button id="home-btn-logout" onclick="doLogout()" style="margin-top:10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:8px;padding:10px 24px;font-size:13px;cursor:pointer;">⏻ Esci</button>
   </div>
 </div>
@@ -2325,6 +2329,19 @@ function goMieFatture(){
   const tk = encodeURIComponent(sessionStorage.getItem('enpals_auth') || '');
   const _cb = Date.now();
   window.open('https://abry-1954.github.io/Simulatore-enpals/gestione.html?modo=fatture&utente='+nome+'&_cu='+cu+'&_cp='+cp+'&_tk='+tk+'&_='+_cb, '_blank');
+}
+
+function goCalendario(){
+  const nome = encodeURIComponent(S.lav.nominativo || S.user || '');
+  if(!nome){ alert('Utente non identificato'); return; }
+  // Stesso meccanismo di goMieFatture: il token vive in sessionStorage
+  // con prefisso "tok:", va tolto prima di passarlo come Bearer.
+  const tokRaw = sessionStorage.getItem('enpals_auth') || '';
+  const tok = tokRaw.startsWith('tok:') ? tokRaw.slice(4) : '';
+  const ruolo = encodeURIComponent(sessionStorage.getItem('enpals_ruolo') || 'utente');
+  if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
+  const _cb = Date.now();
+  window.open('https://abry-1954.github.io/Simulatore-enpals/calendario_diva_prototipo.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
 }
 
 function doLogout(){

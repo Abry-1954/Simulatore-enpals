@@ -699,11 +699,62 @@
   }
 
   ::-webkit-scrollbar { display: none; }
+
+  /* ===== LOGIN ===== */
+  .login-screen {
+    position: fixed; inset: 0; z-index: 500;
+    background: linear-gradient(135deg, #4c1d95, #3730a3);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .login-box {
+    background: #fff; border-radius: 20px; padding: 32px 26px;
+    width: 100%; max-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  }
+  .login-title { font-size: 20px; font-weight: 800; color: #2e2a3d; text-align: center; margin-bottom: 4px; }
+  .login-sub { font-size: 12.5px; color: #8a8598; text-align: center; margin-bottom: 22px; }
+  .login-field { margin-bottom: 12px; }
+  .login-field label { display:block; font-size: 11px; font-weight: 700; color: #6b6678; text-transform: uppercase; margin-bottom: 4px; }
+  .login-field input {
+    width: 100%; padding: 11px 12px; border-radius: 10px;
+    border: 1.5px solid #e7e4ee; font-size: 14px; font-family: inherit;
+  }
+  .login-field input:focus { outline: none; border-color: #fb923c; }
+  .login-btn {
+    width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px;
+    border: none; background: linear-gradient(135deg, #fb923c, #ea580c);
+    color: #fff; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  .login-btn:disabled { opacity: .6; cursor: not-allowed; }
+  .login-error {
+    background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+    font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 8px;
+    margin-bottom: 12px; display: none;
+  }
+  .login-hint { font-size: 10.5px; color: #b0abbe; text-align: center; margin-top: 16px; line-height: 1.5; }
 </style>
 </head>
 <body>
 
-<div class="app">
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-title">📅 Il mio calendario</div>
+    <div class="login-sub">Accedi con le tue credenziali DIVA</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-field">
+      <label>Utente</label>
+      <input type="text" id="login-user" autocomplete="username" placeholder="nome utente" onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="password" onkeydown="if(event.key==='Enter') eseguiLogin()">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="eseguiLogin()">Accedi</button>
+    <div class="login-hint">Stesso login usato per il wizard fatture DIVA.<br>I tuoi appuntamenti sono visibili solo a te.</div>
+  </div>
+</div>
+
+<div class="app" id="app-root" style="display:none;">
 
   <div class="cal-header">
     <div class="cal-header-top">
@@ -848,15 +899,105 @@ function oggiISO(d){
 const OGGI = new Date();
 const OGGI_ISO = oggiISO(OGGI);
 
-let eventi = [
-  {id:1, titolo:'Doppiaggio ep. 4', azienda:'Lumax Production', data: OGGI_ISO, inizio:'09:00', fine:'11:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', turni:1, righe:28},
-  {id:2, titolo:'Prova turno', azienda:'Sound Farm 999', data: OGGI_ISO, inizio:'14:30', fine:'16:00', colore:'blu', note:'', tipoOpera:'', turni:'', righe:''},
-  {id:3, titolo:'Adattamento testo', azienda:'BB Dub', data: addDays(OGGI_ISO,1), inizio:'10:00', fine:'12:30', colore:'verde', note:'', tipoOpera:'', turni:'', righe:''},
-  {id:4, titolo:'Sessione registrazione', azienda:'3Cycle', data: addDays(OGGI_ISO,1), inizio:'15:00', fine:'17:00', colore:'viola', note:'', tipoOpera:'', turni:'', righe:''},
-  {id:5, titolo:'Direzione doppiaggio', azienda:'DEA5', data: addDays(OGGI_ISO,3), inizio:'09:30', fine:'13:00', colore:'rosa', note:'', tipoOpera:'', turni:'', righe:''},
-  {id:6, titolo:'Turno serale', azienda:'Lumax Production', data: addDays(OGGI_ISO,4), inizio:'18:00', fine:'20:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', turni:1, righe:15},
-  {id:7, titolo:'Riunione cast', azienda:'Sound Farm 999', data: addDays(OGGI_ISO,7), inizio:'11:00', fine:'12:00', colore:'blu', note:'Turno già lavorato — pronto per fattura', tipoOpera:'Film', turni:1, righe:42},
-];
+// ════════════════════════════════════════════════════════════
+// CONFIGURAZIONE API — server DIVA (stesso backend delle fatture)
+// ════════════════════════════════════════════════════════════
+const API_BASE = 'https://enpals-server.onrender.com';
+
+let AUTH = { token: null, nominativo: null, ruolo: null };
+
+async function apiFetch(path, opts={}, _retry=true){
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if(AUTH.token) headers['Authorization'] = 'Bearer '+AUTH.token;
+  let res;
+  try{
+    res = await fetch(API_BASE+path, Object.assign({}, opts, {headers}));
+  } catch(networkErr){
+    // Il server Render gratuito "dorme" dopo 15 min di inattività: il primo
+    // risveglio può richiedere fino a ~30 secondi e la prima richiesta va
+    // spesso in errore di rete. Un solo retry automatico dopo una pausa
+    // copre la stragrande maggioranza dei casi, senza dover duplicare la
+    // logica di retry che il wizard DIVA ha già per conto suo.
+    if(_retry){
+      await new Promise(r=>setTimeout(r, 4000));
+      return apiFetch(path, opts, false);
+    }
+    throw new Error('Server non raggiungibile (potrebbe essere in fase di risveglio, riprova tra qualche secondo).');
+  }
+  let body = null;
+  try{ body = await res.json(); } catch(e){}
+  if(!res.ok){
+    const msg = (body && body.error) ? body.error : ('Errore '+res.status);
+    throw new Error(msg);
+  }
+  return body;
+}
+
+/* Converte l'oggetto interno (usato da tutto il resto del codice, con
+   inizio/fine/tipoOpera) nel formato colonne del server (ora_inizio/
+   ora_fine/tipo_opera). Nessun'altra funzione del prototipo va toccata:
+   solo il livello che parla con l'API conosce questa differenza. */
+function toApiPayload(e){
+  return {
+    titolo: e.titolo,
+    azienda: e.azienda || null,
+    data: e.data,
+    ora_inizio: e.inizio,
+    ora_fine: e.fine,
+    colore: e.colore,
+    note: e.note || null,
+    tipo_opera: e.tipoOpera || null,
+    turni: (e.turni==='' || e.turni==null) ? null : Number(e.turni),
+    righe: (e.righe==='' || e.righe==null) ? null : Number(e.righe)
+  };
+}
+function fromApiRecord(r){
+  return {
+    id: r.id,
+    titolo: r.titolo,
+    azienda: r.azienda || '',
+    data: r.data,
+    inizio: (r.ora_inizio||'').slice(0,5),
+    fine: (r.ora_fine||'').slice(0,5),
+    colore: r.colore || 'arancio',
+    note: r.note || '',
+    tipoOpera: r.tipo_opera || '',
+    turni: (r.turni===null || r.turni===undefined) ? '' : r.turni,
+    righe: (r.righe===null || r.righe===undefined) ? '' : r.righe,
+    fatturaUrl: r.fattura_pdf_url || null
+  };
+}
+
+async function eseguiLogin(){
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  if(!user || !pass){ err.textContent = 'Inserisci utente e password.'; err.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = 'Accesso in corso…';
+  try{
+    const r = await apiFetch('/login', { method:'POST', body: JSON.stringify({username:user, password:pass}) });
+    if(!r.ok){ throw new Error(r.error || 'Credenziali non valide'); }
+    AUTH.token = r.token; AUTH.nominativo = user.toUpperCase(); AUTH.ruolo = r.ruolo;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-root').style.display = '';
+    await caricaEventi();
+  } catch(e){
+    err.textContent = e.message || 'Errore di accesso.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Accedi';
+  }
+}
+
+async function caricaEventi(){
+  const rows = await apiFetch('/agenda');
+  eventi = rows.map(fromApiRecord);
+  render();
+}
+
+let eventi = [];
 
 function addDays(iso, n){
   const d = new Date(iso+'T00:00:00');
@@ -1280,7 +1421,7 @@ function chiudiModale(){
   document.getElementById('modal-overlay').classList.remove('show');
 }
 
-function salvaEvento(){
+async function salvaEvento(){
   const titolo = document.getElementById('f-titolo').value.trim();
   if(!titolo){ alert("Inserisci un titolo per l'appuntamento."); return; }
   const colSel = document.querySelector('.color-dot.selected');
@@ -1300,15 +1441,21 @@ function salvaEvento(){
   };
   if(dati.fine <= dati.inizio){ alert("L'orario di fine deve essere dopo l'inizio."); return; }
 
-  if(eventoInModifica){
-    const e = eventi.find(x=>x.id===eventoInModifica);
-    Object.assign(e, dati);
-  } else {
-    dati.id = Math.max(0,...eventi.map(e=>e.id))+1;
-    eventi.push(dati);
+  const btnSalva = document.querySelector('#modal-overlay .btn-primary');
+  if(btnSalva){ btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio…'; }
+  try{
+    if(eventoInModifica){
+      await apiFetch('/agenda?id='+eventoInModifica, { method:'PATCH', body: JSON.stringify(toApiPayload(dati)) });
+    } else {
+      await apiFetch('/agenda', { method:'POST', body: JSON.stringify(toApiPayload(dati)) });
+    }
+    chiudiModale();
+    await caricaEventi();
+  } catch(e){
+    alert('Errore nel salvataggio: '+e.message);
+  } finally {
+    if(btnSalva){ btnSalva.disabled = false; btnSalva.textContent = 'Salva'; }
   }
-  chiudiModale();
-  render();
 }
 
 function aggiornaStatoGenera(){
@@ -1324,7 +1471,7 @@ function aggiornaStatoGenera(){
   if(hint) hint.style.display = pronto ? 'none' : 'block';
 }
 
-function generaFattura(){
+async function generaFattura(){
   if(!eventoInModifica) return;
   const e = eventi.find(x=>x.id===eventoInModifica);
   if(!e || !e.tipoOpera || e.turni==='' || e.righe===''){ return; }
@@ -1333,10 +1480,19 @@ function generaFattura(){
   // il motore di calcolo fatture esistente e lo salva su Supabase
   // Storage (bucket fatture-pdf), restituendo l'URL pubblico del file.
   // Per ora simuliamo il salvataggio con un PDF placeholder, per poter
-  // testare il flusso completo genera → salva → consulta.
-  e.fatturaUrl = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
-  alert('Fattura generata e salvata per "'+e.titolo+'" — '+e.tipoOpera+', '+e.turni+' '+(e.turni===1?'turno':'turni')+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(PDF placeholder — il collegamento al vero motore di calcolo e al bucket Supabase non è ancora fatto)');
-  document.getElementById('btn-visualizza').style.display = 'block';
+  // testare il flusso completo genera → salva → consulta. L'URL viene
+  // comunque scritto davvero sul record (fattura_pdf_url), così lo
+  // sfondo verde e questo pulsante restano corretti anche dopo un reload.
+  const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+  try{
+    await apiFetch('/agenda?id='+e.id, { method:'PATCH', body: JSON.stringify({ fattura_pdf_url: url }) });
+    e.fatturaUrl = url;
+    alert('Fattura generata e salvata per "'+e.titolo+'" — '+e.tipoOpera+', '+e.turni+' '+(e.turni===1?'turno':'turni')+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(PDF placeholder — il collegamento al vero motore di calcolo non è ancora fatto)');
+    document.getElementById('btn-visualizza').style.display = 'block';
+    render();
+  } catch(err){
+    alert('Errore nel salvataggio della fattura: '+err.message);
+  }
 }
 
 function visualizzaFatturaSalvata(){
@@ -1443,7 +1599,7 @@ function aggiornaCampiInline(id){
    dal fatto che si stia generando o meno una fattura in questo momento.
    Dopo il salvataggio la card passa allo stato "pronto" e la checkbox
    si spunta da sola, così il pulsante Genera fattura si può attivare. */
-function salvaCampiInline(id){
+async function salvaCampiInline(id){
   const selTipo = document.getElementById('tipo-'+id);
   const inpTurni = document.getElementById('turni-'+id);
   const inpRighe = document.getElementById('righe-'+id);
@@ -1452,11 +1608,18 @@ function salvaCampiInline(id){
   const righe = (inpRighe && inpRighe.value!=='') ? Number(inpRighe.value) : '';
   if(!tipoOpera || turni==='' || righe===''){ return; }
 
-  const e = eventi.find(x=>x.id===id);
-  if(e) Object.assign(e, { tipoOpera: tipoOpera, turni: turni, righe: righe });
-
-  apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese);
-  render();
+  const btnSalva = document.getElementById('salva-'+id);
+  if(btnSalva){ btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio…'; }
+  try{
+    await apiFetch('/agenda?id='+id, { method:'PATCH', body: JSON.stringify({ tipo_opera: tipoOpera, turni: turni, righe: righe }) });
+    const e = eventi.find(x=>x.id===id);
+    if(e) Object.assign(e, { tipoOpera: tipoOpera, turni: turni, righe: righe });
+    apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese);
+    render();
+  } catch(err){
+    alert('Errore nel salvataggio: '+err.message);
+    if(btnSalva){ btnSalva.disabled = false; btnSalva.textContent = 'Salva'; }
+  }
 }
 
 function aggiornaStatoSelezioneMulti(){
@@ -1482,7 +1645,7 @@ function aggiornaStatoSelezioneMulti(){
   btn.disabled = false;
 }
 
-function confermaGeneraFatturaMultipla(){
+async function confermaGeneraFatturaMultipla(){
   const checked = [...document.querySelectorAll('#multi-list input[type="checkbox"]:checked')];
   if(!checked.length) return;
 
@@ -1492,13 +1655,7 @@ function confermaGeneraFatturaMultipla(){
     const e = eventi.find(x=>x.id===id);
     const dati = leggiTipoRighe(id);
     if(!dati.tipoOpera || dati.turni==='' || dati.righe===''){ return null; }
-    // Se tipo opera/turni/righe sono stati completati ora nel pannello
-    // (non erano già sull'appuntamento), li salviamo sull'appuntamento
-    // stesso, così restano registrati anche fuori da questa fattura.
-    if(e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni)){
-      Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe });
-    }
-    recordIds.push(id);
+    recordIds.push({ id, dati, cambiato: e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni) });
     return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
   }).filter(Boolean);
 
@@ -1510,17 +1667,34 @@ function confermaGeneraFatturaMultipla(){
   // su Supabase Storage (bucket fatture-pdf). Per ora simuliamo il
   // salvataggio con un PDF placeholder per testare l'intero flusso.
   const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
-  fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = url;
-  // Marca ogni singolo appuntamento incluso come "fatturato": è quello
-  // che accende lo sfondo verde del nome azienda nella vista mensile.
-  recordIds.forEach(id=>{
-    const e = eventi.find(x=>x.id===id);
-    if(e) e.fatturaUrl = url;
-  });
+  const btnGenera = document.getElementById('btn-genera-multi');
+  if(btnGenera){ btnGenera.disabled = true; btnGenera.textContent = 'Generazione…'; }
 
-  alert('Fattura generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(PDF placeholder — il collegamento al vero motore di calcolo e al bucket Supabase non è ancora fatto)');
-  document.getElementById('btn-visualizza-multi').style.display = 'block';
-  render();
+  try{
+    // Salva su ciascun appuntamento incluso: eventuali tipo/turni/righe non
+    // ancora persistiti (rete di sicurezza, di norma già salvati dal
+    // pulsante "Salva" per riga) + l'URL della fattura appena generata —
+    // è quello che accende lo sfondo verde nella vista mensile.
+    await Promise.all(recordIds.map(({id, dati, cambiato})=>{
+      const payload = { fattura_pdf_url: url };
+      if(cambiato){ payload.tipo_opera = dati.tipoOpera; payload.turni = dati.turni; payload.righe = dati.righe; }
+      return apiFetch('/agenda?id='+id, { method:'PATCH', body: JSON.stringify(payload) });
+    }));
+
+    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = url;
+    recordIds.forEach(({id, dati})=>{
+      const e = eventi.find(x=>x.id===id);
+      if(e){ e.fatturaUrl = url; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
+    });
+
+    alert('Fattura generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(PDF placeholder — il collegamento al vero motore di calcolo non è ancora fatto)');
+    document.getElementById('btn-visualizza-multi').style.display = 'block';
+    render();
+  } catch(err){
+    alert('Errore nel salvataggio della fattura: '+err.message);
+  } finally {
+    if(btnGenera){ btnGenera.disabled = false; btnGenera.textContent = 'Genera fattura'; }
+  }
 }
 
 function visualizzaFatturaSalvataMulti(){
@@ -1529,14 +1703,54 @@ function visualizzaFatturaSalvataMulti(){
   window.open(url, '_blank');
 }
 
-function eliminaEvento(){
+async function eliminaEvento(){
   if(!eventoInModifica) return;
-  eventi = eventi.filter(e=>e.id!==eventoInModifica);
-  chiudiModale();
-  render();
+  if(!confirm('Eliminare questo appuntamento? L\'operazione non è recuperabile.')) return;
+  try{
+    await apiFetch('/agenda?id='+eventoInModifica, { method:'DELETE' });
+    chiudiModale();
+    await caricaEventi();
+  } catch(e){
+    alert('Errore nella eliminazione: '+e.message);
+  }
 }
 
-render();
+/* Punto di ingresso "integrato": se il calendario viene aperto dal
+   pulsante "Il mio calendario" nel wizard DIVA, il token e il nominativo
+   arrivano già pronti nell'URL (stesso meccanismo già usato per
+   "Le mie fatture" → gestione.html), quindi si salta il login qui.
+   Il form di login resta solo come fallback per aprire il file da solo,
+   ad esempio durante i test prima di collegare il bottone nel wizard. */
+async function avviaApp(){
+  const qs = new URLSearchParams(window.location.search);
+  const tokenUrl = qs.get('token');
+  const nominativoUrl = qs.get('nominativo');
+  const ruoloUrl = qs.get('ruolo');
+
+  if(tokenUrl && nominativoUrl){
+    AUTH.token = tokenUrl;
+    AUTH.nominativo = nominativoUrl.toUpperCase();
+    AUTH.ruolo = ruoloUrl || 'utente';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-root').style.display = '';
+    try{
+      await caricaEventi();
+    } catch(e){
+      // Token scaduto o non valido: non riproviamo un login qui dentro,
+      // rimandiamo l'utente al wizard dove il login (con i suoi retry)
+      // è già gestito correttamente.
+      alert('Sessione non valida o scaduta. Torna al wizard DIVA e riapri "Il mio calendario".');
+    }
+    return;
+  }
+
+  // Nessun token in URL: mostra il form di login manuale (solo per test diretti)
+  document.getElementById('login-screen').style.display = '';
+  document.getElementById('app-root').style.display = 'none';
+  document.getElementById('login-user').focus();
+}
+
+avviaApp();
 </script>
 
 </body>
