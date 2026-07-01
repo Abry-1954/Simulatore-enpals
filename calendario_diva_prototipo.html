@@ -185,7 +185,7 @@
     border-left: 1px solid #8fae93;
   }
   .month-day {
-    aspect-ratio: 1;
+    min-height: 68px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -196,6 +196,7 @@
     background: transparent;
     border-right: 1px solid #8fae93;
     border-bottom: 1px solid #8fae93;
+    overflow: hidden;
   }
   .month-day:active { background: rgba(255,255,255,0.35); }
   .month-day.other-month { opacity: 0.35; }
@@ -206,15 +207,32 @@
     color: #2e2a3d;
   }
   .month-day.today .month-day-num { color: #c2410c; font-weight: 700; }
-  .month-day-dots {
+  .month-day-labels {
     display: flex;
+    flex-direction: column;
     gap: 2px;
     margin-top: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 30px;
+    width: 100%;
+    padding: 0 3px;
+    overflow: hidden;
   }
-  .month-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .month-day-label {
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.25;
+    padding: 1.5px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+  .month-day-more {
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #6b6678;
+    text-align: center;
+  }
 
   /* ===== VISTA SETTIMANA / GIORNO — griglia oraria ===== */
   .time-view { display: flex; }
@@ -752,12 +770,19 @@ function renderMese(){
     const iso = oggiISO(d);
     const isOther = d.getMonth()!==mese;
     const isToday = iso===OGGI_ISO;
-    const evs = eventiDelGiorno(iso).slice(0,3);
+    const evsGiorno = eventiDelGiorno(iso);
+    const evs = evsGiorno.slice(0,2);
+    const altre = evsGiorno.length - evs.length;
     html += '<div class="month-day '+(isOther?'other-month ':'')+(isToday?'today':'')+'" onclick="apriSettimanaDaMese(\''+iso+'\')">';
     html += '<span class="month-day-num">'+d.getDate()+'</span>';
     if(evs.length){
-      html += '<div class="month-day-dots">';
-      evs.forEach(e=> html += '<span class="month-dot" style="background:'+colorOf(e.colore).bar+'"></span>');
+      html += '<div class="month-day-labels">';
+      evs.forEach(e=>{
+        const c = colorOf(e.colore);
+        const nome = e.azienda || e.titolo;
+        html += '<span class="month-day-label" style="background:'+c.bg+';color:'+c.text+'">'+nome+'</span>';
+      });
+      if(altre>0) html += '<span class="month-day-more">+'+altre+' altr'+(altre===1?'o':'i')+'</span>';
       html += '</div>';
     }
     html += '</div>';
