@@ -905,35 +905,49 @@ function render(){
   renderReminderBanner();
 }
 
-/* Banner semplificato: da domani a domenica (fine di questa settimana),
-   mostra quanti appuntamenti ci sono in totale e quanti tra questi non
-   hanno ancora tipo opera/turni/righe compilati — oggi è escluso perché
-   è ancora "in corso", non ha senso avvisare. */
+/* Banner: mostra gli appuntamenti della settimana ATTUALMENTE VISUALIZZATA
+   (segue la navigazione avanti/indietro), non sempre quella di oggi.
+   - Se la settimana visualizzata è quella corrente (di oggi): guarda da
+     domani a domenica, escludendo oggi che è ancora "in corso".
+   - Se è una settimana diversa (passata o futura): guarda l'intera
+     settimana, da lunedì a domenica. */
 function renderReminderBanner(){
   const el = document.getElementById('reminder-banner');
   if(!el) return;
 
-  const domani = new Date(OGGI); domani.setDate(domani.getDate()+1);
-  const fineSettimana = startOfWeek(OGGI); fineSettimana.setDate(fineSettimana.getDate()+6);
+  const inizioSettVista = startOfWeek(dataCorrente);
+  const fineSettVista = new Date(inizioSettVista); fineSettVista.setDate(fineSettVista.getDate()+6);
+  const inizioSettOggi = startOfWeek(OGGI);
+  const stessaSettimanaDiOggi = oggiISO(inizioSettVista)===oggiISO(inizioSettOggi);
 
-  const isoDomani = oggiISO(domani);
-  const isoFine = oggiISO(fineSettimana);
+  let isoInizio, isoFine, periodo;
+  if(stessaSettimanaDiOggi){
+    const domani = new Date(OGGI); domani.setDate(domani.getDate()+1);
+    isoInizio = oggiISO(domani);
+    isoFine = oggiISO(fineSettVista);
+    periodo = 'da domani a domenica';
+  } else {
+    isoInizio = oggiISO(inizioSettVista);
+    isoFine = oggiISO(fineSettVista);
+    periodo = 'da lunedì a domenica';
+  }
 
-  const evs = eventi.filter(e => e.data >= isoDomani && e.data <= isoFine);
+  const evs = eventi.filter(e => e.data >= isoInizio && e.data <= isoFine);
   const tot = evs.length;
   const incompleti = evs.filter(e => !e.tipoOpera || e.turni==='' || e.righe==='').length;
+  const isoTarget = isoInizio <= isoFine ? isoInizio : oggiISO(inizioSettVista);
 
   if(tot===0){
-    el.innerHTML = '<div class="reminder-item reminder-ok">✓ Nessun appuntamento da domani a domenica</div>';
+    el.innerHTML = '<div class="reminder-item reminder-ok">✓ Nessun appuntamento '+periodo+'</div>';
     return;
   }
   if(incompleti===0){
-    el.innerHTML = '<div class="reminder-item reminder-ok" style="cursor:pointer" onclick="vaiASettimana(\''+OGGI_ISO+'\')">✓ '
-      + tot+' appuntament'+(tot===1?'o':'i')+' da domani a domenica, tutti pronti per la fatturazione</div>';
+    el.innerHTML = '<div class="reminder-item reminder-ok" style="cursor:pointer" onclick="vaiASettimana(\''+isoTarget+'\')">✓ '
+      + tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+', tutti pronti per la fatturazione</div>';
     return;
   }
-  el.innerHTML = '<div class="reminder-item reminder-attenzione" onclick="vaiASettimana(\''+OGGI_ISO+'\')">'
-    + '<span class="reminder-warn">⚠ '+tot+' appuntament'+(tot===1?'o':'i')+' da domani a domenica, '
+  el.innerHTML = '<div class="reminder-item reminder-attenzione" onclick="vaiASettimana(\''+isoTarget+'\')">'
+    + '<span class="reminder-warn">⚠ '+tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+', '
     + incompleti+' dei quali con dati incompleti per la fatturazione</span>'
     + '</div>';
 }
