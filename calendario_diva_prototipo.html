@@ -370,13 +370,35 @@
   .riepilogo-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.1rem; }
   .riepilogo-row {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
     background: #fff;
     border: 1px solid #ece9f3;
     border-radius: 12px;
     padding: 10px 12px;
   }
+  .riepilogo-row-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .riepilogo-row-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f1eff6;
+  }
+  .riepilogo-genera-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+  }
+  .riepilogo-genera-btn:active { opacity: 0.85; }
   .riepilogo-bar { width: 4px; align-self: stretch; border-radius: 3px; flex-shrink: 0; }
   .riepilogo-nome {
     flex: 1;
@@ -554,6 +576,41 @@
     margin-top: 4px;
   }
 
+  /* ===== PANNELLO SELEZIONE MULTIPLA — FATTURA DA PIÙ APPUNTAMENTI ===== */
+  .multi-list { display: flex; flex-direction: column; gap: 8px; margin: 1rem 0; }
+  .multi-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border: 1.5px solid #e7e4ee;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #faf9fc;
+  }
+  .multi-item.pronto { border-color: #a7f3d0; background: #f0fdf4; }
+  .multi-item.incompleto { opacity: 0.6; }
+  .multi-item input[type="checkbox"] {
+    width: 18px; height: 18px;
+    margin-top: 2px;
+    accent-color: #059669;
+    flex-shrink: 0;
+  }
+  .multi-item-body { flex: 1; min-width: 0; }
+  .multi-item-data { font-size: 13px; font-weight: 700; color: #2e2a3d; }
+  .multi-item-titolo { font-size: 12px; color: #6b6678; margin-top: 1px; }
+  .multi-item-dettaglio { font-size: 11.5px; color: #059669; font-weight: 600; margin-top: 3px; }
+  .multi-item-warn { font-size: 11.5px; color: #c2410c; font-weight: 600; margin-top: 3px; }
+  .multi-summary {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #9a5b2e;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
   ::-webkit-scrollbar { display: none; }
 </style>
 </head>
@@ -667,6 +724,19 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-overlay-multi">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title-multi">Genera fattura</div>
+    <div id="multi-summary" class="multi-summary"></div>
+    <div id="multi-list" class="multi-list"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="chiudiModaleMulti()">Annulla</button>
+      <button class="btn-generate" id="btn-genera-multi" onclick="confermaGeneraFatturaMultipla()" disabled>Genera fattura</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const COLORI = [
   {id:'arancio', bg:'#fff7ed', bar:'#f97316', text:'#9a3412'},
@@ -683,12 +753,12 @@ const OGGI = new Date();
 const OGGI_ISO = oggiISO(OGGI);
 
 let eventi = [
-  {id:1, titolo:'Doppiaggio ep. 4', azienda:'Lumax Production', data: OGGI_ISO, inizio:'09:00', fine:'11:00', colore:'arancio', note:'', tipoOpera:'', righe:''},
+  {id:1, titolo:'Doppiaggio ep. 4', azienda:'Lumax Production', data: OGGI_ISO, inizio:'09:00', fine:'11:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', righe:28},
   {id:2, titolo:'Prova turno', azienda:'Sound Farm 999', data: OGGI_ISO, inizio:'14:30', fine:'16:00', colore:'blu', note:'', tipoOpera:'', righe:''},
   {id:3, titolo:'Adattamento testo', azienda:'BB Dub', data: addDays(OGGI_ISO,1), inizio:'10:00', fine:'12:30', colore:'verde', note:'', tipoOpera:'', righe:''},
   {id:4, titolo:'Sessione registrazione', azienda:'3Cycle', data: addDays(OGGI_ISO,1), inizio:'15:00', fine:'17:00', colore:'viola', note:'', tipoOpera:'', righe:''},
   {id:5, titolo:'Direzione doppiaggio', azienda:'DEA5', data: addDays(OGGI_ISO,3), inizio:'09:30', fine:'13:00', colore:'rosa', note:'', tipoOpera:'', righe:''},
-  {id:6, titolo:'Turno serale', azienda:'Lumax Production', data: addDays(OGGI_ISO,4), inizio:'18:00', fine:'20:00', colore:'arancio', note:'', tipoOpera:'', righe:''},
+  {id:6, titolo:'Turno serale', azienda:'Lumax Production', data: addDays(OGGI_ISO,4), inizio:'18:00', fine:'20:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', righe:15},
   {id:7, titolo:'Riunione cast', azienda:'Sound Farm 999', data: addDays(OGGI_ISO,7), inizio:'11:00', fine:'12:00', colore:'blu', note:'Turno già lavorato — pronto per fattura', tipoOpera:'Film', righe:42},
 ];
 
@@ -838,11 +908,18 @@ function renderRiepilogoMese(anno, mese){
     const v = perAzienda[nome];
     const c = colorOf(v.colore);
     html += '<div class="riepilogo-row">';
+    html += '<div class="riepilogo-row-top">';
     html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
     html += '<div class="riepilogo-nome">'+nome+'</div>';
     html += '<div class="riepilogo-stat">'+v.turni+' '+(v.turni===1?'turno':'turni')+'</div>';
     html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
     html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
+    html += '</div>';
+    if(nome!=='Senza azienda'){
+      html += '<div class="riepilogo-row-actions">';
+      html += '<button class="riepilogo-genera-btn" onclick="apriSelezioneFattura(\''+nome.replace(/'/g,"\\'")+'\', '+anno+', '+mese+')">🧾 Genera fattura</button>';
+      html += '</div>';
+    }
     html += '</div>';
   });
   html += '</div>';
@@ -1084,6 +1161,83 @@ function generaFattura(){
   // dell'appuntamento + profilo utente da Supabase, genera il PDF con
   // il motore di calcolo fatture esistente e lo salva su fatture-pdf.
   alert('Genererebbe la fattura per "'+e.titolo+'" — '+e.tipoOpera+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(Funzione non ancora collegata al server)');
+}
+
+/* ===== FATTURA DA PIÙ APPUNTAMENTI — STESSA AZIENDA, STESSO MESE ===== */
+let selezioneMulti = { azienda: '', anno: 0, mese: 0 };
+
+function formattaDataBreve(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.getDate()+' '+MESI[d.getMonth()].slice(0,3);
+}
+
+function apriSelezioneFattura(nome, anno, mese){
+  selezioneMulti = { azienda: nome, anno: anno, mese: mese };
+  document.getElementById('modal-title-multi').textContent = 'Genera fattura — '+nome;
+
+  const evs = eventi.filter(e=>{
+    const d = new Date(e.data+'T00:00:00');
+    return (e.azienda||'')===nome && d.getFullYear()===anno && d.getMonth()===mese;
+  }).sort((a,b)=> a.data.localeCompare(b.data) || a.inizio.localeCompare(b.inizio));
+
+  let html = '';
+  evs.forEach(e=>{
+    const pronto = !!e.tipoOpera && e.righe!=='';
+    html += '<label class="multi-item '+(pronto?'pronto':'incompleto')+'">';
+    html += '<input type="checkbox" data-id="'+e.id+'" '+(pronto?'checked':'disabled')+' onchange="aggiornaStatoSelezioneMulti()">';
+    html += '<div class="multi-item-body">';
+    html += '<div class="multi-item-data">'+formattaDataBreve(e.data)+'</div>';
+    html += '<div class="multi-item-titolo">'+e.titolo+'</div>';
+    if(pronto) html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.righe+' righe</div>';
+    else html += '<div class="multi-item-warn">Manca tipo opera e/o righe — completa l\'appuntamento per includerlo</div>';
+    html += '</div></label>';
+  });
+  document.getElementById('multi-list').innerHTML = html || '<div class="agenda-empty"><i>—</i>Nessun appuntamento trovato.</div>';
+
+  aggiornaStatoSelezioneMulti();
+  document.getElementById('modal-overlay-multi').classList.add('show');
+}
+
+function chiudiModaleMulti(){
+  document.getElementById('modal-overlay-multi').classList.remove('show');
+}
+
+function aggiornaStatoSelezioneMulti(){
+  const checked = [...document.querySelectorAll('#multi-list input[type="checkbox"]:checked')];
+  const btn = document.getElementById('btn-genera-multi');
+  const summary = document.getElementById('multi-summary');
+
+  if(!checked.length){
+    summary.textContent = 'Seleziona almeno un appuntamento pronto (tipo opera + righe compilati).';
+    btn.classList.remove('attivo');
+    btn.disabled = true;
+    return;
+  }
+
+  let righeTot = 0;
+  checked.forEach(cb=>{
+    const e = eventi.find(x=>x.id===Number(cb.dataset.id));
+    if(e) righeTot += (typeof e.righe==='number' ? e.righe : 0);
+  });
+  summary.textContent = checked.length+' record selezionat'+(checked.length===1?'o':'i')+' · '+righeTot+' righe totali · azienda '+selezioneMulti.azienda;
+  btn.classList.add('attivo');
+  btn.disabled = false;
+}
+
+function confermaGeneraFatturaMultipla(){
+  const checked = [...document.querySelectorAll('#multi-list input[type="checkbox"]:checked')];
+  if(!checked.length) return;
+
+  const records = checked.map(cb=>{
+    const e = eventi.find(x=>x.id===Number(cb.dataset.id));
+    return e.data+' — '+e.titolo+' ('+e.tipoOpera+', '+e.righe+' righe)';
+  });
+
+  // TODO: qui andrà la vera chiamata al server — un'unica fattura con
+  // record r01, r02... (uno per appuntamento selezionato), stessa
+  // azienda in testata, stesso motore di calcolo già esistente.
+  alert('Genererebbe UNA fattura per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(Funzione non ancora collegata al server)');
+  chiudiModaleMulti();
 }
 
 function eliminaEvento(){
