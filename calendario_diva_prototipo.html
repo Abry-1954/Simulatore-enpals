@@ -1404,7 +1404,7 @@ function confermaGeneraFatturaMultipla(){
   fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = url;
 
   alert('Fattura generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(PDF placeholder — il collegamento al vero motore di calcolo e al bucket Supabase non è ancora fatto)');
-  chiudiModaleMulti();
+  document.getElementById('btn-visualizza-multi').style.display = 'block';
   render();
 }
 
