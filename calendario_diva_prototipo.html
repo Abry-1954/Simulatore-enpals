@@ -600,6 +600,19 @@
   .multi-item-titolo { font-size: 12px; color: #6b6678; margin-top: 1px; }
   .multi-item-dettaglio { font-size: 11.5px; color: #059669; font-weight: 600; margin-top: 3px; }
   .multi-item-warn { font-size: 11.5px; color: #c2410c; font-weight: 600; margin-top: 3px; }
+  .multi-item-inline { display: flex; gap: 6px; margin-top: 6px; }
+  .multi-inline-select, .multi-inline-input {
+    font-size: 12px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    border: 1.5px solid #fed7aa;
+    background: #fff;
+    color: #2e2a3d;
+    font-family: inherit;
+  }
+  .multi-inline-select { flex: 1.4; min-width: 0; }
+  .multi-inline-input { flex: 1; min-width: 0; }
+  .multi-inline-select:focus, .multi-inline-input:focus { outline: none; border-color: #f97316; }
   .multi-summary {
     background: #fff7ed;
     border: 1px solid #fed7aa;
@@ -1165,10 +1178,17 @@ function generaFattura(){
 
 /* ===== FATTURA DA PIÙ APPUNTAMENTI — STESSA AZIENDA, STESSO MESE ===== */
 let selezioneMulti = { azienda: '', anno: 0, mese: 0 };
+const TIPI_OPERA = ['Film','Soap','Telefilm','Cartoni','TvMovie','Doc','Doc No Sync'];
 
 function formattaDataBreve(iso){
   const d = new Date(iso+'T00:00:00');
   return d.getDate()+' '+MESI[d.getMonth()].slice(0,3);
+}
+
+function opzioniTipoOperaHtml(){
+  let h = '<option value="">Tipo opera…</option>';
+  TIPI_OPERA.forEach(t=> h += '<option value="'+t+'">'+t+'</option>');
+  return h;
 }
 
 function apriSelezioneFattura(nome, anno, mese){
@@ -1183,14 +1203,21 @@ function apriSelezioneFattura(nome, anno, mese){
   let html = '';
   evs.forEach(e=>{
     const pronto = !!e.tipoOpera && e.righe!=='';
-    html += '<label class="multi-item '+(pronto?'pronto':'incompleto')+'">';
+    html += '<div class="multi-item '+(pronto?'pronto':'incompleto')+'" id="multi-item-'+e.id+'">';
     html += '<input type="checkbox" data-id="'+e.id+'" '+(pronto?'checked':'disabled')+' onchange="aggiornaStatoSelezioneMulti()">';
     html += '<div class="multi-item-body">';
     html += '<div class="multi-item-data">'+formattaDataBreve(e.data)+'</div>';
     html += '<div class="multi-item-titolo">'+e.titolo+'</div>';
-    if(pronto) html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.righe+' righe</div>';
-    else html += '<div class="multi-item-warn">Manca tipo opera e/o righe — completa l\'appuntamento per includerlo</div>';
-    html += '</div></label>';
+    if(pronto){
+      html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.righe+' righe</div>';
+    } else {
+      html += '<div class="multi-item-warn">Obbligatorio per emettere: completa tipo opera e righe</div>';
+      html += '<div class="multi-item-inline">';
+      html += '<select class="multi-inline-select" id="tipo-'+e.id+'" onchange="aggiornaCampiInline('+e.id+')">'+opzioniTipoOperaHtml()+'</select>';
+      html += '<input type="number" class="multi-inline-input" id="righe-'+e.id+'" placeholder="Righe" min="0" step="1" oninput="aggiornaCampiInline('+e.id+')">';
+      html += '</div>';
+    }
+    html += '</div></div>';
   });
   document.getElementById('multi-list').innerHTML = html || '<div class="agenda-empty"><i>—</i>Nessun appuntamento trovato.</div>';
 
@@ -1202,13 +1229,40 @@ function chiudiModaleMulti(){
   document.getElementById('modal-overlay-multi').classList.remove('show');
 }
 
+/* Legge tipo opera + righe di un appuntamento: dal dato già salvato se
+   completo, altrimenti dai campi inline compilati lì per lì in sede
+   di emissione (non ancora salvati sull'appuntamento). */
+function leggiTipoRighe(id){
+  const e = eventi.find(x=>x.id===id);
+  if(e && e.tipoOpera && e.righe!=='') return { tipoOpera: e.tipoOpera, righe: e.righe };
+  const selTipo = document.getElementById('tipo-'+id);
+  const inpRighe = document.getElementById('righe-'+id);
+  const tipoOpera = selTipo ? selTipo.value : '';
+  const righeVal = inpRighe ? inpRighe.value : '';
+  return { tipoOpera: tipoOpera, righe: righeVal==='' ? '' : Number(righeVal) };
+}
+
+function aggiornaCampiInline(id){
+  const dati = leggiTipoRighe(id);
+  const completo = !!dati.tipoOpera && dati.righe!=='';
+  const item = document.getElementById('multi-item-'+id);
+  const cb = item ? item.querySelector('input[type="checkbox"]') : null;
+  if(item) item.classList.toggle('pronto', completo);
+  if(item) item.classList.toggle('incompleto', !completo);
+  if(cb){
+    cb.disabled = !completo;
+    cb.checked = completo;
+  }
+  aggiornaStatoSelezioneMulti();
+}
+
 function aggiornaStatoSelezioneMulti(){
   const checked = [...document.querySelectorAll('#multi-list input[type="checkbox"]:checked')];
   const btn = document.getElementById('btn-genera-multi');
   const summary = document.getElementById('multi-summary');
 
   if(!checked.length){
-    summary.textContent = 'Seleziona almeno un appuntamento pronto (tipo opera + righe compilati).';
+    summary.textContent = 'Seleziona almeno un appuntamento con tipo opera e righe compilati.';
     btn.classList.remove('attivo');
     btn.disabled = true;
     return;
@@ -1216,8 +1270,8 @@ function aggiornaStatoSelezioneMulti(){
 
   let righeTot = 0;
   checked.forEach(cb=>{
-    const e = eventi.find(x=>x.id===Number(cb.dataset.id));
-    if(e) righeTot += (typeof e.righe==='number' ? e.righe : 0);
+    const dati = leggiTipoRighe(Number(cb.dataset.id));
+    righeTot += (typeof dati.righe==='number' ? dati.righe : 0);
   });
   summary.textContent = checked.length+' record selezionat'+(checked.length===1?'o':'i')+' · '+righeTot+' righe totali · azienda '+selezioneMulti.azienda;
   btn.classList.add('attivo');
@@ -1229,15 +1283,27 @@ function confermaGeneraFatturaMultipla(){
   if(!checked.length) return;
 
   const records = checked.map(cb=>{
-    const e = eventi.find(x=>x.id===Number(cb.dataset.id));
-    return e.data+' — '+e.titolo+' ('+e.tipoOpera+', '+e.righe+' righe)';
-  });
+    const id = Number(cb.dataset.id);
+    const e = eventi.find(x=>x.id===id);
+    const dati = leggiTipoRighe(id);
+    if(!dati.tipoOpera || dati.righe===''){ return null; }
+    // Se tipo opera/righe sono stati completati ora nel pannello (non
+    // erano già sull'appuntamento), li salviamo sull'appuntamento
+    // stesso, così restano registrati anche fuori da questa fattura.
+    if(e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe)){
+      Object.assign(e, { tipoOpera: dati.tipoOpera, righe: dati.righe });
+    }
+    return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.righe+' righe)';
+  }).filter(Boolean);
+
+  if(!records.length){ alert('Completa tipo opera e righe per almeno un appuntamento selezionato.'); return; }
 
   // TODO: qui andrà la vera chiamata al server — un'unica fattura con
   // record r01, r02... (uno per appuntamento selezionato), stessa
   // azienda in testata, stesso motore di calcolo già esistente.
   alert('Genererebbe UNA fattura per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(Funzione non ancora collegata al server)');
   chiudiModaleMulti();
+  render();
 }
 
 function eliminaEvento(){
