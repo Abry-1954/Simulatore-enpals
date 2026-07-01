@@ -570,6 +570,19 @@
     color: #fff;
   }
   .btn-generate.attivo:active { opacity: 0.85; }
+  .btn-view-invoice {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1.5px solid #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-view-invoice:active { opacity: 0.85; }
   .field-hint {
     font-size: 11px;
     color: #9b96a8;
@@ -726,7 +739,7 @@
 
     <div class="field-row">
       <div class="field-group">
-        <label class="field-label">Tipo opera <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
+        <label class="field-label">Tipo opera</label>
         <select class="field-select" id="f-tipo-opera" onchange="aggiornaStatoGenera()">
           <option value="">— non ancora noto —</option>
           <option value="Film">Film</option>
@@ -739,13 +752,13 @@
         </select>
       </div>
       <div class="field-group">
-        <label class="field-label">Turni <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
+        <label class="field-label">Turni</label>
         <input type="number" class="field-input" id="f-turni" placeholder="Es. 1" min="1" step="1" oninput="aggiornaStatoGenera()">
       </div>
     </div>
 
     <div class="field-group">
-      <label class="field-label">Righe <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
+      <label class="field-label">Righe</label>
       <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
     </div>
 
@@ -760,7 +773,8 @@
     </div>
     <button class="btn-delete" id="btn-elimina" style="display:none" onclick="eliminaEvento()">Elimina appuntamento</button>
     <button class="btn-generate" id="btn-genera" style="display:none" onclick="generaFattura()" disabled>Genera fattura da questo appuntamento</button>
-    <div class="field-hint" id="genera-hint" style="display:none">Compila tipo opera e righe per attivare la generazione.</div>
+    <button class="btn-view-invoice" id="btn-visualizza" style="display:none" onclick="visualizzaFatturaSalvata()">📄 Visualizza fattura salvata</button>
+    <div class="field-hint" id="genera-hint" style="display:none">Compila tipo opera, turni e righe per attivare la generazione.</div>
   </div>
 </div>
 
@@ -774,6 +788,7 @@
       <button class="btn-secondary" onclick="chiudiModaleMulti()">Annulla</button>
       <button class="btn-generate" id="btn-genera-multi" onclick="confermaGeneraFatturaMultipla()" disabled>Genera fattura</button>
     </div>
+    <button class="btn-view-invoice" id="btn-visualizza-multi" style="display:none" onclick="visualizzaFatturaSalvataMulti()">📄 Visualizza fattura salvata</button>
   </div>
 </div>
 
@@ -1105,6 +1120,7 @@ function apriModaleNuovo(){
   document.getElementById('f-righe').value = '';
   document.getElementById('btn-elimina').style.display = 'none';
   document.getElementById('btn-genera').style.display = 'none';
+  document.getElementById('btn-visualizza').style.display = 'none';
   document.getElementById('genera-hint').style.display = 'none';
   buildColorPicker('arancio');
   document.getElementById('modal-overlay').classList.add('show');
@@ -1124,6 +1140,7 @@ function apriModaleSuSlot(iso, ora){
   document.getElementById('f-righe').value = '';
   document.getElementById('btn-elimina').style.display = 'none';
   document.getElementById('btn-genera').style.display = 'none';
+  document.getElementById('btn-visualizza').style.display = 'none';
   document.getElementById('genera-hint').style.display = 'none';
   buildColorPicker('arancio');
   document.getElementById('modal-overlay').classList.add('show');
@@ -1145,6 +1162,7 @@ function apriDettaglio(id){
   document.getElementById('f-righe').value = (e.righe===0 || e.righe) ? e.righe : '';
   document.getElementById('btn-elimina').style.display = 'block';
   document.getElementById('btn-genera').style.display = 'block';
+  document.getElementById('btn-visualizza').style.display = e.fatturaUrl ? 'block' : 'none';
   document.getElementById('genera-hint').style.display = 'block';
   buildColorPicker(e.colore);
   document.getElementById('modal-overlay').classList.add('show');
@@ -1205,12 +1223,29 @@ function generaFattura(){
   if(!e || !e.tipoOpera || e.turni==='' || e.righe===''){ return; }
   // TODO: qui andrà la vera chiamata al server — raccoglie i dati
   // dell'appuntamento + profilo utente da Supabase, genera il PDF con
-  // il motore di calcolo fatture esistente e lo salva su fatture-pdf.
-  alert('Genererebbe la fattura per "'+e.titolo+'" — '+e.tipoOpera+', '+e.turni+' '+(e.turni===1?'turno':'turni')+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(Funzione non ancora collegata al server)');
+  // il motore di calcolo fatture esistente e lo salva su Supabase
+  // Storage (bucket fatture-pdf), restituendo l'URL pubblico del file.
+  // Per ora simuliamo il salvataggio con un PDF placeholder, per poter
+  // testare il flusso completo genera → salva → consulta.
+  e.fatturaUrl = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+  alert('Fattura generata e salvata per "'+e.titolo+'" — '+e.tipoOpera+', '+e.turni+' '+(e.turni===1?'turno':'turni')+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(PDF placeholder — il collegamento al vero motore di calcolo e al bucket Supabase non è ancora fatto)');
+  document.getElementById('btn-visualizza').style.display = 'block';
+}
+
+function visualizzaFatturaSalvata(){
+  if(!eventoInModifica) return;
+  const e = eventi.find(x=>x.id===eventoInModifica);
+  if(!e || !e.fatturaUrl) return;
+  window.open(e.fatturaUrl, '_blank');
 }
 
 /* ===== FATTURA DA PIÙ APPUNTAMENTI — STESSA AZIENDA, STESSO MESE ===== */
 let selezioneMulti = { azienda: '', anno: 0, mese: 0 };
+// Registro delle fatture "salvate" (simulato): chiave azienda|anno|mese -> URL PDF.
+// In produzione questa informazione arriverà da Supabase (tabella fatture),
+// non da uno stato locale in memoria come qui nel prototipo.
+let fattureSalvate = {};
+function chiaveFattura(nome, anno, mese){ return nome+'|'+anno+'|'+mese; }
 const TIPI_OPERA = ['Film','Soap','Telefilm','Cartoni','TvMovie','Doc','Doc No Sync'];
 
 function formattaDataBreve(iso){
@@ -1255,6 +1290,9 @@ function apriSelezioneFattura(nome, anno, mese){
     html += '</div></div>';
   });
   document.getElementById('multi-list').innerHTML = html || '<div class="agenda-empty"><i>—</i>Nessun appuntamento trovato.</div>';
+
+  const salvata = fattureSalvate[chiaveFattura(nome, anno, mese)];
+  document.getElementById('btn-visualizza-multi').style.display = salvata ? 'block' : 'none';
 
   aggiornaStatoSelezioneMulti();
   document.getElementById('modal-overlay-multi').classList.add('show');
@@ -1355,14 +1393,25 @@ function confermaGeneraFatturaMultipla(){
     return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
   }).filter(Boolean);
 
-  if(!records.length){ alert('Completa tipo opera e righe per almeno un appuntamento selezionato.'); return; }
+  if(!records.length){ alert('Completa tipo opera, turni e righe per almeno un appuntamento selezionato.'); return; }
 
   // TODO: qui andrà la vera chiamata al server — un'unica fattura con
   // record r01, r02... (uno per appuntamento selezionato), stessa
-  // azienda in testata, stesso motore di calcolo già esistente.
-  alert('Genererebbe UNA fattura per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(Funzione non ancora collegata al server)');
+  // azienda in testata, stesso motore di calcolo già esistente, salvata
+  // su Supabase Storage (bucket fatture-pdf). Per ora simuliamo il
+  // salvataggio con un PDF placeholder per testare l'intero flusso.
+  const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+  fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = url;
+
+  alert('Fattura generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(PDF placeholder — il collegamento al vero motore di calcolo e al bucket Supabase non è ancora fatto)');
   chiudiModaleMulti();
   render();
+}
+
+function visualizzaFatturaSalvataMulti(){
+  const url = fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)];
+  if(!url) return;
+  window.open(url, '_blank');
 }
 
 function eliminaEvento(){
