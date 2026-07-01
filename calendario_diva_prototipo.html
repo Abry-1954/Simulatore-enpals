@@ -604,22 +604,25 @@
   .multi-inline-select, .multi-inline-input {
     font-size: 13px;
     font-weight: 600;
-    padding: 8px 9px;
+    padding: 8px 6px;
     border-radius: 8px;
     border: 2px solid #c2410c;
     background: #fff;
     color: #1a1725;
     font-family: inherit;
+    text-align: center;
   }
-  .multi-inline-select { flex: 1.4; min-width: 0; }
+  .multi-inline-select { flex: 1.6; min-width: 0; text-align: left; }
   .multi-inline-input { flex: 1; min-width: 0; }
+  .multi-inline-turni { flex: 0.8; }
   .multi-inline-select:focus, .multi-inline-input:focus { outline: none; border-color: #9a3412; box-shadow: 0 0 0 2px rgba(194,65,12,0.15); }
   .multi-inline-input::placeholder { color: #8a8598; font-weight: 500; }
   .multi-inline-save {
-    flex: 0 0 auto;
+    width: 100%;
+    margin-top: 6px;
     font-size: 12px;
     font-weight: 700;
-    padding: 7px 12px;
+    padding: 8px 12px;
     border-radius: 8px;
     border: none;
     cursor: pointer;
@@ -736,9 +739,14 @@
         </select>
       </div>
       <div class="field-group">
-        <label class="field-label">Righe <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
-        <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
+        <label class="field-label">Turni <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
+        <input type="number" class="field-input" id="f-turni" placeholder="Es. 1" min="1" step="1" oninput="aggiornaStatoGenera()">
       </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Righe <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
+      <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
     </div>
 
     <div class="field-group">
@@ -785,13 +793,13 @@ const OGGI = new Date();
 const OGGI_ISO = oggiISO(OGGI);
 
 let eventi = [
-  {id:1, titolo:'Doppiaggio ep. 4', azienda:'Lumax Production', data: OGGI_ISO, inizio:'09:00', fine:'11:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', righe:28},
-  {id:2, titolo:'Prova turno', azienda:'Sound Farm 999', data: OGGI_ISO, inizio:'14:30', fine:'16:00', colore:'blu', note:'', tipoOpera:'', righe:''},
-  {id:3, titolo:'Adattamento testo', azienda:'BB Dub', data: addDays(OGGI_ISO,1), inizio:'10:00', fine:'12:30', colore:'verde', note:'', tipoOpera:'', righe:''},
-  {id:4, titolo:'Sessione registrazione', azienda:'3Cycle', data: addDays(OGGI_ISO,1), inizio:'15:00', fine:'17:00', colore:'viola', note:'', tipoOpera:'', righe:''},
-  {id:5, titolo:'Direzione doppiaggio', azienda:'DEA5', data: addDays(OGGI_ISO,3), inizio:'09:30', fine:'13:00', colore:'rosa', note:'', tipoOpera:'', righe:''},
-  {id:6, titolo:'Turno serale', azienda:'Lumax Production', data: addDays(OGGI_ISO,4), inizio:'18:00', fine:'20:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', righe:15},
-  {id:7, titolo:'Riunione cast', azienda:'Sound Farm 999', data: addDays(OGGI_ISO,7), inizio:'11:00', fine:'12:00', colore:'blu', note:'Turno già lavorato — pronto per fattura', tipoOpera:'Film', righe:42},
+  {id:1, titolo:'Doppiaggio ep. 4', azienda:'Lumax Production', data: OGGI_ISO, inizio:'09:00', fine:'11:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', turni:1, righe:28},
+  {id:2, titolo:'Prova turno', azienda:'Sound Farm 999', data: OGGI_ISO, inizio:'14:30', fine:'16:00', colore:'blu', note:'', tipoOpera:'', turni:'', righe:''},
+  {id:3, titolo:'Adattamento testo', azienda:'BB Dub', data: addDays(OGGI_ISO,1), inizio:'10:00', fine:'12:30', colore:'verde', note:'', tipoOpera:'', turni:'', righe:''},
+  {id:4, titolo:'Sessione registrazione', azienda:'3Cycle', data: addDays(OGGI_ISO,1), inizio:'15:00', fine:'17:00', colore:'viola', note:'', tipoOpera:'', turni:'', righe:''},
+  {id:5, titolo:'Direzione doppiaggio', azienda:'DEA5', data: addDays(OGGI_ISO,3), inizio:'09:30', fine:'13:00', colore:'rosa', note:'', tipoOpera:'', turni:'', righe:''},
+  {id:6, titolo:'Turno serale', azienda:'Lumax Production', data: addDays(OGGI_ISO,4), inizio:'18:00', fine:'20:00', colore:'arancio', note:'Turno già lavorato', tipoOpera:'Film', turni:1, righe:15},
+  {id:7, titolo:'Riunione cast', azienda:'Sound Farm 999', data: addDays(OGGI_ISO,7), inizio:'11:00', fine:'12:00', colore:'blu', note:'Turno già lavorato — pronto per fattura', tipoOpera:'Film', turni:1, righe:42},
 ];
 
 function addDays(iso, n){
@@ -1093,6 +1101,7 @@ function apriModaleNuovo(){
   document.getElementById('f-fine').value = '10:00';
   document.getElementById('f-note').value = '';
   document.getElementById('f-tipo-opera').value = '';
+  document.getElementById('f-turni').value = '';
   document.getElementById('f-righe').value = '';
   document.getElementById('btn-elimina').style.display = 'none';
   document.getElementById('btn-genera').style.display = 'none';
@@ -1111,6 +1120,7 @@ function apriModaleSuSlot(iso, ora){
   document.getElementById('f-fine').value = String(ora+1).padStart(2,'0')+':00';
   document.getElementById('f-note').value = '';
   document.getElementById('f-tipo-opera').value = '';
+  document.getElementById('f-turni').value = '';
   document.getElementById('f-righe').value = '';
   document.getElementById('btn-elimina').style.display = 'none';
   document.getElementById('btn-genera').style.display = 'none';
@@ -1131,6 +1141,7 @@ function apriDettaglio(id){
   document.getElementById('f-fine').value = e.fine;
   document.getElementById('f-note').value = e.note;
   document.getElementById('f-tipo-opera').value = e.tipoOpera || '';
+  document.getElementById('f-turni').value = (e.turni===0 || e.turni) ? e.turni : '';
   document.getElementById('f-righe').value = (e.righe===0 || e.righe) ? e.righe : '';
   document.getElementById('btn-elimina').style.display = 'block';
   document.getElementById('btn-genera').style.display = 'block';
@@ -1148,6 +1159,7 @@ function salvaEvento(){
   const titolo = document.getElementById('f-titolo').value.trim();
   if(!titolo){ alert("Inserisci un titolo per l'appuntamento."); return; }
   const colSel = document.querySelector('.color-dot.selected');
+  const turniVal = document.getElementById('f-turni').value;
   const righeVal = document.getElementById('f-righe').value;
   const dati = {
     titolo: titolo,
@@ -1158,6 +1170,7 @@ function salvaEvento(){
     colore: colSel ? colSel.dataset.color : 'arancio',
     note: document.getElementById('f-note').value.trim(),
     tipoOpera: document.getElementById('f-tipo-opera').value,
+    turni: turniVal === '' ? '' : Number(turniVal),
     righe: righeVal === '' ? '' : Number(righeVal)
   };
   if(dati.fine <= dati.inizio){ alert("L'orario di fine deve essere dopo l'inizio."); return; }
@@ -1177,8 +1190,9 @@ function aggiornaStatoGenera(){
   const btn = document.getElementById('btn-genera');
   if(!btn || btn.style.display === 'none') return;
   const tipo = document.getElementById('f-tipo-opera').value;
+  const turni = document.getElementById('f-turni').value;
   const righe = document.getElementById('f-righe').value;
-  const pronto = tipo !== '' && righe !== '';
+  const pronto = tipo !== '' && turni !== '' && righe !== '';
   btn.classList.toggle('attivo', pronto);
   btn.disabled = !pronto;
   const hint = document.getElementById('genera-hint');
@@ -1188,11 +1202,11 @@ function aggiornaStatoGenera(){
 function generaFattura(){
   if(!eventoInModifica) return;
   const e = eventi.find(x=>x.id===eventoInModifica);
-  if(!e || !e.tipoOpera || e.righe===''){ return; }
+  if(!e || !e.tipoOpera || e.turni==='' || e.righe===''){ return; }
   // TODO: qui andrà la vera chiamata al server — raccoglie i dati
   // dell'appuntamento + profilo utente da Supabase, genera il PDF con
   // il motore di calcolo fatture esistente e lo salva su fatture-pdf.
-  alert('Genererebbe la fattura per "'+e.titolo+'" — '+e.tipoOpera+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(Funzione non ancora collegata al server)');
+  alert('Genererebbe la fattura per "'+e.titolo+'" — '+e.tipoOpera+', '+e.turni+' '+(e.turni===1?'turno':'turni')+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(Funzione non ancora collegata al server)');
 }
 
 /* ===== FATTURA DA PIÙ APPUNTAMENTI — STESSA AZIENDA, STESSO MESE ===== */
@@ -1221,21 +1235,22 @@ function apriSelezioneFattura(nome, anno, mese){
 
   let html = '';
   evs.forEach(e=>{
-    const pronto = !!e.tipoOpera && e.righe!=='';
+    const pronto = !!e.tipoOpera && e.righe!=='' && e.turni!=='' && e.turni!=null;
     html += '<div class="multi-item '+(pronto?'pronto':'incompleto')+'" id="multi-item-'+e.id+'">';
     html += '<input type="checkbox" data-id="'+e.id+'" '+(pronto?'checked':'disabled')+' onchange="aggiornaStatoSelezioneMulti()">';
     html += '<div class="multi-item-body">';
     html += '<div class="multi-item-data">'+formattaDataBreve(e.data)+'</div>';
     html += '<div class="multi-item-titolo">'+e.titolo+'</div>';
     if(pronto){
-      html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.righe+' righe</div>';
+      html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.turni+' '+(e.turni===1?'turno':'turni')+' · '+e.righe+' righe</div>';
     } else {
-      html += '<div class="multi-item-warn">Manca tipo opera e/o righe — inseriscile e salvale qui</div>';
+      html += '<div class="multi-item-warn">Manca tipo opera, turni e/o righe — inseriscili e salvali qui</div>';
       html += '<div class="multi-item-inline">';
       html += '<select class="multi-inline-select" id="tipo-'+e.id+'" onchange="aggiornaCampiInline('+e.id+')">'+opzioniTipoOperaHtml()+'</select>';
-      html += '<input type="number" class="multi-inline-input" id="righe-'+e.id+'" placeholder="Righe" min="0" step="1" oninput="aggiornaCampiInline('+e.id+')">';
-      html += '<button type="button" class="multi-inline-save" id="salva-'+e.id+'" onclick="salvaCampiInline('+e.id+')" disabled>Salva</button>';
+      html += '<input type="number" class="multi-inline-input multi-inline-turni" id="turni-'+e.id+'" placeholder="Turni" min="1" step="1" value="'+(e.turni || '')+'" oninput="aggiornaCampiInline('+e.id+')">';
+      html += '<input type="number" class="multi-inline-input" id="righe-'+e.id+'" placeholder="Righe" min="0" step="1" value="'+(e.righe!=='' && e.righe!=null ? e.righe : '')+'" oninput="aggiornaCampiInline('+e.id+')">';
       html += '</div>';
+      html += '<button type="button" class="multi-inline-save" id="salva-'+e.id+'" onclick="salvaCampiInline('+e.id+')" disabled>Salva</button>';
     }
     html += '</div></div>';
   });
@@ -1249,40 +1264,51 @@ function chiudiModaleMulti(){
   document.getElementById('modal-overlay-multi').classList.remove('show');
 }
 
-/* Legge tipo opera + righe di un appuntamento: dal dato già salvato se
-   completo, altrimenti dai campi inline compilati lì per lì in sede
-   di emissione (non ancora salvati sull'appuntamento). */
+/* Legge tipo opera + turni + righe di un appuntamento: dal dato già
+   salvato se completo, altrimenti dai campi inline compilati lì per lì
+   in sede di emissione (non ancora salvati sull'appuntamento). */
 function leggiTipoRighe(id){
   const e = eventi.find(x=>x.id===id);
-  if(e && e.tipoOpera && e.righe!=='') return { tipoOpera: e.tipoOpera, righe: e.righe };
+  if(e && e.tipoOpera && e.righe!=='' && e.turni!=='' && e.turni!=null){
+    return { tipoOpera: e.tipoOpera, righe: e.righe, turni: e.turni };
+  }
   const selTipo = document.getElementById('tipo-'+id);
+  const inpTurni = document.getElementById('turni-'+id);
   const inpRighe = document.getElementById('righe-'+id);
   const tipoOpera = selTipo ? selTipo.value : '';
+  const turniVal = inpTurni ? inpTurni.value : '';
   const righeVal = inpRighe ? inpRighe.value : '';
-  return { tipoOpera: tipoOpera, righe: righeVal==='' ? '' : Number(righeVal) };
+  return {
+    tipoOpera: tipoOpera,
+    turni: turniVal==='' ? '' : Number(turniVal),
+    righe: righeVal==='' ? '' : Number(righeVal)
+  };
 }
 
 function aggiornaCampiInline(id){
   const selTipo = document.getElementById('tipo-'+id);
+  const inpTurni = document.getElementById('turni-'+id);
   const inpRighe = document.getElementById('righe-'+id);
   const btnSalva = document.getElementById('salva-'+id);
-  const completo = !!(selTipo && inpRighe && selTipo.value!=='' && inpRighe.value!=='');
+  const completo = !!(selTipo && inpTurni && inpRighe && selTipo.value!=='' && inpTurni.value!=='' && inpRighe.value!=='');
   if(btnSalva) btnSalva.disabled = !completo;
 }
 
-/* Salva subito tipo opera e righe sull'appuntamento, indipendentemente
+/* Salva subito tipo opera, turni e righe sull'appuntamento, indipendentemente
    dal fatto che si stia generando o meno una fattura in questo momento.
    Dopo il salvataggio la card passa allo stato "pronto" e la checkbox
    si spunta da sola, così il pulsante Genera fattura si può attivare. */
 function salvaCampiInline(id){
   const selTipo = document.getElementById('tipo-'+id);
+  const inpTurni = document.getElementById('turni-'+id);
   const inpRighe = document.getElementById('righe-'+id);
   const tipoOpera = selTipo ? selTipo.value : '';
+  const turni = (inpTurni && inpTurni.value!=='') ? Number(inpTurni.value) : '';
   const righe = (inpRighe && inpRighe.value!=='') ? Number(inpRighe.value) : '';
-  if(!tipoOpera || righe===''){ return; }
+  if(!tipoOpera || turni==='' || righe===''){ return; }
 
   const e = eventi.find(x=>x.id===id);
-  if(e) Object.assign(e, { tipoOpera: tipoOpera, righe: righe });
+  if(e) Object.assign(e, { tipoOpera: tipoOpera, turni: turni, righe: righe });
 
   apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese);
   render();
@@ -1294,18 +1320,19 @@ function aggiornaStatoSelezioneMulti(){
   const summary = document.getElementById('multi-summary');
 
   if(!checked.length){
-    summary.textContent = 'Seleziona almeno un appuntamento con tipo opera e righe compilati.';
+    summary.textContent = 'Seleziona almeno un appuntamento con tipo opera, turni e righe compilati.';
     btn.classList.remove('attivo');
     btn.disabled = true;
     return;
   }
 
-  let righeTot = 0;
+  let righeTot = 0, turniTot = 0;
   checked.forEach(cb=>{
     const dati = leggiTipoRighe(Number(cb.dataset.id));
     righeTot += (typeof dati.righe==='number' ? dati.righe : 0);
+    turniTot += (typeof dati.turni==='number' ? dati.turni : 0);
   });
-  summary.textContent = checked.length+' record selezionat'+(checked.length===1?'o':'i')+' · '+righeTot+' righe totali · azienda '+selezioneMulti.azienda;
+  summary.textContent = checked.length+' record selezionat'+(checked.length===1?'o':'i')+' · '+turniTot+' '+(turniTot===1?'turno':'turni')+' · '+righeTot+' righe totali · azienda '+selezioneMulti.azienda;
   btn.classList.add('attivo');
   btn.disabled = false;
 }
@@ -1318,14 +1345,14 @@ function confermaGeneraFatturaMultipla(){
     const id = Number(cb.dataset.id);
     const e = eventi.find(x=>x.id===id);
     const dati = leggiTipoRighe(id);
-    if(!dati.tipoOpera || dati.righe===''){ return null; }
-    // Se tipo opera/righe sono stati completati ora nel pannello (non
-    // erano già sull'appuntamento), li salviamo sull'appuntamento
+    if(!dati.tipoOpera || dati.turni==='' || dati.righe===''){ return null; }
+    // Se tipo opera/turni/righe sono stati completati ora nel pannello
+    // (non erano già sull'appuntamento), li salviamo sull'appuntamento
     // stesso, così restano registrati anche fuori da questa fattura.
-    if(e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe)){
-      Object.assign(e, { tipoOpera: dati.tipoOpera, righe: dati.righe });
+    if(e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni)){
+      Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe });
     }
-    return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.righe+' righe)';
+    return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
   }).filter(Boolean);
 
   if(!records.length){ alert('Completa tipo opera e righe per almeno un appuntamento selezionato.'); return; }
