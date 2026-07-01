@@ -227,6 +227,10 @@
     text-overflow: ellipsis;
     text-align: center;
   }
+  .month-day-label-fatturato {
+    background: #059669;
+    color: #fff;
+  }
   .month-day-more {
     font-size: 7.5px;
     font-weight: 700;
@@ -903,9 +907,13 @@ function renderMese(){
     if(evs.length){
       html += '<div class="month-day-labels">';
       evs.forEach(e=>{
-        const c = colorOf(e.colore);
         const nome = e.azienda || e.titolo;
-        html += '<span class="month-day-label" style="background:'+c.bg+';color:'+c.text+'">'+nome+'</span>';
+        if(e.fatturaUrl){
+          html += '<span class="month-day-label month-day-label-fatturato">✓ '+nome+'</span>';
+        } else {
+          const c = colorOf(e.colore);
+          html += '<span class="month-day-label" style="background:'+c.bg+';color:'+c.text+'">'+nome+'</span>';
+        }
       });
       if(altre>0) html += '<span class="month-day-more">+'+altre+' altr'+(altre===1?'o':'i')+'</span>';
       html += '</div>';
@@ -1379,6 +1387,7 @@ function confermaGeneraFatturaMultipla(){
   const checked = [...document.querySelectorAll('#multi-list input[type="checkbox"]:checked')];
   if(!checked.length) return;
 
+  const recordIds = [];
   const records = checked.map(cb=>{
     const id = Number(cb.dataset.id);
     const e = eventi.find(x=>x.id===id);
@@ -1390,6 +1399,7 @@ function confermaGeneraFatturaMultipla(){
     if(e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni)){
       Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe });
     }
+    recordIds.push(id);
     return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
   }).filter(Boolean);
 
@@ -1402,6 +1412,12 @@ function confermaGeneraFatturaMultipla(){
   // salvataggio con un PDF placeholder per testare l'intero flusso.
   const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
   fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = url;
+  // Marca ogni singolo appuntamento incluso come "fatturato": è quello
+  // che accende lo sfondo verde del nome azienda nella vista mensile.
+  recordIds.forEach(id=>{
+    const e = eventi.find(x=>x.id===id);
+    if(e) e.fatturaUrl = url;
+  });
 
   alert('Fattura generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(PDF placeholder — il collegamento al vero motore di calcolo e al bucket Supabase non è ancora fatto)');
   document.getElementById('btn-visualizza-multi').style.display = 'block';
