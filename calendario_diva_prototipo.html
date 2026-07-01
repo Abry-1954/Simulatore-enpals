@@ -613,6 +613,23 @@
   .multi-inline-select { flex: 1.4; min-width: 0; }
   .multi-inline-input { flex: 1; min-width: 0; }
   .multi-inline-select:focus, .multi-inline-input:focus { outline: none; border-color: #f97316; }
+  .multi-inline-save {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: #e7e4ee;
+    color: #a7a2b5;
+  }
+  .multi-inline-save:not(:disabled) {
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+    cursor: pointer;
+  }
+  .multi-inline-save:disabled { cursor: not-allowed; }
   .multi-summary {
     background: #fff7ed;
     border: 1px solid #fed7aa;
@@ -1211,10 +1228,11 @@ function apriSelezioneFattura(nome, anno, mese){
     if(pronto){
       html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.righe+' righe</div>';
     } else {
-      html += '<div class="multi-item-warn">Obbligatorio per emettere: completa tipo opera e righe</div>';
+      html += '<div class="multi-item-warn">Manca tipo opera e/o righe — inseriscile e salvale qui</div>';
       html += '<div class="multi-item-inline">';
       html += '<select class="multi-inline-select" id="tipo-'+e.id+'" onchange="aggiornaCampiInline('+e.id+')">'+opzioniTipoOperaHtml()+'</select>';
       html += '<input type="number" class="multi-inline-input" id="righe-'+e.id+'" placeholder="Righe" min="0" step="1" oninput="aggiornaCampiInline('+e.id+')">';
+      html += '<button type="button" class="multi-inline-save" id="salva-'+e.id+'" onclick="salvaCampiInline('+e.id+')" disabled>Salva</button>';
       html += '</div>';
     }
     html += '</div></div>';
@@ -1243,17 +1261,29 @@ function leggiTipoRighe(id){
 }
 
 function aggiornaCampiInline(id){
-  const dati = leggiTipoRighe(id);
-  const completo = !!dati.tipoOpera && dati.righe!=='';
-  const item = document.getElementById('multi-item-'+id);
-  const cb = item ? item.querySelector('input[type="checkbox"]') : null;
-  if(item) item.classList.toggle('pronto', completo);
-  if(item) item.classList.toggle('incompleto', !completo);
-  if(cb){
-    cb.disabled = !completo;
-    cb.checked = completo;
-  }
-  aggiornaStatoSelezioneMulti();
+  const selTipo = document.getElementById('tipo-'+id);
+  const inpRighe = document.getElementById('righe-'+id);
+  const btnSalva = document.getElementById('salva-'+id);
+  const completo = !!(selTipo && inpRighe && selTipo.value!=='' && inpRighe.value!=='');
+  if(btnSalva) btnSalva.disabled = !completo;
+}
+
+/* Salva subito tipo opera e righe sull'appuntamento, indipendentemente
+   dal fatto che si stia generando o meno una fattura in questo momento.
+   Dopo il salvataggio la card passa allo stato "pronto" e la checkbox
+   si spunta da sola, così il pulsante Genera fattura si può attivare. */
+function salvaCampiInline(id){
+  const selTipo = document.getElementById('tipo-'+id);
+  const inpRighe = document.getElementById('righe-'+id);
+  const tipoOpera = selTipo ? selTipo.value : '';
+  const righe = (inpRighe && inpRighe.value!=='') ? Number(inpRighe.value) : '';
+  if(!tipoOpera || righe===''){ return; }
+
+  const e = eventi.find(x=>x.id===id);
+  if(e) Object.assign(e, { tipoOpera: tipoOpera, righe: righe });
+
+  apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese);
+  render();
 }
 
 function aggiornaStatoSelezioneMulti(){
