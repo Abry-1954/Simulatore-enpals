@@ -758,7 +758,7 @@
 
   <div class="cal-header">
     <div class="cal-header-top">
-      <button class="cal-back" aria-label="Torna alla home" onclick="alert('Tornerebbe alla home di DIVA')">←</button>
+      <button class="cal-back" aria-label="Torna alla home" onclick="chiudiCalendario()">←</button>
       <span class="cal-title">Il mio calendario</span>
     </div>
     <div class="cal-subtitle" id="user-label">Ciao, CUGINI</div>
@@ -800,11 +800,6 @@
       <label class="field-label">Azienda</label>
       <select class="field-select" id="f-azienda">
         <option value="">Nessuna azienda</option>
-        <option value="Lumax Production">Lumax Production</option>
-        <option value="BB Dub">BB Dub</option>
-        <option value="Sound Farm 999">Sound Farm 999</option>
-        <option value="3Cycle">3Cycle</option>
-        <option value="DEA5">DEA5</option>
       </select>
     </div>
 
@@ -982,7 +977,7 @@ async function eseguiLogin(){
     AUTH.token = r.token; AUTH.nominativo = user.toUpperCase(); AUTH.ruolo = r.ruolo;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
-    await caricaEventi();
+    await Promise.all([caricaEventi(), caricaAziende()]);
   } catch(e){
     err.textContent = e.message || 'Errore di accesso.';
     err.style.display = 'block';
@@ -995,6 +990,34 @@ async function caricaEventi(){
   const rows = await apiFetch('/agenda');
   eventi = rows.map(fromApiRecord);
   render();
+}
+
+let aziendeList = [];
+
+async function caricaAziende(){
+  try{
+    aziendeList = await apiFetch('/aziende');
+    popolaSelectAziende();
+  } catch(e){
+    // Non blocchiamo il calendario se le aziende non si caricano — resta
+    // solo l'opzione "Nessuna azienda", l'utente può comunque lavorare.
+    console.warn('Errore caricamento aziende:', e.message);
+  }
+}
+
+function popolaSelectAziende(){
+  const sel = document.getElementById('f-azienda');
+  const valorePrecedente = sel.value;
+  sel.innerHTML = '';
+  const optVuota = document.createElement('option');
+  optVuota.value = ''; optVuota.textContent = 'Nessuna azienda';
+  sel.appendChild(optVuota);
+  aziendeList.forEach(a=>{
+    const opt = document.createElement('option');
+    opt.value = a.rag; opt.textContent = a.rag;
+    sel.appendChild(opt);
+  });
+  if(valorePrecedente) sel.value = valorePrecedente;
 }
 
 let eventi = [];
@@ -1721,6 +1744,20 @@ async function eliminaEvento(){
    "Le mie fatture" → gestione.html), quindi si salta il login qui.
    Il form di login resta solo come fallback per aprire il file da solo,
    ad esempio durante i test prima di collegare il bottone nel wizard. */
+/* Il calendario si apre sempre come nuova scheda (window.open) dal
+   pulsante "Il mio calendario" nel wizard — quindi "torna alla home"
+   qui significa semplicemente chiudere questa scheda e tornare a
+   quella del wizard, già aperta dietro. Se il browser impedisce la
+   chiusura (capita se la scheda non risulta aperta via script, es.
+   aprendo il file direttamente durante i test), mostriamo un avviso
+   invece di fallire silenziosamente. */
+function chiudiCalendario(){
+  window.close();
+  setTimeout(()=>{
+    alert('Chiudi pure questa scheda e torna al wizard DIVA.');
+  }, 300);
+}
+
 async function avviaApp(){
   const qs = new URLSearchParams(window.location.search);
   const tokenUrl = qs.get('token');
@@ -1734,7 +1771,7 @@ async function avviaApp(){
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
     try{
-      await caricaEventi();
+      await Promise.all([caricaEventi(), caricaAziende()]);
     } catch(e){
       // Token scaduto o non valido: non riproviamo un login qui dentro,
       // rimandiamo l'utente al wizard dove il login (con i suoi retry)
