@@ -150,6 +150,39 @@
     border-color: rgba(251,146,60,0.35);
   }
 
+  .reminder-banner {
+    display: flex;
+    gap: 8px;
+    padding: 0 1rem 0.9rem;
+    flex-shrink: 0;
+  }
+  .reminder-item {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+  }
+  .reminder-item:active { background: rgba(255,255,255,0.16); }
+  .reminder-item.reminder-attenzione { border-color: rgba(251,146,60,0.5); background: rgba(251,146,60,0.12); }
+  .reminder-item.reminder-ok {
+    cursor: default;
+    border-color: rgba(52,211,153,0.35);
+    background: rgba(52,211,153,0.08);
+    color: #6ee7b7;
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+  .reminder-warn {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fdba74;
+  }
+
   /* ===== CORPO SCROLLABILE ===== */
   .cal-body {
     flex: 1;
@@ -695,6 +728,8 @@
     <div class="cal-tab" data-view="month" onclick="cambiaVista('month')">Mese</div>
   </div>
 
+  <div class="reminder-banner" id="reminder-banner"></div>
+
   <div class="cal-body" id="cal-body"></div>
 
   <button class="fab" aria-label="Aggiungi appuntamento" onclick="apriModaleNuovo()">+</button>
@@ -867,6 +902,47 @@ function render(){
   if(vistaCorrente==='month') body.innerHTML = renderMese();
   else body.innerHTML = renderTimeView(vistaCorrente);
   posizionaEventi();
+  renderReminderBanner();
+}
+
+/* Banner semplificato: da domani a domenica (fine di questa settimana),
+   mostra quanti appuntamenti ci sono in totale e quanti tra questi non
+   hanno ancora tipo opera/turni/righe compilati — oggi è escluso perché
+   è ancora "in corso", non ha senso avvisare. */
+function renderReminderBanner(){
+  const el = document.getElementById('reminder-banner');
+  if(!el) return;
+
+  const domani = new Date(OGGI); domani.setDate(domani.getDate()+1);
+  const fineSettimana = startOfWeek(OGGI); fineSettimana.setDate(fineSettimana.getDate()+6);
+
+  const isoDomani = oggiISO(domani);
+  const isoFine = oggiISO(fineSettimana);
+
+  const evs = eventi.filter(e => e.data >= isoDomani && e.data <= isoFine);
+  const tot = evs.length;
+  const incompleti = evs.filter(e => !e.tipoOpera || e.turni==='' || e.righe==='').length;
+
+  if(tot===0){
+    el.innerHTML = '<div class="reminder-item reminder-ok">✓ Nessun appuntamento da domani a domenica</div>';
+    return;
+  }
+  if(incompleti===0){
+    el.innerHTML = '<div class="reminder-item reminder-ok" style="cursor:pointer" onclick="vaiASettimana(\''+OGGI_ISO+'\')">✓ '
+      + tot+' appuntament'+(tot===1?'o':'i')+' da domani a domenica, tutti pronti per la fatturazione</div>';
+    return;
+  }
+  el.innerHTML = '<div class="reminder-item reminder-attenzione" onclick="vaiASettimana(\''+OGGI_ISO+'\')">'
+    + '<span class="reminder-warn">⚠ '+tot+' appuntament'+(tot===1?'o':'i')+' da domani a domenica, '
+    + incompleti+' dei quali con dati incompleti per la fatturazione</span>'
+    + '</div>';
+}
+
+function vaiASettimana(iso){
+  dataCorrente = new Date(iso+'T00:00:00');
+  vistaCorrente = 'week';
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.toggle('active', t.dataset.view==='week'));
+  render();
 }
 
 function renderNavLabel(){
