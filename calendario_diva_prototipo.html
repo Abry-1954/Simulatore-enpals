@@ -382,11 +382,12 @@
   }
   .riepilogo-totale {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     padding-bottom: 1.4rem;
   }
   .riepilogo-totale-item {
-    flex: 1;
+    flex: 1 1 72px;
     min-width: 0;
     background: linear-gradient(135deg, #fff7ed, #ffedd5);
     border: 1px solid #fed7aa;
@@ -510,6 +511,31 @@
     cursor: pointer;
   }
 
+  .btn-generate {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: not-allowed;
+    background: #e7e4ee;
+    color: #a7a2b5;
+    transition: background 0.15s, color 0.15s, opacity 0.15s;
+  }
+  .btn-generate.attivo {
+    cursor: pointer;
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+  }
+  .btn-generate.attivo:active { opacity: 0.85; }
+  .field-hint {
+    font-size: 11px;
+    color: #9b96a8;
+    margin-top: 4px;
+  }
+
   ::-webkit-scrollbar { display: none; }
 </style>
 </head>
@@ -588,6 +614,26 @@
       <div class="color-picker" id="color-picker"></div>
     </div>
 
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Tipo opera <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
+        <select class="field-select" id="f-tipo-opera" onchange="aggiornaStatoGenera()">
+          <option value="">— non ancora noto —</option>
+          <option value="Film">Film</option>
+          <option value="Soap">Soap</option>
+          <option value="Telefilm">Telefilm</option>
+          <option value="Cartoni">Cartoni</option>
+          <option value="TvMovie">TvMovie</option>
+          <option value="Doc">Doc</option>
+          <option value="Doc No Sync">Doc No Sync</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Righe <span style="font-weight:400;text-transform:none;">(facoltativo)</span></label>
+        <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
+      </div>
+    </div>
+
     <div class="field-group">
       <label class="field-label">Note</label>
       <input type="text" class="field-input" id="f-note" placeholder="Note facoltative">
@@ -598,6 +644,8 @@
       <button class="btn-primary" onclick="salvaEvento()">Salva</button>
     </div>
     <button class="btn-delete" id="btn-elimina" style="display:none" onclick="eliminaEvento()">Elimina appuntamento</button>
+    <button class="btn-generate" id="btn-genera" style="display:none" onclick="generaFattura()" disabled>Genera fattura da questo appuntamento</button>
+    <div class="field-hint" id="genera-hint" style="display:none">Compila tipo opera e righe per attivare la generazione.</div>
   </div>
 </div>
 
@@ -617,13 +665,13 @@ const OGGI = new Date();
 const OGGI_ISO = oggiISO(OGGI);
 
 let eventi = [
-  {id:1, titolo:'Doppiaggio ep. 4', azienda:'Lumax Production', data: OGGI_ISO, inizio:'09:00', fine:'11:00', colore:'arancio', note:''},
-  {id:2, titolo:'Prova turno', azienda:'Sound Farm 999', data: OGGI_ISO, inizio:'14:30', fine:'16:00', colore:'blu', note:''},
-  {id:3, titolo:'Adattamento testo', azienda:'BB Dub', data: addDays(OGGI_ISO,1), inizio:'10:00', fine:'12:30', colore:'verde', note:''},
-  {id:4, titolo:'Sessione registrazione', azienda:'3Cycle', data: addDays(OGGI_ISO,1), inizio:'15:00', fine:'17:00', colore:'viola', note:''},
-  {id:5, titolo:'Direzione doppiaggio', azienda:'DEA5', data: addDays(OGGI_ISO,3), inizio:'09:30', fine:'13:00', colore:'rosa', note:''},
-  {id:6, titolo:'Turno serale', azienda:'Lumax Production', data: addDays(OGGI_ISO,4), inizio:'18:00', fine:'20:00', colore:'arancio', note:''},
-  {id:7, titolo:'Riunione cast', azienda:'Sound Farm 999', data: addDays(OGGI_ISO,7), inizio:'11:00', fine:'12:00', colore:'blu', note:''},
+  {id:1, titolo:'Doppiaggio ep. 4', azienda:'Lumax Production', data: OGGI_ISO, inizio:'09:00', fine:'11:00', colore:'arancio', note:'', tipoOpera:'', righe:''},
+  {id:2, titolo:'Prova turno', azienda:'Sound Farm 999', data: OGGI_ISO, inizio:'14:30', fine:'16:00', colore:'blu', note:'', tipoOpera:'', righe:''},
+  {id:3, titolo:'Adattamento testo', azienda:'BB Dub', data: addDays(OGGI_ISO,1), inizio:'10:00', fine:'12:30', colore:'verde', note:'', tipoOpera:'', righe:''},
+  {id:4, titolo:'Sessione registrazione', azienda:'3Cycle', data: addDays(OGGI_ISO,1), inizio:'15:00', fine:'17:00', colore:'viola', note:'', tipoOpera:'', righe:''},
+  {id:5, titolo:'Direzione doppiaggio', azienda:'DEA5', data: addDays(OGGI_ISO,3), inizio:'09:30', fine:'13:00', colore:'rosa', note:'', tipoOpera:'', righe:''},
+  {id:6, titolo:'Turno serale', azienda:'Lumax Production', data: addDays(OGGI_ISO,4), inizio:'18:00', fine:'20:00', colore:'arancio', note:'', tipoOpera:'', righe:''},
+  {id:7, titolo:'Riunione cast', azienda:'Sound Farm 999', data: addDays(OGGI_ISO,7), inizio:'11:00', fine:'12:00', colore:'blu', note:'Turno già lavorato — pronto per fattura', tipoOpera:'Film', righe:42},
 ];
 
 function addDays(iso, n){
@@ -742,14 +790,19 @@ function renderRiepilogoMese(anno, mese){
   const perAzienda = {};
   const giorniImpegnati = new Set();
   let oreTotali = 0;
+  let righeTotali = 0;
 
   evsMese.forEach(e=>{
     const nome = e.azienda || 'Senza azienda';
-    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, colore:e.colore};
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, colore:e.colore};
     const ore = durataOre(e.inizio, e.fine);
+    const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
     perAzienda[nome].turni += 1;
     perAzienda[nome].ore += ore;
+    perAzienda[nome].righe += righeEv;
+    if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
     oreTotali += ore;
+    righeTotali += righeEv;
     giorniImpegnati.add(e.data);
   });
 
@@ -764,6 +817,7 @@ function renderRiepilogoMese(anno, mese){
     html += '<div class="riepilogo-nome">'+nome+'</div>';
     html += '<div class="riepilogo-stat">'+v.turni+' '+(v.turni===1?'turno':'turni')+'</div>';
     html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
     html += '</div>';
   });
   html += '</div>';
@@ -772,6 +826,7 @@ function renderRiepilogoMese(anno, mese){
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+evsMese.length+'</span><span class="riepilogo-totale-lbl">'+(evsMese.length===1?'turno':'turni')+' totali</span></div>';
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+giorniImpegnati.size+'</span><span class="riepilogo-totale-lbl">'+(giorniImpegnati.size===1?'giorno':'giorni')+' impegnati</span></div>';
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+formattaOre(oreTotali)+'</span><span class="riepilogo-totale-lbl">ore totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+righeTotali+'</span><span class="riepilogo-totale-lbl">righe totali</span></div>';
   html += '</div>';
 
   html += '</div>';
@@ -903,7 +958,11 @@ function apriModaleNuovo(){
   document.getElementById('f-inizio').value = '09:00';
   document.getElementById('f-fine').value = '10:00';
   document.getElementById('f-note').value = '';
+  document.getElementById('f-tipo-opera').value = '';
+  document.getElementById('f-righe').value = '';
   document.getElementById('btn-elimina').style.display = 'none';
+  document.getElementById('btn-genera').style.display = 'none';
+  document.getElementById('genera-hint').style.display = 'none';
   buildColorPicker('arancio');
   document.getElementById('modal-overlay').classList.add('show');
 }
@@ -917,7 +976,11 @@ function apriModaleSuSlot(iso, ora){
   document.getElementById('f-inizio').value = String(ora).padStart(2,'0')+':00';
   document.getElementById('f-fine').value = String(ora+1).padStart(2,'0')+':00';
   document.getElementById('f-note').value = '';
+  document.getElementById('f-tipo-opera').value = '';
+  document.getElementById('f-righe').value = '';
   document.getElementById('btn-elimina').style.display = 'none';
+  document.getElementById('btn-genera').style.display = 'none';
+  document.getElementById('genera-hint').style.display = 'none';
   buildColorPicker('arancio');
   document.getElementById('modal-overlay').classList.add('show');
 }
@@ -933,9 +996,14 @@ function apriDettaglio(id){
   document.getElementById('f-inizio').value = e.inizio;
   document.getElementById('f-fine').value = e.fine;
   document.getElementById('f-note').value = e.note;
+  document.getElementById('f-tipo-opera').value = e.tipoOpera || '';
+  document.getElementById('f-righe').value = (e.righe===0 || e.righe) ? e.righe : '';
   document.getElementById('btn-elimina').style.display = 'block';
+  document.getElementById('btn-genera').style.display = 'block';
+  document.getElementById('genera-hint').style.display = 'block';
   buildColorPicker(e.colore);
   document.getElementById('modal-overlay').classList.add('show');
+  aggiornaStatoGenera();
 }
 
 function chiudiModale(){
@@ -946,6 +1014,7 @@ function salvaEvento(){
   const titolo = document.getElementById('f-titolo').value.trim();
   if(!titolo){ alert("Inserisci un titolo per l'appuntamento."); return; }
   const colSel = document.querySelector('.color-dot.selected');
+  const righeVal = document.getElementById('f-righe').value;
   const dati = {
     titolo: titolo,
     azienda: document.getElementById('f-azienda').value,
@@ -953,7 +1022,9 @@ function salvaEvento(){
     inizio: document.getElementById('f-inizio').value,
     fine: document.getElementById('f-fine').value,
     colore: colSel ? colSel.dataset.color : 'arancio',
-    note: document.getElementById('f-note').value.trim()
+    note: document.getElementById('f-note').value.trim(),
+    tipoOpera: document.getElementById('f-tipo-opera').value,
+    righe: righeVal === '' ? '' : Number(righeVal)
   };
   if(dati.fine <= dati.inizio){ alert("L'orario di fine deve essere dopo l'inizio."); return; }
 
@@ -966,6 +1037,28 @@ function salvaEvento(){
   }
   chiudiModale();
   render();
+}
+
+function aggiornaStatoGenera(){
+  const btn = document.getElementById('btn-genera');
+  if(!btn || btn.style.display === 'none') return;
+  const tipo = document.getElementById('f-tipo-opera').value;
+  const righe = document.getElementById('f-righe').value;
+  const pronto = tipo !== '' && righe !== '';
+  btn.classList.toggle('attivo', pronto);
+  btn.disabled = !pronto;
+  const hint = document.getElementById('genera-hint');
+  if(hint) hint.style.display = pronto ? 'none' : 'block';
+}
+
+function generaFattura(){
+  if(!eventoInModifica) return;
+  const e = eventi.find(x=>x.id===eventoInModifica);
+  if(!e || !e.tipoOpera || e.righe===''){ return; }
+  // TODO: qui andrà la vera chiamata al server — raccoglie i dati
+  // dell'appuntamento + profilo utente da Supabase, genera il PDF con
+  // il motore di calcolo fatture esistente e lo salva su fatture-pdf.
+  alert('Genererebbe la fattura per "'+e.titolo+'" — '+e.tipoOpera+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(Funzione non ancora collegata al server)');
 }
 
 function eliminaEvento(){
