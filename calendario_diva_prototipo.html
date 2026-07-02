@@ -438,6 +438,7 @@
     color: #fff;
   }
   .riepilogo-genera-btn:active { opacity: 0.85; }
+  .riepilogo-genera-btn.tutto-fatturato { background: linear-gradient(135deg, #60a5fa, #1d4ed8); }
   .riepilogo-bar { width: 4px; align-self: stretch; border-radius: 3px; flex-shrink: 0; }
   .riepilogo-nome {
     flex: 1;
@@ -861,9 +862,12 @@
       <input type="text" class="field-input" id="f-note" placeholder="Note facoltative">
     </div>
 
+    <div class="field-hint" id="blocco-fatturato" style="display:none;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:600;">
+      🔒 Fattura già emessa — questo appuntamento non è più modificabile. Per correggere i dati, elimina prima la fattura.
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="chiudiModale()">Annulla</button>
-      <button class="btn-primary" onclick="salvaEvento()">Salva</button>
+      <button class="btn-primary" id="btn-salva-evento" onclick="salvaEvento()">Salva</button>
     </div>
     <button class="btn-delete" id="btn-elimina" style="display:none" onclick="eliminaEvento()">Elimina appuntamento</button>
     <button class="btn-generate" id="btn-genera" style="display:none" onclick="generaFattura()" disabled>Genera fattura da questo appuntamento</button>
@@ -1286,7 +1290,7 @@ function renderRiepilogoMese(anno, mese){
 
   evsMese.forEach(e=>{
     const nome = e.azienda || 'Senza azienda';
-    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, colore:e.colore};
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, tuttoFatturato:true, colore:e.colore};
     const ore = durataOre(e.inizio, e.fine);
     const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
     const turniEv = (typeof e.turni === 'number') ? e.turni : 0;
@@ -1295,6 +1299,7 @@ function renderRiepilogoMese(anno, mese){
     perAzienda[nome].righe += righeEv;
     if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
     if(typeof e.turni === 'number') perAzienda[nome].turniNote = true;
+    if(!e.fatturaRecNbr) perAzienda[nome].tuttoFatturato = false;
     oreTotali += ore;
     righeTotali += righeEv;
     turniTotali += turniEv;
@@ -1317,7 +1322,11 @@ function renderRiepilogoMese(anno, mese){
     html += '</div>';
     if(nome!=='Senza azienda'){
       html += '<div class="riepilogo-row-actions">';
-      html += '<button class="riepilogo-genera-btn" onclick="apriSelezioneFattura(\''+nome.replace(/'/g,"\\'")+'\', '+anno+', '+mese+')">🧾 Genera fattura</button>';
+      if(v.tuttoFatturato){
+        html += '<button class="riepilogo-genera-btn tutto-fatturato" onclick="apriSelezioneFattura(\''+nome.replace(/'/g,"\\'")+'\', '+anno+', '+mese+')">📄 Visualizza/Elimina</button>';
+      } else {
+        html += '<button class="riepilogo-genera-btn" onclick="apriSelezioneFattura(\''+nome.replace(/'/g,"\\'")+'\', '+anno+', '+mese+')">🧾 Genera fattura</button>';
+      }
       html += '</div>';
     }
     html += '</div>';
@@ -1458,8 +1467,27 @@ function buildColorPicker(selezionato){
   });
 }
 
+/* Riporta il form appuntamento allo stato sbloccato: serve perché lo
+   stesso form viene riusato sia per i nuovi appuntamenti sia per la
+   modifica di uno esistente — se l'ultima apertura era un appuntamento
+   già fatturato (campi disabilitati), un nuovo appuntamento partirebbe
+   ereditando quel blocco per errore. */
+function sbloccaFormAppuntamento(){
+  ['f-titolo','f-azienda','f-data','f-inizio','f-fine','f-note','f-tipo-opera','f-turni','f-righe'].forEach(fid=>{
+    const el = document.getElementById(fid);
+    if(el) el.disabled = false;
+  });
+  const picker = document.getElementById('color-picker');
+  if(picker){ picker.style.pointerEvents = ''; picker.style.opacity = ''; }
+  const btnSalva = document.getElementById('btn-salva-evento');
+  if(btnSalva) btnSalva.style.display = 'inline-block';
+  const bloccoMsg = document.getElementById('blocco-fatturato');
+  if(bloccoMsg) bloccoMsg.style.display = 'none';
+}
+
 function apriModaleNuovo(){
   eventoInModifica = null;
+  sbloccaFormAppuntamento();
   document.getElementById('modal-title').textContent = 'Nuovo appuntamento';
   document.getElementById('f-titolo').value = '';
   document.getElementById('f-azienda').value = '';
@@ -1480,6 +1508,7 @@ function apriModaleNuovo(){
 
 function apriModaleSuSlot(iso, ora){
   eventoInModifica = null;
+  sbloccaFormAppuntamento();
   document.getElementById('modal-title').textContent = 'Nuovo appuntamento';
   document.getElementById('f-titolo').value = '';
   document.getElementById('f-azienda').value = '';
@@ -1512,7 +1541,26 @@ function apriDettaglio(id){
   document.getElementById('f-tipo-opera').value = e.tipoOpera || '';
   document.getElementById('f-turni').value = (e.turni===0 || e.turni) ? e.turni : '';
   document.getElementById('f-righe').value = (e.righe===0 || e.righe) ? e.righe : '';
+
   const giaFatturato = !!e.fatturaRecNbr;
+
+  // Fattura già emessa: nessun campo modificabile — i dati di una fattura
+  // già salvata su Supabase non devono più poter divergere da quelli
+  // dell'appuntamento. Per correggere, va prima eliminata la fattura
+  // (eliminaFatturaConCollegati), non semplicemente ri-salvato il form.
+  ['f-titolo','f-azienda','f-data','f-inizio','f-fine','f-note','f-tipo-opera','f-turni','f-righe'].forEach(fid=>{
+    const el = document.getElementById(fid);
+    if(el) el.disabled = giaFatturato;
+  });
+  const picker = document.getElementById('color-picker');
+  if(picker) picker.style.pointerEvents = giaFatturato ? 'none' : '';
+  if(picker) picker.style.opacity = giaFatturato ? '0.5' : '';
+
+  const btnSalva = document.getElementById('btn-salva-evento');
+  if(btnSalva){ btnSalva.style.display = giaFatturato ? 'none' : 'inline-block'; }
+  const bloccoMsg = document.getElementById('blocco-fatturato');
+  if(bloccoMsg) bloccoMsg.style.display = giaFatturato ? 'block' : 'none';
+
   document.getElementById('btn-elimina').style.display = 'block';
   document.getElementById('btn-genera').style.display = giaFatturato ? 'none' : 'block';
   document.getElementById('btn-visualizza').style.display = e.fatturaUrl ? 'block' : 'none';
@@ -1527,6 +1575,13 @@ function chiudiModale(){
 }
 
 async function salvaEvento(){
+  if(eventoInModifica){
+    const esistente = eventi.find(x=>x.id===eventoInModifica);
+    if(esistente && esistente.fatturaRecNbr){
+      alert('Questo appuntamento è collegato a una fattura già emessa e non può essere modificato. Elimina prima la fattura se serve correggere i dati.');
+      return;
+    }
+  }
   const titolo = document.getElementById('f-titolo').value.trim();
   if(!titolo){ alert("Inserisci un titolo per l'appuntamento."); return; }
   const colSel = document.querySelector('.color-dot.selected');
@@ -1648,12 +1703,14 @@ function opzioniTipoOperaHtml(){
 
 function apriSelezioneFattura(nome, anno, mese){
   selezioneMulti = { azienda: nome, anno: anno, mese: mese };
-  document.getElementById('modal-title-multi').textContent = 'Genera fattura — '+nome;
 
   const evs = eventi.filter(e=>{
     const d = new Date(e.data+'T00:00:00');
     return (e.azienda||'')===nome && d.getFullYear()===anno && d.getMonth()===mese;
   }).sort((a,b)=> a.data.localeCompare(b.data) || a.inizio.localeCompare(b.inizio));
+
+  const tuttoFatturato = evs.length>0 && evs.every(e=>!!e.fatturaRecNbr);
+  document.getElementById('modal-title-multi').textContent = (tuttoFatturato ? 'Fatture emesse — ' : 'Genera fattura — ')+nome;
 
   let html = '';
   evs.forEach(e=>{
