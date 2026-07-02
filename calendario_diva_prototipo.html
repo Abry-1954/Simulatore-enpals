@@ -922,7 +922,19 @@ function preparaMotoreFattura(){
   if(_motorePronto) return _motorePronto;
   _motorePronto = new Promise((resolve, reject)=>{
     const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
+    // IMPORTANTE: niente display:none — un elemento non visualizzato non
+    // viene mai disegnato dal browser, e html2canvas (dentro html2pdf.js)
+    // cattura uno "screenshot" del DOM: su un iframe con display:none
+    // catturerebbe sempre e solo bianco. Lo teniamo invece renderizzato
+    // per davvero, solo spostato fuori dall'area visibile dello schermo.
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '-10000px';
+    iframe.style.width = '900px';
+    iframe.style.height = '1400px';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    iframe.style.pointerEvents = 'none';
     iframe.src = WIZARD_URL + '?headless=1&token=' + encodeURIComponent(AUTH.token) + '&nominativo=' + encodeURIComponent(AUTH.nominativo);
     iframe.onload = async ()=>{
       try{
