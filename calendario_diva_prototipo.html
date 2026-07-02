@@ -1643,7 +1643,7 @@ async function generaFattura(){
 
   try{
     const risultato = await generaFatturaViaMotore(e.azienda, [{
-      titolo: e.titolo, data: e.data, tipoOpera: e.tipoOpera, turni: e.turni, righe: e.righe
+      titolo: e.titolo, data: e.data, tipoOpera: e.tipoOpera, turni: e.turni, righe: e.righe, note: e.note
     }]);
     await apiFetch('/agenda?id='+e.id, { method:'PATCH', body: JSON.stringify({
       fattura_rec_nbr: risultato.rec_nbr, fattura_pdf_url: risultato.pdf_url
@@ -1867,7 +1867,7 @@ async function confermaGeneraFatturaMultipla(){
     const dati = leggiTipoRighe(id);
     if(!dati.tipoOpera || dati.turni==='' || dati.righe===''){ return null; }
     recordIds.push({ id, dati, cambiato: e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni) });
-    recordsPerMotore.push({ titolo: e.titolo, data: e.data, tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe });
+    recordsPerMotore.push({ titolo: e.titolo, data: e.data, tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe, note: e.note });
     return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
   }).filter(Boolean);
 

@@ -2264,6 +2264,15 @@ function generaFatturaAutomaticaDaAgenda(payload){
       const tl = mapPersonaAttivita(S.lav.attivita);
       if(!tl) throw new Error('Attività professionale non impostata o non riconosciuta in Persone (attivita="'+(S.lav.attivita||'')+'"). Aggiornala dal profilo prima di generare fatture automatiche.');
 
+      // Nota di pagamento: solo la PRIMA (in ordine di data, cioè il primo
+      // record della fattura, r01) — il campo è relativo alla fattura nel
+      // suo complesso, non alle singole lavorazioni, e ha un limite reale
+      // di 30 caratteri sul database: troncata qui per sicurezza, così
+      // un valore più lungo non fa fallire il salvataggio più avanti.
+      // Sempre impostata (anche a stringa vuota) per non lasciare residui
+      // di una generazione precedente nella stessa sessione dell'iframe.
+      window._agendaNotaPagamento = ((payload.records[0] && payload.records[0].note) || '').trim().slice(0, 30);
+
       const azMatch = (window._AZIENDE_DB||[]).find(a=>(a.ragione_sociale||'').trim().toUpperCase() === (payload.azienda||'').trim().toUpperCase());
       if(!azMatch) throw new Error('Azienda "'+payload.azienda+'" non trovata in anagrafica. Completala prima di generare la fattura automatica.');
       S.soc = azMatch;
@@ -2971,6 +2980,13 @@ async function salvaSuDB(){
     data_fattura:     S.righi[0]?.datalav||new Date().toISOString().substring(0,10),
     data_lavoro:      S.righi[0]?.datalav||''
   };
+
+  // Nota di pagamento dall'agenda: solo in modalità agenda (generazione
+  // automatica dal calendario) e solo se il primo record aveva davvero
+  // una nota — altrimenti il campo resta come sempre, vuoto.
+  if(window._agendaMode && window._agendaNotaPagamento){
+    rec.note_pagamento = window._agendaNotaPagamento;
+  }
 
   // Righe
   S.righi.forEach(function(r,i){
