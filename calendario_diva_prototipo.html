@@ -1026,7 +1026,8 @@ function fromApiRecord(r){
     tipoOpera: r.tipo_opera || '',
     turni: (r.turni===null || r.turni===undefined) ? '' : r.turni,
     righe: (r.righe===null || r.righe===undefined) ? '' : r.righe,
-    fatturaUrl: r.fattura_pdf_url || null
+    fatturaUrl: r.fattura_pdf_url || null,
+    fatturaRecNbr: r.fattura_rec_nbr || null
   };
 }
 
@@ -1580,6 +1581,7 @@ async function generaFattura(){
       fattura_rec_nbr: risultato.rec_nbr, fattura_pdf_url: risultato.pdf_url
     }) });
     e.fatturaUrl = risultato.pdf_url;
+    e.fatturaRecNbr = risultato.rec_nbr;
     alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+e.titolo+'" — azienda '+e.azienda+'.');
     document.getElementById('btn-visualizza').style.display = 'block';
     render();
@@ -1590,11 +1592,25 @@ async function generaFattura(){
   }
 }
 
-function visualizzaFatturaSalvata(){
+async function visualizzaFatturaSalvata(){
   if(!eventoInModifica) return;
   const e = eventi.find(x=>x.id===eventoInModifica);
-  if(!e || !e.fatturaUrl) return;
-  window.open(e.fatturaUrl, '_blank');
+  if(!e || !e.fatturaRecNbr){ if(e && e.fatturaUrl) window.open(e.fatturaUrl, '_blank'); return; }
+
+  // Apriamo subito una scheda vuota, PRIMA di aspettare la rete: se
+  // aspettassimo la risposta del server prima di chiamare window.open,
+  // il browser la tratterebbe come popup non richiesto dall'utente e la
+  // bloccherebbe. Aprendola subito e riempiendola dopo, resta legittima.
+  const finestra = window.open('', '_blank');
+  try{
+    const r = await apiFetch('/fatture_pdf_url?rec_nbr='+encodeURIComponent(e.fatturaRecNbr));
+    if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
+    if(finestra) finestra.location.href = r.signed_url;
+    else window.open(r.signed_url, '_blank'); // popup bloccato al primo tentativo: riprova diretto
+  } catch(err){
+    if(finestra) finestra.close();
+    alert('Errore nel recupero del PDF: '+err.message);
+  }
 }
 
 /* ===== FATTURA DA PIÙ APPUNTAMENTI — STESSA AZIENDA, STESSO MESE ===== */
@@ -1776,10 +1792,10 @@ async function confermaGeneraFatturaMultipla(){
       return apiFetch('/agenda?id='+id, { method:'PATCH', body: JSON.stringify(payload) });
     }));
 
-    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = risultato.pdf_url;
+    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = { recNbr: risultato.rec_nbr, url: risultato.pdf_url };
     recordIds.forEach(({id, dati})=>{
       const e = eventi.find(x=>x.id===id);
-      if(e){ e.fatturaUrl = risultato.pdf_url; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
+      if(e){ e.fatturaUrl = risultato.pdf_url; e.fatturaRecNbr = risultato.rec_nbr; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
     });
 
     alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n'));
@@ -1792,10 +1808,21 @@ async function confermaGeneraFatturaMultipla(){
   }
 }
 
-function visualizzaFatturaSalvataMulti(){
-  const url = fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)];
-  if(!url) return;
-  window.open(url, '_blank');
+async function visualizzaFatturaSalvataMulti(){
+  const salvata = fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)];
+  if(!salvata){ return; }
+  if(!salvata.recNbr){ if(salvata.url) window.open(salvata.url, '_blank'); return; }
+
+  const finestra = window.open('', '_blank');
+  try{
+    const r = await apiFetch('/fatture_pdf_url?rec_nbr='+encodeURIComponent(salvata.recNbr));
+    if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
+    if(finestra) finestra.location.href = r.signed_url;
+    else window.open(r.signed_url, '_blank');
+  } catch(err){
+    if(finestra) finestra.close();
+    alert('Errore nel recupero del PDF: '+err.message);
+  }
 }
 
 async function eliminaEvento(){
