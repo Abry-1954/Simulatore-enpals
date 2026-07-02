@@ -2156,37 +2156,47 @@ function popolaSLavDaPersona(match){
   S.user = match.nominativo;
 }
 
-// Mappa il regime fiscale salvato in Persone (es. "FATT. AGEV.") al codice
-// TIPI_FATT esatto. A differenza di vocaleMapTipoFatt (pensata per il
-// parlato libero, quindi "morbida"), qui serve un match preciso: un
-// regime fiscale sbagliato ha conseguenze fiscali reali, meglio fermarsi
-// con un errore chiaro che indovinare.
+// Mappa il regime fiscale salvato in Persone al codice TIPI_FATT esatto.
+// Nel sistema risultano in uso DUE formati per lo stesso dato: quello
+// abbreviato del modulo di iscrizione ("FATT. AGEV.") e quello esteso
+// (es. "FATTURA REGIME AGEVOLATO", uguale a labelLong). Invece di tenere
+// due tabelle parallele — rischio concreto di dimenticarne una, come
+// successo con FA — leggiamo direttamente da TIPI_FATT (5 regimi:
+// FO, FA, RS, RA, RGA), confrontando sia label che labelLong, con una
+// normalizzazione morbida (punti/spazi) come ultima rete di sicurezza.
+// A differenza di vocaleMapTipoFatt (pensata per il parlato libero), qui
+// serve un match preciso: un regime fiscale sbagliato ha conseguenze
+// fiscali reali, meglio fermarsi con un errore chiaro che indovinare.
 function mapPersonaTipoFatt(testo){
   const t = (testo||'').trim().toUpperCase();
-  const tabella = {
-    'FATT. ORD.':       'FO',
-    'FATT. AGEV.':       'FA',
-    'RIC. SEMPLICE':     'RS',
-    'RIC. ADAT.':        'RA',
-    'RIC. AGEV. ADAT.':  'RGA'
-  };
-  const cod = tabella[t];
-  if(!cod) return null;
-  return TIPI_FATT.find(x=>x.cod===cod) || null;
+  if(!t) return null;
+
+  let trovato = TIPI_FATT.find(x => x.label.toUpperCase()===t || x.labelLong.toUpperCase()===t);
+  if(trovato) return trovato;
+
+  // Fallback: normalizza togliendo punti e spazi multipli, riprova
+  const norm = s => s.toUpperCase().replace(/\./g,'').replace(/\s+/g,' ').trim();
+  const tNorm = norm(t);
+  trovato = TIPI_FATT.find(x => norm(x.label)===tNorm || norm(x.labelLong)===tNorm);
+  return trovato || null;
 }
 
-// Stesso principio per l'attività professionale (Doppiatore/Adattatore/...)
+// Stesso principio per l'attività professionale (Doppiatore/Adattatore/...):
+// confronto su label diretta, poi fallback per parola chiave (stesso
+// criterio già usato da vocaleMapTipoLav, qui applicato al dato scritto
+// anziché al parlato) per coprire eventuali varianti di formulazione.
 function mapPersonaAttivita(testo){
   const t = (testo||'').trim().toUpperCase();
-  const tabella = {
-    'DOPPIATORE':                 'DOPP',
-    'ADATTATORE':                 'ADAT',
-    'DIRETTORE DEL DOPPIAGGIO':   'DIR',
-    'ASSISTENTE AL DOPPIAGGIO':   'ASST'
-  };
-  const cod = tabella[t];
-  if(!cod) return null;
-  return TIPI_LAV.find(x=>x.cod===cod) || null;
+  if(!t) return null;
+
+  let trovato = TIPI_LAV.find(x => x.label.toUpperCase()===t);
+  if(trovato) return trovato;
+
+  if(t.includes('ADATT'))  return TIPI_LAV.find(x=>x.cod==='ADAT')  || null;
+  if(t.includes('ASSIST')) return TIPI_LAV.find(x=>x.cod==='ASST') || null;
+  if(t.includes('DIRETT')) return TIPI_LAV.find(x=>x.cod==='DIR')  || null;
+  if(t.includes('DOPPIAT'))return TIPI_LAV.find(x=>x.cod==='DOPP') || null;
+  return null;
 }
 
 // Il tipo opera arriva dal calendario già come etichetta esatta
