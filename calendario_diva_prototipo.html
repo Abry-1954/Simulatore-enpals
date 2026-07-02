@@ -761,7 +761,7 @@
       <button class="cal-back" aria-label="Torna alla home" onclick="chiudiCalendario()">←</button>
       <span class="cal-title">Il mio calendario</span>
     </div>
-    <div class="cal-subtitle" id="user-label">Ciao, CUGINI</div>
+    <div class="cal-subtitle" id="user-label"></div>
   </div>
 
   <div class="cal-nav">
@@ -899,7 +899,62 @@ const OGGI_ISO = oggiISO(OGGI);
 // ════════════════════════════════════════════════════════════
 const API_BASE = 'https://enpals-server.onrender.com';
 
+// URL del wizard DIVA — usato per caricare il motore di calcolo/PDF in un
+// iframe nascosto. Stesso repo/percorso già usato da "Il mio calendario"
+// nel wizard per aprire questo file: se cambia lì, va cambiato anche qui.
+const WIZARD_URL = 'https://abry-1954.github.io/Simulatore-enpals/Nuovo_DIVA_Mobile_Wizard.html';
+
 let AUTH = { token: null, nominativo: null, ruolo: null };
+
+/* ════════════════════════════════════════════════════════════
+   MOTORE FATTURA — il calcolo ENPALS e la generazione PDF vivono nel
+   wizard, non qui: li riusiamo caricando il wizard in un iframe
+   invisibile, autenticato con lo stesso token già in uso (nessun
+   secondo login), e chiamando la sua funzione
+   generaFatturaAutomaticaDaAgenda(payload) direttamente via JS
+   (stesso dominio, accesso diretto consentito). Zero duplicazione
+   della logica fiscale, zero schermate visibili.
+   ════════════════════════════════════════════════════════════ */
+let _motoreIframe = null;
+let _motorePronto = null;
+
+function preparaMotoreFattura(){
+  if(_motorePronto) return _motorePronto;
+  _motorePronto = new Promise((resolve, reject)=>{
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = WIZARD_URL + '?headless=1&token=' + encodeURIComponent(AUTH.token) + '&nominativo=' + encodeURIComponent(AUTH.nominativo);
+    iframe.onload = async ()=>{
+      try{
+        if(!iframe.contentWindow._headlessBootstrap){
+          throw new Error('Il wizard non ha avviato il bootstrap silenzioso (parametro headless mancante o URL wizard non aggiornato).');
+        }
+        await iframe.contentWindow._headlessBootstrap;
+        resolve(iframe);
+      }catch(e){
+        _motorePronto = null;
+        reject(e);
+      }
+    };
+    iframe.onerror = ()=>{ _motorePronto = null; reject(new Error('Impossibile caricare il wizard per generare la fattura.')); };
+    document.body.appendChild(iframe);
+    _motoreIframe = iframe;
+  });
+  return _motorePronto;
+}
+
+/* Genera davvero la fattura: azienda + uno o più record. Ritorna
+   {ok, rec_nbr, rif_nbr, pdf_url}. Timeout di sicurezza a 60s — la
+   generazione normale richiede pochi secondi, ma un iframe bloccato
+   non deve lasciare l'utente in attesa per sempre. */
+async function generaFatturaViaMotore(azienda, records){
+  const iframe = await preparaMotoreFattura();
+  const timeout = new Promise((_,rej)=> setTimeout(()=>rej(new Error('Generazione fattura scaduta (oltre 60 secondi). Riprova.')), 60000));
+  return Promise.race([
+    iframe.contentWindow.generaFatturaAutomaticaDaAgenda({ azienda, records }),
+    timeout
+  ]);
+}
 
 async function apiFetch(path, opts={}, _retry=true){
   const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
@@ -975,6 +1030,7 @@ async function eseguiLogin(){
     const r = await apiFetch('/login', { method:'POST', body: JSON.stringify({username:user, password:pass}) });
     if(!r.ok){ throw new Error(r.error || 'Credenziali non valide'); }
     AUTH.token = r.token; AUTH.nominativo = user.toUpperCase(); AUTH.ruolo = r.ruolo;
+    document.getElementById('user-label').textContent = 'Ciao, '+AUTH.nominativo;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
     await Promise.all([caricaEventi(), caricaAziende()]);
@@ -1498,23 +1554,27 @@ async function generaFattura(){
   if(!eventoInModifica) return;
   const e = eventi.find(x=>x.id===eventoInModifica);
   if(!e || !e.tipoOpera || e.turni==='' || e.righe===''){ return; }
-  // TODO: qui andrà la vera chiamata al server — raccoglie i dati
-  // dell'appuntamento + profilo utente da Supabase, genera il PDF con
-  // il motore di calcolo fatture esistente e lo salva su Supabase
-  // Storage (bucket fatture-pdf), restituendo l'URL pubblico del file.
-  // Per ora simuliamo il salvataggio con un PDF placeholder, per poter
-  // testare il flusso completo genera → salva → consulta. L'URL viene
-  // comunque scritto davvero sul record (fattura_pdf_url), così lo
-  // sfondo verde e questo pulsante restano corretti anche dopo un reload.
-  const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+  if(!e.azienda){ alert('Serve un\'azienda per emettere la fattura — completa il campo "Azienda" su questo appuntamento.'); return; }
+
+  const btn = document.getElementById('btn-genera');
+  const testoOriginale = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Generazione in corso…'; }
+
   try{
-    await apiFetch('/agenda?id='+e.id, { method:'PATCH', body: JSON.stringify({ fattura_pdf_url: url }) });
-    e.fatturaUrl = url;
-    alert('Fattura generata e salvata per "'+e.titolo+'" — '+e.tipoOpera+', '+e.turni+' '+(e.turni===1?'turno':'turni')+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(PDF placeholder — il collegamento al vero motore di calcolo non è ancora fatto)');
+    const risultato = await generaFatturaViaMotore(e.azienda, [{
+      titolo: e.titolo, data: e.data, tipoOpera: e.tipoOpera, turni: e.turni, righe: e.righe
+    }]);
+    await apiFetch('/agenda?id='+e.id, { method:'PATCH', body: JSON.stringify({
+      fattura_rec_nbr: risultato.rec_nbr, fattura_pdf_url: risultato.pdf_url
+    }) });
+    e.fatturaUrl = risultato.pdf_url;
+    alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+e.titolo+'" — azienda '+e.azienda+'.');
     document.getElementById('btn-visualizza').style.display = 'block';
     render();
   } catch(err){
-    alert('Errore nel salvataggio della fattura: '+err.message);
+    alert('Errore nella generazione della fattura: '+err.message);
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = testoOriginale; }
   }
 }
 
@@ -1673,48 +1733,48 @@ async function confermaGeneraFatturaMultipla(){
   if(!checked.length) return;
 
   const recordIds = [];
+  const recordsPerMotore = [];
   const records = checked.map(cb=>{
     const id = Number(cb.dataset.id);
     const e = eventi.find(x=>x.id===id);
     const dati = leggiTipoRighe(id);
     if(!dati.tipoOpera || dati.turni==='' || dati.righe===''){ return null; }
     recordIds.push({ id, dati, cambiato: e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni) });
+    recordsPerMotore.push({ titolo: e.titolo, data: e.data, tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe });
     return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
   }).filter(Boolean);
 
   if(!records.length){ alert('Completa tipo opera, turni e righe per almeno un appuntamento selezionato.'); return; }
 
-  // TODO: qui andrà la vera chiamata al server — un'unica fattura con
-  // record r01, r02... (uno per appuntamento selezionato), stessa
-  // azienda in testata, stesso motore di calcolo già esistente, salvata
-  // su Supabase Storage (bucket fatture-pdf). Per ora simuliamo il
-  // salvataggio con un PDF placeholder per testare l'intero flusso.
-  const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
   const btnGenera = document.getElementById('btn-genera-multi');
-  if(btnGenera){ btnGenera.disabled = true; btnGenera.textContent = 'Generazione…'; }
+  if(btnGenera){ btnGenera.disabled = true; btnGenera.textContent = 'Generazione in corso…'; }
 
   try{
-    // Salva su ciascun appuntamento incluso: eventuali tipo/turni/righe non
-    // ancora persistiti (rete di sicurezza, di norma già salvati dal
-    // pulsante "Salva" per riga) + l'URL della fattura appena generata —
-    // è quello che accende lo sfondo verde nella vista mensile.
+    // Un'unica fattura reale, con un record r01/r02/... per ogni
+    // appuntamento selezionato, stessa azienda in testata — generata dal
+    // motore di calcolo del wizard, non da un placeholder.
+    const risultato = await generaFatturaViaMotore(selezioneMulti.azienda, recordsPerMotore);
+
+    // Salva su ciascun appuntamento incluso: il riferimento alla fattura
+    // appena generata (stesso rec_nbr per tutti, sono record della STESSA
+    // fattura) + eventuali tipo/turni/righe non ancora persistiti.
     await Promise.all(recordIds.map(({id, dati, cambiato})=>{
-      const payload = { fattura_pdf_url: url };
+      const payload = { fattura_rec_nbr: risultato.rec_nbr, fattura_pdf_url: risultato.pdf_url };
       if(cambiato){ payload.tipo_opera = dati.tipoOpera; payload.turni = dati.turni; payload.righe = dati.righe; }
       return apiFetch('/agenda?id='+id, { method:'PATCH', body: JSON.stringify(payload) });
     }));
 
-    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = url;
+    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = risultato.pdf_url;
     recordIds.forEach(({id, dati})=>{
       const e = eventi.find(x=>x.id===id);
-      if(e){ e.fatturaUrl = url; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
+      if(e){ e.fatturaUrl = risultato.pdf_url; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
     });
 
-    alert('Fattura generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(PDF placeholder — il collegamento al vero motore di calcolo non è ancora fatto)');
+    alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n'));
     document.getElementById('btn-visualizza-multi').style.display = 'block';
     render();
   } catch(err){
-    alert('Errore nel salvataggio della fattura: '+err.message);
+    alert('Errore nella generazione della fattura: '+err.message);
   } finally {
     if(btnGenera){ btnGenera.disabled = false; btnGenera.textContent = 'Genera fattura'; }
   }
@@ -1768,6 +1828,7 @@ async function avviaApp(){
     AUTH.token = tokenUrl;
     AUTH.nominativo = nominativoUrl.toUpperCase();
     AUTH.ruolo = ruoloUrl || 'utente';
+    document.getElementById('user-label').textContent = 'Ciao, '+AUTH.nominativo;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
     try{
