@@ -1167,21 +1167,22 @@ function renderReminderBanner(){
 
   const evs = eventi.filter(e => e.data >= isoInizio && e.data <= isoFine);
   const tot = evs.length;
-  const incompleti = evs.filter(e => !e.tipoOpera || e.turni==='' || e.righe==='').length;
+  const emesse = evs.filter(e => !!e.fatturaUrl).length;
+  const nonEmesse = tot - emesse;
   const isoTarget = isoInizio <= isoFine ? isoInizio : oggiISO(inizioSettVista);
 
   if(tot===0){
     el.innerHTML = '<div class="reminder-item reminder-ok">✓ Nessun appuntamento '+periodo+'</div>';
     return;
   }
-  if(incompleti===0){
+  if(nonEmesse===0){
     el.innerHTML = '<div class="reminder-item reminder-ok" style="cursor:pointer" onclick="vaiASettimana(\''+isoTarget+'\')">✓ '
-      + tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+', tutti pronti per la fatturazione</div>';
+      + tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+' — tutti con fattura emessa</div>';
     return;
   }
   el.innerHTML = '<div class="reminder-item reminder-attenzione" onclick="vaiASettimana(\''+isoTarget+'\')">'
-    + '<span class="reminder-warn">⚠ '+tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+', '
-    + incompleti+' dei quali con dati incompleti per la fatturazione</span>'
+    + '<span class="reminder-warn">'+tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+' — '
+    + '✓ '+emesse+' Emessa Fattura, ⚠ '+nonEmesse+' Fattura non Emessa</span>'
     + '</div>';
 }
 
