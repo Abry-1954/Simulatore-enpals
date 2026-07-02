@@ -641,6 +641,13 @@
   }
   .multi-item.pronto { border-color: #a7f3d0; background: #f0fdf4; }
   .multi-item.incompleto { opacity: 0.6; }
+  .multi-item.fatturato { border-color: #93c5fd; background: #eff6ff; }
+  .multi-item-check-fatturato {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    background: #1d4ed8; color: #fff; border-radius: 4px;
+    font-size: 12px; font-weight: 700;
+  }
   .multi-item input[type="checkbox"] {
     width: 18px; height: 18px;
     margin-top: 2px;
@@ -1505,10 +1512,11 @@ function apriDettaglio(id){
   document.getElementById('f-tipo-opera').value = e.tipoOpera || '';
   document.getElementById('f-turni').value = (e.turni===0 || e.turni) ? e.turni : '';
   document.getElementById('f-righe').value = (e.righe===0 || e.righe) ? e.righe : '';
+  const giaFatturato = !!e.fatturaRecNbr;
   document.getElementById('btn-elimina').style.display = 'block';
-  document.getElementById('btn-genera').style.display = 'block';
+  document.getElementById('btn-genera').style.display = giaFatturato ? 'none' : 'block';
   document.getElementById('btn-visualizza').style.display = e.fatturaUrl ? 'block' : 'none';
-  document.getElementById('genera-hint').style.display = 'block';
+  document.getElementById('genera-hint').style.display = giaFatturato ? 'none' : 'block';
   buildColorPicker(e.colore);
   document.getElementById('modal-overlay').classList.add('show');
   aggiornaStatoGenera();
@@ -1649,13 +1657,25 @@ function apriSelezioneFattura(nome, anno, mese){
 
   let html = '';
   evs.forEach(e=>{
+    const fatturato = !!e.fatturaRecNbr;
     const pronto = !!e.tipoOpera && e.righe!=='' && e.turni!=='' && e.turni!=null;
-    html += '<div class="multi-item '+(pronto?'pronto':'incompleto')+'" id="multi-item-'+e.id+'">';
-    html += '<input type="checkbox" data-id="'+e.id+'" '+(pronto?'checked':'disabled')+' onchange="aggiornaStatoSelezioneMulti()">';
+    const stato = fatturato ? 'fatturato' : (pronto ? 'pronto' : 'incompleto');
+    html += '<div class="multi-item '+stato+'" id="multi-item-'+e.id+'">';
+    if(fatturato){
+      html += '<span class="multi-item-check-fatturato">✓</span>';
+    } else {
+      html += '<input type="checkbox" data-id="'+e.id+'" '+(pronto?'checked':'disabled')+' onchange="aggiornaStatoSelezioneMulti()">';
+    }
     html += '<div class="multi-item-body">';
     html += '<div class="multi-item-data">'+formattaDataBreve(e.data)+'</div>';
     html += '<div class="multi-item-titolo">'+e.titolo+'</div>';
-    if(pronto){
+    if(fatturato){
+      html += '<div class="multi-item-dettaglio" style="color:#1d4ed8">Già fatturata — '+e.tipoOpera+' · '+e.turni+' '+(e.turni===1?'turno':'turni')+' · '+e.righe+' righe</div>';
+      html += '<div class="multi-item-inline">';
+      html += '<button type="button" class="multi-inline-save" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff" onclick="visualizzaFatturaRecord('+e.id+')">📄 Visualizza</button>';
+      html += '<button type="button" class="multi-inline-save" style="background:#fff;border:1.5px solid #fecaca;color:#dc2626" onclick="eliminaFatturaConCollegati('+e.fatturaRecNbr+').then(function(ok){ if(ok) apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese); })">🗑 Elimina fattura</button>';
+      html += '</div>';
+    } else if(pronto){
       html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.turni+' '+(e.turni===1?'turno':'turni')+' · '+e.righe+' righe</div>';
     } else {
       html += '<div class="multi-item-warn">Manca tipo opera, turni e/o righe — inseriscili e salvali qui</div>';
@@ -1675,6 +1695,23 @@ function apriSelezioneFattura(nome, anno, mese){
 
   aggiornaStatoSelezioneMulti();
   document.getElementById('modal-overlay-multi').classList.add('show');
+}
+
+/* Apre il PDF di un singolo record già fatturato dal pannello mensile —
+   stessa logica di rigenerazione del link fresco già usata altrove. */
+async function visualizzaFatturaRecord(id){
+  const e = eventi.find(x=>x.id===id);
+  if(!e || !e.fatturaRecNbr) return;
+  const finestra = window.open('', '_blank');
+  try{
+    const r = await apiFetch('/fatture_pdf_url?rec_nbr='+encodeURIComponent(e.fatturaRecNbr));
+    if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
+    if(finestra) finestra.location.href = r.signed_url;
+    else window.open(r.signed_url, '_blank');
+  } catch(err){
+    if(finestra) finestra.close();
+    alert('Errore nel recupero del PDF: '+err.message);
+  }
 }
 
 function chiudiModaleMulti(){
@@ -1832,13 +1869,69 @@ async function visualizzaFatturaSalvataMulti(){
 
 async function eliminaEvento(){
   if(!eventoInModifica) return;
-  if(!confirm('Eliminare questo appuntamento? L\'operazione non è recuperabile.')) return;
+  const e = eventi.find(x=>x.id===eventoInModifica);
+  if(!e) return;
+
+  // Caso A — nessuna fattura collegata: comportamento invariato, elimina solo l'appuntamento.
+  if(!e.fatturaRecNbr){
+    if(!confirm('Eliminare questo appuntamento? L\'operazione non è recuperabile.')) return;
+    try{
+      await apiFetch('/agenda?id='+eventoInModifica, { method:'DELETE' });
+      chiudiModale();
+      await caricaEventi();
+    } catch(err){
+      alert('Errore nella eliminazione: '+err.message);
+    }
+    return;
+  }
+
+  // Caso B — appuntamento collegato a una fattura già emessa: la cancellazione
+  // porta via tutto insieme (fattura, PDF, tutti gli appuntamenti collegati,
+  // anche se la fattura è multipla). Logica condivisa con il pannello mensile.
+  const ok = await eliminaFatturaConCollegati(e.fatturaRecNbr);
+  if(ok) chiudiModale();
+}
+
+/* Cancellazione a cascata di una fattura già emessa: il record fattura su
+   Supabase (il server toglie anche il PDF dal bucket in automatico) più
+   TUTTI gli appuntamenti collegati allo stesso fattura_rec_nbr — non solo
+   quello da cui si è partiti, perché una fattura multipla ne coinvolge
+   più di uno (da 2 a 31). Due avvisi distinti, non uno solo. Riusata sia
+   dal dettaglio giorno/settimana sia dal pannello "Genera fattura" mensile.
+   Ritorna true se l'eliminazione è andata a buon fine. */
+async function eliminaFatturaConCollegati(fatturaRecNbr){
+  const collegati = eventi.filter(x => x.fatturaRecNbr === fatturaRecNbr);
+  if(!collegati.length) return false;
+  const elenco = collegati.map(x => '• '+x.data+' — '+x.titolo).join('\n');
+
+  const primoAvviso = confirm(
+    'ATTENZIONE — questa fattura coinvolge '+collegati.length+' appuntament'+(collegati.length===1?'o':'i')+'.\n\n'
+    + 'Eliminandola verranno cancellati insieme:\n'
+    + elenco + '\n\n'
+    + '+ il record della fattura su Supabase\n'
+    + '+ il PDF salvato sul bucket\n\n'
+    + 'Vuoi procedere?'
+  );
+  if(!primoAvviso) return false;
+
+  const secondoAvviso = confirm(
+    'Confermi di voler eliminare DEFINITIVAMENTE la fattura e tutt'+(collegati.length===1?'o':'i')
+    + ' l\'appuntament'+(collegati.length===1?'o':'i')+' collegat'+(collegati.length===1?'o':'i')+'?\n\n'
+    + 'Questa operazione non è recuperabile.'
+  );
+  if(!secondoAvviso) return false;
+
   try{
-    await apiFetch('/agenda?id='+eventoInModifica, { method:'DELETE' });
-    chiudiModale();
+    // Prima la fattura (il server cancella anche il PDF dal bucket in automatico),
+    // poi gli appuntamenti — così se la prima fallisce non tocchiamo nulla in agenda.
+    await apiFetch('/fatture?id='+fatturaRecNbr, { method:'DELETE' });
+    await Promise.all(collegati.map(x => apiFetch('/agenda?id='+x.id, { method:'DELETE' })));
     await caricaEventi();
-  } catch(e){
-    alert('Errore nella eliminazione: '+e.message);
+    alert('Fattura e appuntament'+(collegati.length===1?'o':'i')+' collegat'+(collegati.length===1?'o':'i')+' eliminati.');
+    return true;
+  } catch(err){
+    alert('Errore durante l\'eliminazione: '+err.message+'\n\nVerifica manualmente su Supabase: alcune parti potrebbero essere state cancellate e altre no.');
+    return false;
   }
 }
 
