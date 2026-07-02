@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il mio calendario — DIVA Mobile</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    --app-width: 760px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 760px;
+    min-height: 100vh;
+    background: linear-gradient(155deg, rgb(46,16,101) 0%, rgb(76,29,149) 50%, rgb(124,58,237) 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== AVVISO RUOTA SCHERMO (solo telefono verticale, vista settimana) ===== */
+  .rotate-hint {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+    color: #6b6678;
+  }
+  .rotate-hint i {
+    font-size: 40px;
+    color: #fb923c;
+    margin-bottom: 14px;
+    display: inline-block;
+  }
+  .rotate-hint-title { font-size: 15px; font-weight: 700; color: #2e2a3d; margin-bottom: 6px; }
+  .rotate-hint-sub { font-size: 13px; line-height: 1.5; max-width: 260px; }
+  .rotate-hint-btn {
+    margin-top: 18px;
+    padding: 10px 18px;
+    border-radius: 11px;
+    border: 1.5px solid #fed7aa;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  @media (orientation: portrait) and (max-width: 600px) {
+    .week-needs-rotate .rotate-hint { display: flex; }
+    .week-needs-rotate .time-view { display: none; }
+  }
+
+  /* ===== HEADER ===== */
+  .cal-header {
+    padding: 1.1rem 1rem 0.9rem;
+    flex-shrink: 0;
+  }
+  .cal-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .cal-back {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .cal-back:active { background: rgba(255,255,255,0.2); }
+  .cal-title { font-size: 18px; font-weight: 700; color: #fff; }
+  .cal-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); margin-left: 44px; }
+
+  /* ===== NAVIGAZIONE PERIODO ===== */
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1rem 0.7rem;
+    flex-shrink: 0;
+  }
+  .cal-nav-btn {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .cal-nav-btn:active { background: rgba(255,255,255,0.18); }
+  .cal-nav-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    flex: 1;
+    text-transform: capitalize;
+  }
+  .cal-today-btn {
+    font-size: 11px;
+    color: #fcd34d;
+    background: rgba(252,211,77,0.12);
+    border: 1px solid rgba(252,211,77,0.3);
+    border-radius: 6px;
+    padding: 4px 9px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+
+  /* ===== TABS VISTA ===== */
+  .cal-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 1rem 0.9rem;
+    flex-shrink: 0;
+  }
+  .cal-tab {
+    flex: 1;
+    text-align: center;
+    padding: 7px 0;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.65);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  .cal-tab.active {
+    background: rgba(251,146,60,0.18);
+    color: #fdba74;
+    border-color: rgba(251,146,60,0.35);
+  }
+
+  .reminder-banner {
+    display: flex;
+    gap: 8px;
+    padding: 0 1rem 0.9rem;
+    flex-shrink: 0;
+  }
+  .reminder-item {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+  }
+  .reminder-item:active { background: rgba(255,255,255,0.16); }
+  .reminder-item.reminder-attenzione { border-color: rgba(251,146,60,0.5); background: rgba(251,146,60,0.12); }
+  .reminder-item.reminder-ok {
+    cursor: default;
+    border-color: rgba(52,211,153,0.35);
+    background: rgba(52,211,153,0.08);
+    color: #6ee7b7;
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+  .reminder-warn {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fdba74;
+  }
+
+  /* ===== CORPO SCROLLABILE ===== */
+  .cal-body {
+    flex: 1;
+    background: #b9d9bd;
+    border-radius: 22px 22px 0 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 90px;
+  }
+
+  /* ===== VISTA MESE ===== */
+  .month-grid {
+    padding: 1rem 0.85rem 0;
+  }
+  .month-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 6px;
+  }
+  .month-weekdays span {
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #9b96a8;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .month-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+    border-top: 1px solid #8fae93;
+    border-left: 1px solid #8fae93;
+  }
+  .month-day {
+    min-height: 68px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 6px;
+    cursor: pointer;
+    position: relative;
+    background: transparent;
+    border-right: 1px solid #8fae93;
+    border-bottom: 1px solid #8fae93;
+    overflow: hidden;
+  }
+  .month-day:active { background: rgba(255,255,255,0.35); }
+  .month-day.other-month { opacity: 0.35; }
+  .month-day.today { background: #fff7ed; box-shadow: inset 0 0 0 2px #fb923c; }
+  .month-day-num {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2e2a3d;
+  }
+  .month-day.today .month-day-num { color: #c2410c; font-weight: 700; }
+  .month-day-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 4px;
+    width: 100%;
+    padding: 0 3px;
+    overflow: hidden;
+  }
+  .month-day-label {
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.25;
+    padding: 1.5px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+  .month-day-label-fatturato {
+    background: #059669;
+    color: #fff;
+  }
+  .month-day-more {
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #6b6678;
+    text-align: center;
+  }
+
+  /* ===== VISTA SETTIMANA / GIORNO — griglia oraria ===== */
+  .time-view { display: flex; }
+  .time-col {
+    width: 34px;
+    flex-shrink: 0;
+    padding-top: 14px;
+    border-right: 1px solid #8fae93;
+  }
+  .time-slot-label {
+    height: 58px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5b5668;
+    text-align: right;
+    padding-right: 5px;
+    transform: translateY(-7px);
+  }
+  .days-scroll {
+    flex: 1;
+    min-width: 0;
+  }
+  .days-row {
+    display: flex;
+    border-bottom: 1px solid #8fae93;
+  }
+  .day-head {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    padding: 8px 1px 10px;
+    cursor: pointer;
+  }
+  .day-head:active { background: #f4f2f9; }
+  .day-head.single { cursor: default; }
+  .day-head.single:active { background: transparent; }
+  .day-head-dow { font-size: 10px; color: #9b96a8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+  .day-head-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 3px auto 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2e2a3d;
+  }
+  .day-head.today .day-head-num { background: #fb923c; color: #fff; }
+  .day-head.single { min-width: 100%; }
+
+  .grid-wrap { position: relative; }
+  .grid-lines { position: relative; }
+  .grid-line {
+    height: 58px;
+    border-bottom: 1px solid #8fae93;
+  }
+  .grid-cols { display: flex; position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+  .grid-day-col {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    border-right: 1px solid #8fae93;
+  }
+  .grid-day-col.single { min-width: 100%; }
+  .grid-hour-cell {
+    height: 58px;
+    cursor: pointer;
+  }
+  .grid-hour-cell:active { background: #f4f2f9; }
+
+  .cal-event {
+    position: absolute;
+    left: 3px; right: 3px;
+    border-radius: 7px;
+    padding: 4px 7px;
+    overflow: hidden;
+    cursor: pointer;
+    border-left: 3px solid;
+  }
+  .cal-event-title { font-size: 12px; font-weight: 700; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .cal-event-azienda { font-size: 10.5px; font-weight: 600; opacity: 0.85; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-event-time { font-size: 10px; opacity: 0.8; margin-top: 1px; font-weight: 600; }
+  .cal-event-dettaglio { font-size: 10px; opacity: 0.9; margin-top: 2px; font-weight: 700; }
+  .cal-event-incompleto { color: #9a3412 !important; opacity: 0.75; font-style: italic; }
+
+  .now-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 0;
+    border-top: 2px solid #ef4444;
+    z-index: 5;
+  }
+  .now-line::before {
+    content: '';
+    position: absolute;
+    left: -4px; top: -4px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+  }
+
+  /* ===== LISTA APPUNTAMENTI DEL GIORNO (sotto al mese) ===== */
+  .day-agenda { padding: 1.1rem 1rem 0; }
+  .day-agenda-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #6b6678;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 10px;
+  }
+  .agenda-item {
+    display: flex;
+    gap: 10px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    align-items: center;
+    border: 1px solid #ece9f3;
+    cursor: pointer;
+  }
+  .agenda-item:active { background: #faf9fc; }
+  .agenda-bar { width: 4px; align-self: stretch; border-radius: 3px; flex-shrink: 0; }
+  .agenda-time { font-size: 11.5px; font-weight: 700; color: #6b6678; width: 42px; flex-shrink: 0; line-height: 1.3; }
+  .agenda-info { flex: 1; min-width: 0; }
+  .agenda-info-title { font-size: 13.5px; font-weight: 600; color: #2e2a3d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .agenda-info-sub { font-size: 11.5px; color: #9b96a8; margin-top: 1px; }
+  .agenda-empty {
+    text-align: center;
+    padding: 2.2rem 1rem;
+    color: #a9a4b8;
+    font-size: 13px;
+  }
+  .agenda-empty i { font-size: 26px; display: block; margin-bottom: 8px; opacity: 0.5; }
+
+  /* ===== RIEPILOGO MENSILE PER AZIENDA ===== */
+  .riepilogo-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.1rem; }
+  .riepilogo-row {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #ece9f3;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .riepilogo-row-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .riepilogo-row-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f1eff6;
+  }
+  .riepilogo-genera-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+  }
+  .riepilogo-genera-btn:active { opacity: 0.85; }
+  .riepilogo-bar { width: 4px; align-self: stretch; border-radius: 3px; flex-shrink: 0; }
+  .riepilogo-nome {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #2e2a3d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .riepilogo-stat {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b6678;
+    background: #f4f2f9;
+    border-radius: 7px;
+    padding: 4px 9px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .riepilogo-totale {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 1.4rem;
+  }
+  .riepilogo-totale-item {
+    flex: 1 1 72px;
+    min-width: 0;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    padding: 12px 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+  }
+  .riepilogo-totale-num { font-size: 20px; font-weight: 700; color: #c2410c; line-height: 1.2; }
+  .riepilogo-totale-lbl { font-size: 10.5px; font-weight: 600; color: #9a5b2e; margin-top: 2px; line-height: 1.3; }
+
+  /* ===== FAB AGGIUNGI ===== */
+  .fab {
+    position: fixed;
+    bottom: 22px;
+    right: max(22px, calc((100vw - var(--app-width, 460px)) / 2 + 22px));
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(251,146,60,0.45);
+    z-index: 40;
+  }
+  .fab:active { transform: scale(0.94); }
+
+  /* ===== MODALE CREAZIONE / DETTAGLIO ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.55);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    width: 100%;
+    max-width: 460px;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    padding: 1.3rem 1.2rem calc(1.3rem + env(safe-area-inset-bottom));
+    max-height: 86vh;
+    overflow-y: auto;
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: #e2dfe9;
+    border-radius: 3px;
+    margin: 0 auto 1rem;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; color: #2e2a3d; margin-bottom: 1.1rem; }
+  .field-group { margin-bottom: 1rem; }
+  .field-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b6678;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .field-input, .field-select {
+    width: 100%;
+    padding: 11px 13px;
+    border-radius: 11px;
+    border: 1.5px solid #e7e4ee;
+    font-size: 14.5px;
+    color: #2e2a3d;
+    background: #faf9fc;
+    font-family: inherit;
+  }
+  .field-input:focus, .field-select:focus {
+    outline: none;
+    border-color: #fb923c;
+    background: #fff;
+  }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field-group { flex: 1; }
+
+  .color-picker { display: flex; gap: 8px; }
+  .color-dot {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2.5px solid transparent;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 13px;
+  }
+  .color-dot.selected { border-color: #2e2a3d; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 1.4rem; }
+  .btn-secondary, .btn-primary {
+    flex: 1;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-secondary { background: #f1eff6; color: #6b6678; }
+  .btn-secondary:active { background: #e7e4ee; }
+  .btn-primary { background: linear-gradient(135deg, #fb923c, #f97316); color: #fff; }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-delete {
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px;
+    border-radius: 12px;
+    border: 1.5px solid #fecaca;
+    background: #fff;
+    color: #dc2626;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn-generate {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: not-allowed;
+    background: #e7e4ee;
+    color: #a7a2b5;
+    transition: background 0.15s, color 0.15s, opacity 0.15s;
+  }
+  .btn-generate.attivo {
+    cursor: pointer;
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+  }
+  .btn-generate.attivo:active { opacity: 0.85; }
+  .btn-view-invoice {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1.5px solid #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-view-invoice:active { opacity: 0.85; }
+  .field-hint {
+    font-size: 11px;
+    color: #9b96a8;
+    margin-top: 4px;
+  }
+
+  /* ===== PANNELLO SELEZIONE MULTIPLA — FATTURA DA PIÙ APPUNTAMENTI ===== */
+  .multi-list { display: flex; flex-direction: column; gap: 8px; margin: 1rem 0; }
+  .multi-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border: 1.5px solid #e7e4ee;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #faf9fc;
+  }
+  .multi-item.pronto { border-color: #a7f3d0; background: #f0fdf4; }
+  .multi-item.incompleto { opacity: 0.6; }
+  .multi-item input[type="checkbox"] {
+    width: 18px; height: 18px;
+    margin-top: 2px;
+    accent-color: #059669;
+    flex-shrink: 0;
+  }
+  .multi-item-body { flex: 1; min-width: 0; }
+  .multi-item-data { font-size: 13px; font-weight: 700; color: #2e2a3d; }
+  .multi-item-titolo { font-size: 12px; color: #6b6678; margin-top: 1px; }
+  .multi-item-dettaglio { font-size: 11.5px; color: #059669; font-weight: 600; margin-top: 3px; }
+  .multi-item-warn { font-size: 11.5px; color: #c2410c; font-weight: 600; margin-top: 3px; }
+  .multi-item-inline { display: flex; gap: 6px; margin-top: 6px; }
+  .multi-inline-select, .multi-inline-input {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 6px;
+    border-radius: 8px;
+    border: 2px solid #c2410c;
+    background: #fff;
+    color: #1a1725;
+    font-family: inherit;
+    text-align: center;
+  }
+  .multi-inline-select { flex: 1.6; min-width: 0; text-align: left; }
+  .multi-inline-input { flex: 1; min-width: 0; }
+  .multi-inline-turni { flex: 0.8; }
+  .multi-inline-select:focus, .multi-inline-input:focus { outline: none; border-color: #9a3412; box-shadow: 0 0 0 2px rgba(194,65,12,0.15); }
+  .multi-inline-input::placeholder { color: #8a8598; font-weight: 500; }
+  .multi-inline-save {
+    width: 100%;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: #e7e4ee;
+    color: #a7a2b5;
+  }
+  .multi-inline-save:not(:disabled) {
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+    cursor: pointer;
+  }
+  .multi-inline-save:disabled { cursor: not-allowed; }
+  .multi-summary {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #9a5b2e;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  ::-webkit-scrollbar { display: none; }
+
+  /* ===== LOGIN ===== */
+  .login-screen {
+    position: fixed; inset: 0; z-index: 500;
+    background: linear-gradient(135deg, #4c1d95, #3730a3);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .login-box {
+    background: #fff; border-radius: 20px; padding: 32px 26px;
+    width: 100%; max-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  }
+  .login-title { font-size: 20px; font-weight: 800; color: #2e2a3d; text-align: center; margin-bottom: 4px; }
+  .login-sub { font-size: 12.5px; color: #8a8598; text-align: center; margin-bottom: 22px; }
+  .login-field { margin-bottom: 12px; }
+  .login-field label { display:block; font-size: 11px; font-weight: 700; color: #6b6678; text-transform: uppercase; margin-bottom: 4px; }
+  .login-field input {
+    width: 100%; padding: 11px 12px; border-radius: 10px;
+    border: 1.5px solid #e7e4ee; font-size: 14px; font-family: inherit;
+  }
+  .login-field input:focus { outline: none; border-color: #fb923c; }
+  .login-btn {
+    width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px;
+    border: none; background: linear-gradient(135deg, #fb923c, #ea580c);
+    color: #fff; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  .login-btn:disabled { opacity: .6; cursor: not-allowed; }
+  .login-error {
+    background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+    font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 8px;
+    margin-bottom: 12px; display: none;
+  }
+  .login-hint { font-size: 10.5px; color: #b0abbe; text-align: center; margin-top: 16px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-title">📅 Il mio calendario</div>
+    <div class="login-sub">Accedi con le tue credenziali DIVA</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-field">
+      <label>Utente</label>
+      <input type="text" id="login-user" autocomplete="username" placeholder="nome utente" onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="password" onkeydown="if(event.key==='Enter') eseguiLogin()">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="eseguiLogin()">Accedi</button>
+    <div class="login-hint">Stesso login usato per il wizard fatture DIVA.<br>I tuoi appuntamenti sono visibili solo a te.</div>
+  </div>
+</div>
+
+<div class="app" id="app-root" style="display:none;">
+
+  <div class="cal-header">
+    <div class="cal-header-top">
+      <button class="cal-back" aria-label="Torna alla home" onclick="chiudiCalendario()">←</button>
+      <span class="cal-title">Il mio calendario</span>
+    </div>
+    <div class="cal-subtitle" id="user-label"></div>
+  </div>
+
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="navPeriodo(-1)">‹</button>
+    <div style="display:flex; align-items:center; justify-content:center; flex:1;">
+      <span class="cal-nav-label" id="nav-label"></span>
+      <button class="cal-today-btn" onclick="vaiOggi()">Oggi</button>
+    </div>
+    <button class="cal-nav-btn" onclick="navPeriodo(1)">›</button>
+  </div>
+
+  <div class="cal-tabs">
+    <div class="cal-tab" data-view="day" onclick="cambiaVista('day')">Giorno</div>
+    <div class="cal-tab active" data-view="week" onclick="cambiaVista('week')">Settimana</div>
+    <div class="cal-tab" data-view="month" onclick="cambiaVista('month')">Mese</div>
+  </div>
+
+  <div class="reminder-banner" id="reminder-banner"></div>
+
+  <div class="cal-body" id="cal-body"></div>
+
+  <button class="fab" aria-label="Aggiungi appuntamento" onclick="apriModaleNuovo()">+</button>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Nuovo appuntamento</div>
+
+    <div class="field-group">
+      <label class="field-label">Titolo</label>
+      <input type="text" class="field-input" id="f-titolo" placeholder="Es. Doppiaggio episodio 4">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Azienda</label>
+      <select class="field-select" id="f-azienda">
+        <option value="">Nessuna azienda</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Data</label>
+      <input type="date" class="field-input" id="f-data">
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Inizio</label>
+        <input type="time" class="field-input" id="f-inizio">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Fine</label>
+        <input type="time" class="field-input" id="f-fine">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Colore</label>
+      <div class="color-picker" id="color-picker"></div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Tipo opera</label>
+        <select class="field-select" id="f-tipo-opera" onchange="aggiornaStatoGenera()">
+          <option value="">— non ancora noto —</option>
+          <option value="Film">Film</option>
+          <option value="Soap">Soap</option>
+          <option value="Telefilm">Telefilm</option>
+          <option value="Cartoni">Cartoni</option>
+          <option value="TvMovie">TvMovie</option>
+          <option value="Doc">Doc</option>
+          <option value="Doc No Sync">Doc No Sync</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Turni</label>
+        <input type="number" class="field-input" id="f-turni" placeholder="Es. 1" min="1" step="1" oninput="aggiornaStatoGenera()">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Righe</label>
+      <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Note</label>
+      <input type="text" class="field-input" id="f-note" placeholder="Note facoltative">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="chiudiModale()">Annulla</button>
+      <button class="btn-primary" onclick="salvaEvento()">Salva</button>
+    </div>
+    <button class="btn-delete" id="btn-elimina" style="display:none" onclick="eliminaEvento()">Elimina appuntamento</button>
+    <button class="btn-generate" id="btn-genera" style="display:none" onclick="generaFattura()" disabled>Genera fattura da questo appuntamento</button>
+    <button class="btn-view-invoice" id="btn-visualizza" style="display:none" onclick="visualizzaFatturaSalvata()">📄 Visualizza fattura salvata</button>
+    <div class="field-hint" id="genera-hint" style="display:none">Compila tipo opera, turni e righe per attivare la generazione.</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay-multi">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title-multi">Genera fattura</div>
+    <div id="multi-summary" class="multi-summary"></div>
+    <div id="multi-list" class="multi-list"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="chiudiModaleMulti()">Annulla</button>
+      <button class="btn-generate" id="btn-genera-multi" onclick="confermaGeneraFatturaMultipla()" disabled>Genera fattura</button>
+    </div>
+    <button class="btn-view-invoice" id="btn-visualizza-multi" style="display:none" onclick="visualizzaFatturaSalvataMulti()">📄 Visualizza fattura salvata</button>
+  </div>
+</div>
+
+<script>
+const COLORI = [
+  {id:'arancio', bg:'#fff7ed', bar:'#f97316', text:'#9a3412'},
+  {id:'blu',     bg:'#eff6ff', bar:'#3b82f6', text:'#1e40af'},
+  {id:'verde',   bg:'#f0fdf4', bar:'#22c55e', text:'#166534'},
+  {id:'viola',   bg:'#faf5ff', bar:'#a855f7', text:'#6b21a8'},
+  {id:'rosa',    bg:'#fdf2f8', bar:'#ec4899', text:'#9d174d'},
+];
+
+function oggiISO(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+const OGGI = new Date();
+const OGGI_ISO = oggiISO(OGGI);
+
+// ════════════════════════════════════════════════════════════
+// CONFIGURAZIONE API — server DIVA (stesso backend delle fatture)
+// ════════════════════════════════════════════════════════════
+const API_BASE = 'https://enpals-server.onrender.com';
+
+let AUTH = { token: null, nominativo: null, ruolo: null };
+
+async function apiFetch(path, opts={}, _retry=true){
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if(AUTH.token) headers['Authorization'] = 'Bearer '+AUTH.token;
+  let res;
+  try{
+    res = await fetch(API_BASE+path, Object.assign({}, opts, {headers}));
+  } catch(networkErr){
+    // Il server Render gratuito "dorme" dopo 15 min di inattività: il primo
+    // risveglio può richiedere fino a ~30 secondi e la prima richiesta va
+    // spesso in errore di rete. Un solo retry automatico dopo una pausa
+    // copre la stragrande maggioranza dei casi, senza dover duplicare la
+    // logica di retry che il wizard DIVA ha già per conto suo.
+    if(_retry){
+      await new Promise(r=>setTimeout(r, 4000));
+      return apiFetch(path, opts, false);
+    }
+    throw new Error('Server non raggiungibile (potrebbe essere in fase di risveglio, riprova tra qualche secondo).');
+  }
+  let body = null;
+  try{ body = await res.json(); } catch(e){}
+  if(!res.ok){
+    const msg = (body && body.error) ? body.error : ('Errore '+res.status);
+    throw new Error(msg);
+  }
+  return body;
+}
+
+/* Converte l'oggetto interno (usato da tutto il resto del codice, con
+   inizio/fine/tipoOpera) nel formato colonne del server (ora_inizio/
+   ora_fine/tipo_opera). Nessun'altra funzione del prototipo va toccata:
+   solo il livello che parla con l'API conosce questa differenza. */
+function toApiPayload(e){
+  return {
+    titolo: e.titolo,
+    azienda: e.azienda || null,
+    data: e.data,
+    ora_inizio: e.inizio,
+    ora_fine: e.fine,
+    colore: e.colore,
+    note: e.note || null,
+    tipo_opera: e.tipoOpera || null,
+    turni: (e.turni==='' || e.turni==null) ? null : Number(e.turni),
+    righe: (e.righe==='' || e.righe==null) ? null : Number(e.righe)
+  };
+}
+function fromApiRecord(r){
+  return {
+    id: r.id,
+    titolo: r.titolo,
+    azienda: r.azienda || '',
+    data: r.data,
+    inizio: (r.ora_inizio||'').slice(0,5),
+    fine: (r.ora_fine||'').slice(0,5),
+    colore: r.colore || 'arancio',
+    note: r.note || '',
+    tipoOpera: r.tipo_opera || '',
+    turni: (r.turni===null || r.turni===undefined) ? '' : r.turni,
+    righe: (r.righe===null || r.righe===undefined) ? '' : r.righe,
+    fatturaUrl: r.fattura_pdf_url || null
+  };
+}
+
+async function eseguiLogin(){
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  if(!user || !pass){ err.textContent = 'Inserisci utente e password.'; err.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = 'Accesso in corso…';
+  try{
+    const r = await apiFetch('/login', { method:'POST', body: JSON.stringify({username:user, password:pass}) });
+    if(!r.ok){ throw new Error(r.error || 'Credenziali non valide'); }
+    AUTH.token = r.token; AUTH.nominativo = user.toUpperCase(); AUTH.ruolo = r.ruolo;
+    document.getElementById('user-label').textContent = 'Ciao, '+AUTH.nominativo;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-root').style.display = '';
+    await Promise.all([caricaEventi(), caricaAziende()]);
+  } catch(e){
+    err.textContent = e.message || 'Errore di accesso.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Accedi';
+  }
+}
+
+async function caricaEventi(){
+  const rows = await apiFetch('/agenda');
+  eventi = rows.map(fromApiRecord);
+  render();
+}
+
+let aziendeList = [];
+
+async function caricaAziende(){
+  try{
+    aziendeList = await apiFetch('/aziende');
+    popolaSelectAziende();
+  } catch(e){
+    // Non blocchiamo il calendario se le aziende non si caricano — resta
+    // solo l'opzione "Nessuna azienda", l'utente può comunque lavorare.
+    console.warn('Errore caricamento aziende:', e.message);
+  }
+}
+
+function popolaSelectAziende(){
+  const sel = document.getElementById('f-azienda');
+  const valorePrecedente = sel.value;
+  sel.innerHTML = '';
+  const optVuota = document.createElement('option');
+  optVuota.value = ''; optVuota.textContent = 'Nessuna azienda';
+  sel.appendChild(optVuota);
+  aziendeList.forEach(a=>{
+    const opt = document.createElement('option');
+    opt.value = a.rag; opt.textContent = a.rag;
+    sel.appendChild(opt);
+  });
+  if(valorePrecedente) sel.value = valorePrecedente;
+}
+
+let eventi = [];
+
+function addDays(iso, n){
+  const d = new Date(iso+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return oggiISO(d);
+}
+
+let vistaCorrente = 'week';
+let dataCorrente = new Date(OGGI);
+let slotSelezionato = null;
+let eventoInModifica = null;
+
+const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const GIORNI_BREVI = ['lun','mar','mer','gio','ven','sab','dom'];
+
+function colorOf(id){ return COLORI.find(c=>c.id===id) || COLORI[0]; }
+
+function cambiaVista(v){
+  vistaCorrente = v;
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.toggle('active', t.dataset.view===v));
+  render();
+}
+
+function navPeriodo(dir){
+  if(vistaCorrente==='day') dataCorrente.setDate(dataCorrente.getDate()+dir);
+  else if(vistaCorrente==='week') dataCorrente.setDate(dataCorrente.getDate()+dir*7);
+  else dataCorrente.setMonth(dataCorrente.getMonth()+dir);
+  render();
+}
+function vaiOggi(){ dataCorrente = new Date(OGGI); render(); }
+
+function startOfWeek(d){
+  const x = new Date(d);
+  const day = (x.getDay()+6)%7;
+  x.setDate(x.getDate()-day);
+  return x;
+}
+
+function render(){
+  renderNavLabel();
+  const body = document.getElementById('cal-body');
+  document.body.classList.toggle('week-needs-rotate', vistaCorrente === 'week');
+  if(vistaCorrente==='month') body.innerHTML = renderMese();
+  else body.innerHTML = renderTimeView(vistaCorrente);
+  posizionaEventi();
+  renderReminderBanner();
+}
+
+/* Banner: mostra gli appuntamenti della settimana ATTUALMENTE VISUALIZZATA
+   (segue la navigazione avanti/indietro), non sempre quella di oggi.
+   - Se la settimana visualizzata è quella corrente (di oggi): guarda da
+     domani a domenica, escludendo oggi che è ancora "in corso".
+   - Se è una settimana diversa (passata o futura): guarda l'intera
+     settimana, da lunedì a domenica. */
+function renderReminderBanner(){
+  const el = document.getElementById('reminder-banner');
+  if(!el) return;
+
+  const inizioSettVista = startOfWeek(dataCorrente);
+  const fineSettVista = new Date(inizioSettVista); fineSettVista.setDate(fineSettVista.getDate()+6);
+  const inizioSettOggi = startOfWeek(OGGI);
+  const stessaSettimanaDiOggi = oggiISO(inizioSettVista)===oggiISO(inizioSettOggi);
+
+  let isoInizio, isoFine, periodo;
+  if(stessaSettimanaDiOggi){
+    const domani = new Date(OGGI); domani.setDate(domani.getDate()+1);
+    isoInizio = oggiISO(domani);
+    isoFine = oggiISO(fineSettVista);
+    periodo = 'da domani a domenica';
+  } else {
+    isoInizio = oggiISO(inizioSettVista);
+    isoFine = oggiISO(fineSettVista);
+    periodo = 'da lunedì a domenica';
+  }
+
+  const evs = eventi.filter(e => e.data >= isoInizio && e.data <= isoFine);
+  const tot = evs.length;
+  const incompleti = evs.filter(e => !e.tipoOpera || e.turni==='' || e.righe==='').length;
+  const isoTarget = isoInizio <= isoFine ? isoInizio : oggiISO(inizioSettVista);
+
+  if(tot===0){
+    el.innerHTML = '<div class="reminder-item reminder-ok">✓ Nessun appuntamento '+periodo+'</div>';
+    return;
+  }
+  if(incompleti===0){
+    el.innerHTML = '<div class="reminder-item reminder-ok" style="cursor:pointer" onclick="vaiASettimana(\''+isoTarget+'\')">✓ '
+      + tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+', tutti pronti per la fatturazione</div>';
+    return;
+  }
+  el.innerHTML = '<div class="reminder-item reminder-attenzione" onclick="vaiASettimana(\''+isoTarget+'\')">'
+    + '<span class="reminder-warn">⚠ '+tot+' appuntament'+(tot===1?'o':'i')+' '+periodo+', '
+    + incompleti+' dei quali con dati incompleti per la fatturazione</span>'
+    + '</div>';
+}
+
+function vaiASettimana(iso){
+  dataCorrente = new Date(iso+'T00:00:00');
+  vistaCorrente = 'week';
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.toggle('active', t.dataset.view==='week'));
+  render();
+}
+
+function renderNavLabel(){
+  const lbl = document.getElementById('nav-label');
+  if(vistaCorrente==='month'){
+    lbl.textContent = MESI[dataCorrente.getMonth()] + ' ' + dataCorrente.getFullYear();
+  } else if(vistaCorrente==='week'){
+    const s = startOfWeek(dataCorrente);
+    const e = new Date(s); e.setDate(e.getDate()+6);
+    if(s.getMonth()===e.getMonth()) lbl.textContent = s.getDate()+' – '+e.getDate()+' '+MESI[s.getMonth()];
+    else lbl.textContent = s.getDate()+' '+MESI[s.getMonth()].slice(0,3)+' – '+e.getDate()+' '+MESI[e.getMonth()].slice(0,3);
+  } else {
+    lbl.textContent = dataCorrente.getDate()+' '+MESI[dataCorrente.getMonth()]+' '+dataCorrente.getFullYear();
+  }
+}
+
+function eventiDelGiorno(iso){
+  return eventi.filter(e=>e.data===iso).sort((a,b)=>a.inizio.localeCompare(b.inizio));
+}
+
+/* ===== VISTA MESE ===== */
+function renderMese(){
+  const anno = dataCorrente.getFullYear(), mese = dataCorrente.getMonth();
+  const primo = new Date(anno, mese, 1);
+  const inizioGriglia = startOfWeek(primo);
+  let html = '<div class="month-grid"><div class="month-weekdays">';
+  GIORNI_BREVI.forEach(g=> html += '<span>'+g+'</span>');
+  html += '</div><div class="month-days">';
+
+  for(let i=0;i<42;i++){
+    const d = new Date(inizioGriglia); d.setDate(d.getDate()+i);
+    const iso = oggiISO(d);
+    const isOther = d.getMonth()!==mese;
+    const isToday = iso===OGGI_ISO;
+    const evsGiorno = eventiDelGiorno(iso);
+    const evs = evsGiorno.slice(0,2);
+    const altre = evsGiorno.length - evs.length;
+    html += '<div class="month-day '+(isOther?'other-month ':'')+(isToday?'today':'')+'" onclick="apriSettimanaDaMese(\''+iso+'\')">';
+    html += '<span class="month-day-num">'+d.getDate()+'</span>';
+    if(evs.length){
+      html += '<div class="month-day-labels">';
+      evs.forEach(e=>{
+        const nome = e.azienda || e.titolo;
+        if(e.fatturaUrl){
+          html += '<span class="month-day-label month-day-label-fatturato">✓ '+nome+'</span>';
+        } else {
+          const c = colorOf(e.colore);
+          html += '<span class="month-day-label" style="background:'+c.bg+';color:'+c.text+'">'+nome+'</span>';
+        }
+      });
+      if(altre>0) html += '<span class="month-day-more">+'+altre+' altr'+(altre===1?'o':'i')+'</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div></div>';
+
+  html += renderRiepilogoMese(anno, mese);
+  return html;
+}
+
+function durataOre(inizio, fine){
+  const [hI,mI] = inizio.split(':').map(Number);
+  const [hF,mF] = fine.split(':').map(Number);
+  return ((hF*60+mF) - (hI*60+mI)) / 60;
+}
+
+function renderRiepilogoMese(anno, mese){
+  const evsMese = eventi.filter(e=>{
+    const d = new Date(e.data+'T00:00:00');
+    return d.getFullYear()===anno && d.getMonth()===mese;
+  });
+
+  let html = '<div class="day-agenda"><div class="day-agenda-title">Riepilogo '+MESI[mese]+' '+anno+'</div>';
+
+  if(!evsMese.length){
+    html += '<div class="agenda-empty"><i>—</i>Nessun appuntamento in questo mese.</div></div>';
+    return html;
+  }
+
+  const perAzienda = {};
+  const giorniImpegnati = new Set();
+  let oreTotali = 0;
+  let righeTotali = 0;
+
+  evsMese.forEach(e=>{
+    const nome = e.azienda || 'Senza azienda';
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, colore:e.colore};
+    const ore = durataOre(e.inizio, e.fine);
+    const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
+    perAzienda[nome].turni += 1;
+    perAzienda[nome].ore += ore;
+    perAzienda[nome].righe += righeEv;
+    if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
+    oreTotali += ore;
+    righeTotali += righeEv;
+    giorniImpegnati.add(e.data);
+  });
+
+  const aziendeOrdinate = Object.keys(perAzienda).sort((a,b)=> perAzienda[b].ore - perAzienda[a].ore);
+
+  html += '<div class="riepilogo-list">';
+  aziendeOrdinate.forEach(nome=>{
+    const v = perAzienda[nome];
+    const c = colorOf(v.colore);
+    html += '<div class="riepilogo-row">';
+    html += '<div class="riepilogo-row-top">';
+    html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
+    html += '<div class="riepilogo-nome">'+nome+'</div>';
+    html += '<div class="riepilogo-stat">'+v.turni+' '+(v.turni===1?'turno':'turni')+'</div>';
+    html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
+    html += '</div>';
+    if(nome!=='Senza azienda'){
+      html += '<div class="riepilogo-row-actions">';
+      html += '<button class="riepilogo-genera-btn" onclick="apriSelezioneFattura(\''+nome.replace(/'/g,"\\'")+'\', '+anno+', '+mese+')">🧾 Genera fattura</button>';
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  html += '<div class="riepilogo-totale">';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+evsMese.length+'</span><span class="riepilogo-totale-lbl">'+(evsMese.length===1?'turno':'turni')+' totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+giorniImpegnati.size+'</span><span class="riepilogo-totale-lbl">'+(giorniImpegnati.size===1?'giorno':'giorni')+' impegnati</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+formattaOre(oreTotali)+'</span><span class="riepilogo-totale-lbl">ore totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+righeTotali+'</span><span class="riepilogo-totale-lbl">righe totali</span></div>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+function formattaOre(ore){
+  const h = Math.floor(ore);
+  const m = Math.round((ore - h) * 60);
+  if(m === 0) return h + 'h';
+  return h + 'h ' + m + 'm';
+}
+
+function apriSettimanaDaMese(iso){
+  dataCorrente = new Date(iso+'T00:00:00');
+  vistaCorrente = 'week';
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.toggle('active', t.dataset.view==='week'));
+  render();
+}
+
+function apriGiornoDaMese(iso){
+  dataCorrente = new Date(iso+'T00:00:00');
+  vistaCorrente = 'day';
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.toggle('active', t.dataset.view==='day'));
+  render();
+}
+
+/* ===== VISTA GIORNO / SETTIMANA — griglia oraria ===== */
+const ORA_INIZIO = 8, ORA_FINE = 21;
+
+function renderTimeView(modo){
+  const giorni = [];
+  if(modo==='day') giorni.push(new Date(dataCorrente));
+  else { const s = startOfWeek(dataCorrente); for(let i=0;i<7;i++){ const d=new Date(s); d.setDate(d.getDate()+i); giorni.push(d); } }
+
+  let html = '<div class="rotate-hint"><i>&#8635;</i>';
+  html += '<div class="rotate-hint-title">Ruota il telefono</div>';
+  html += '<div class="rotate-hint-sub">In orizzontale vedi tutti i sette giorni della settimana con il testo ben leggibile.</div>';
+  html += '<button class="rotate-hint-btn" onclick="cambiaVista(\'day\')">Vai alla vista Giorno</button></div>';
+
+  html += '<div class="time-view"><div class="time-col">';
+  for(let h=ORA_INIZIO; h<ORA_FINE; h++) html += '<div class="time-slot-label">'+String(h).padStart(2,'0')+':00</div>';
+  html += '</div><div class="days-scroll"><div class="days-row">';
+  giorni.forEach(d=>{
+    const iso = oggiISO(d);
+    const clickAttr = modo==='week' ? ' onclick="apriGiornoDaMese(\''+iso+'\')"' : '';
+    html += '<div class="day-head '+(iso===OGGI_ISO?'today':'')+' '+(modo==='day'?'single':'')+'"'+clickAttr+'>';
+    html += '<div class="day-head-dow">'+GIORNI_BREVI[(d.getDay()+6)%7]+'</div>';
+    html += '<div class="day-head-num">'+d.getDate()+'</div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="grid-wrap"><div class="grid-lines">';
+  for(let h=ORA_INIZIO; h<ORA_FINE; h++) html += '<div class="grid-line"></div>';
+  html += '</div><div class="grid-cols">';
+  giorni.forEach(d=>{
+    const iso = oggiISO(d);
+    html += '<div class="grid-day-col '+(modo==='day'?'single':'')+'" data-date="'+iso+'">';
+    for(let h=ORA_INIZIO; h<ORA_FINE; h++){
+      html += '<div class="grid-hour-cell" onclick="apriModaleSuSlot(\''+iso+'\','+h+')"></div>';
+    }
+    html += '</div>';
+  });
+  html += '</div></div></div></div>';
+  return html;
+}
+
+function posizionaEventi(){
+  document.querySelectorAll('.grid-day-col').forEach(col=>{
+    const iso = col.dataset.date;
+    const evs = eventiDelGiorno(iso);
+    evs.forEach(e=>{
+      const [hI,mI] = e.inizio.split(':').map(Number);
+      const [hF,mF] = e.fine.split(':').map(Number);
+      const top = ((hI - ORA_INIZIO) * 58) + (mI/60*58);
+      const height = Math.max(((hF*60+mF) - (hI*60+mI)) / 60 * 58, 26);
+      const c = colorOf(e.colore);
+      const div = document.createElement('div');
+      div.className = 'cal-event';
+      div.style.top = top+'px';
+      div.style.height = height+'px';
+      div.style.background = c.bg;
+      div.style.borderColor = c.bar;
+      div.style.color = c.text;
+      let contenuto = '<div class="cal-event-title">'+e.titolo+'</div>';
+      if(height>40 && e.azienda) contenuto += '<div class="cal-event-azienda" style="color:'+c.text+'">'+e.azienda+'</div>';
+      if(height>56) contenuto += '<div class="cal-event-time" style="color:'+c.text+'">'+e.inizio+'–'+e.fine+'</div>';
+      if(height>76){
+        if(e.tipoOpera && e.turni!=='' && e.righe!==''){
+          contenuto += '<div class="cal-event-dettaglio" style="color:'+c.text+'">'+e.tipoOpera+' · '+e.turni+' '+(e.turni===1?'turno':'turni')+' · '+e.righe+' righe</div>';
+        } else {
+          contenuto += '<div class="cal-event-dettaglio cal-event-incompleto">dati fattura incompleti</div>';
+        }
+      }
+      div.innerHTML = contenuto;
+      div.onclick = function(ev){ ev.stopPropagation(); apriDettaglio(e.id); };
+      col.appendChild(div);
+    });
+    if(iso===OGGI_ISO){
+      const now = new Date();
+      const h = now.getHours(), m = now.getMinutes();
+      if(h>=ORA_INIZIO && h<ORA_FINE){
+        const top = ((h-ORA_INIZIO)*58)+(m/60*58);
+        const line = document.createElement('div');
+        line.className = 'now-line';
+        line.style.top = top+'px';
+        col.appendChild(line);
+      }
+    }
+  });
+}
+
+/* ===== MODALE ===== */
+function buildColorPicker(selezionato){
+  const wrap = document.getElementById('color-picker');
+  wrap.innerHTML = '';
+  COLORI.forEach(c=>{
+    const dot = document.createElement('div');
+    dot.className = 'color-dot'+(c.id===selezionato?' selected':'');
+    dot.style.background = c.bar;
+    dot.dataset.color = c.id;
+    dot.onclick = function(){
+      document.querySelectorAll('.color-dot').forEach(x=>x.classList.remove('selected'));
+      dot.classList.add('selected');
+    };
+    wrap.appendChild(dot);
+  });
+}
+
+function apriModaleNuovo(){
+  eventoInModifica = null;
+  document.getElementById('modal-title').textContent = 'Nuovo appuntamento';
+  document.getElementById('f-titolo').value = '';
+  document.getElementById('f-azienda').value = '';
+  document.getElementById('f-data').value = oggiISO(dataCorrente);
+  document.getElementById('f-inizio').value = '09:00';
+  document.getElementById('f-fine').value = '10:00';
+  document.getElementById('f-note').value = '';
+  document.getElementById('f-tipo-opera').value = '';
+  document.getElementById('f-turni').value = '';
+  document.getElementById('f-righe').value = '';
+  document.getElementById('btn-elimina').style.display = 'none';
+  document.getElementById('btn-genera').style.display = 'none';
+  document.getElementById('btn-visualizza').style.display = 'none';
+  document.getElementById('genera-hint').style.display = 'none';
+  buildColorPicker('arancio');
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function apriModaleSuSlot(iso, ora){
+  eventoInModifica = null;
+  document.getElementById('modal-title').textContent = 'Nuovo appuntamento';
+  document.getElementById('f-titolo').value = '';
+  document.getElementById('f-azienda').value = '';
+  document.getElementById('f-data').value = iso;
+  document.getElementById('f-inizio').value = String(ora).padStart(2,'0')+':00';
+  document.getElementById('f-fine').value = String(ora+1).padStart(2,'0')+':00';
+  document.getElementById('f-note').value = '';
+  document.getElementById('f-tipo-opera').value = '';
+  document.getElementById('f-turni').value = '';
+  document.getElementById('f-righe').value = '';
+  document.getElementById('btn-elimina').style.display = 'none';
+  document.getElementById('btn-genera').style.display = 'none';
+  document.getElementById('btn-visualizza').style.display = 'none';
+  document.getElementById('genera-hint').style.display = 'none';
+  buildColorPicker('arancio');
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function apriDettaglio(id){
+  const e = eventi.find(x=>x.id===id);
+  if(!e) return;
+  eventoInModifica = id;
+  document.getElementById('modal-title').textContent = 'Modifica appuntamento';
+  document.getElementById('f-titolo').value = e.titolo;
+  document.getElementById('f-azienda').value = e.azienda;
+  document.getElementById('f-data').value = e.data;
+  document.getElementById('f-inizio').value = e.inizio;
+  document.getElementById('f-fine').value = e.fine;
+  document.getElementById('f-note').value = e.note;
+  document.getElementById('f-tipo-opera').value = e.tipoOpera || '';
+  document.getElementById('f-turni').value = (e.turni===0 || e.turni) ? e.turni : '';
+  document.getElementById('f-righe').value = (e.righe===0 || e.righe) ? e.righe : '';
+  document.getElementById('btn-elimina').style.display = 'block';
+  document.getElementById('btn-genera').style.display = 'block';
+  document.getElementById('btn-visualizza').style.display = e.fatturaUrl ? 'block' : 'none';
+  document.getElementById('genera-hint').style.display = 'block';
+  buildColorPicker(e.colore);
+  document.getElementById('modal-overlay').classList.add('show');
+  aggiornaStatoGenera();
+}
+
+function chiudiModale(){
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+async function salvaEvento(){
+  const titolo = document.getElementById('f-titolo').value.trim();
+  if(!titolo){ alert("Inserisci un titolo per l'appuntamento."); return; }
+  const colSel = document.querySelector('.color-dot.selected');
+  const turniVal = document.getElementById('f-turni').value;
+  const righeVal = document.getElementById('f-righe').value;
+  const dati = {
+    titolo: titolo,
+    azienda: document.getElementById('f-azienda').value,
+    data: document.getElementById('f-data').value,
+    inizio: document.getElementById('f-inizio').value,
+    fine: document.getElementById('f-fine').value,
+    colore: colSel ? colSel.dataset.color : 'arancio',
+    note: document.getElementById('f-note').value.trim(),
+    tipoOpera: document.getElementById('f-tipo-opera').value,
+    turni: turniVal === '' ? '' : Number(turniVal),
+    righe: righeVal === '' ? '' : Number(righeVal)
+  };
+  if(dati.fine <= dati.inizio){ alert("L'orario di fine deve essere dopo l'inizio."); return; }
+
+  const btnSalva = document.querySelector('#modal-overlay .btn-primary');
+  if(btnSalva){ btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio…'; }
+  try{
+    if(eventoInModifica){
+      await apiFetch('/agenda?id='+eventoInModifica, { method:'PATCH', body: JSON.stringify(toApiPayload(dati)) });
+    } else {
+      await apiFetch('/agenda', { method:'POST', body: JSON.stringify(toApiPayload(dati)) });
+    }
+    chiudiModale();
+    await caricaEventi();
+  } catch(e){
+    alert('Errore nel salvataggio: '+e.message);
+  } finally {
+    if(btnSalva){ btnSalva.disabled = false; btnSalva.textContent = 'Salva'; }
+  }
+}
+
+function aggiornaStatoGenera(){
+  const btn = document.getElementById('btn-genera');
+  if(!btn || btn.style.display === 'none') return;
+  const tipo = document.getElementById('f-tipo-opera').value;
+  const turni = document.getElementById('f-turni').value;
+  const righe = document.getElementById('f-righe').value;
+  const pronto = tipo !== '' && turni !== '' && righe !== '';
+  btn.classList.toggle('attivo', pronto);
+  btn.disabled = !pronto;
+  const hint = document.getElementById('genera-hint');
+  if(hint) hint.style.display = pronto ? 'none' : 'block';
+}
+
+async function generaFattura(){
+  if(!eventoInModifica) return;
+  const e = eventi.find(x=>x.id===eventoInModifica);
+  if(!e || !e.tipoOpera || e.turni==='' || e.righe===''){ return; }
+  // TODO: qui andrà la vera chiamata al server — raccoglie i dati
+  // dell'appuntamento + profilo utente da Supabase, genera il PDF con
+  // il motore di calcolo fatture esistente e lo salva su Supabase
+  // Storage (bucket fatture-pdf), restituendo l'URL pubblico del file.
+  // Per ora simuliamo il salvataggio con un PDF placeholder, per poter
+  // testare il flusso completo genera → salva → consulta. L'URL viene
+  // comunque scritto davvero sul record (fattura_pdf_url), così lo
+  // sfondo verde e questo pulsante restano corretti anche dopo un reload.
+  const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+  try{
+    await apiFetch('/agenda?id='+e.id, { method:'PATCH', body: JSON.stringify({ fattura_pdf_url: url }) });
+    e.fatturaUrl = url;
+    alert('Fattura generata e salvata per "'+e.titolo+'" — '+e.tipoOpera+', '+e.turni+' '+(e.turni===1?'turno':'turni')+', '+e.righe+' righe, azienda '+(e.azienda||'—')+'.\n\n(PDF placeholder — il collegamento al vero motore di calcolo non è ancora fatto)');
+    document.getElementById('btn-visualizza').style.display = 'block';
+    render();
+  } catch(err){
+    alert('Errore nel salvataggio della fattura: '+err.message);
+  }
+}
+
+function visualizzaFatturaSalvata(){
+  if(!eventoInModifica) return;
+  const e = eventi.find(x=>x.id===eventoInModifica);
+  if(!e || !e.fatturaUrl) return;
+  window.open(e.fatturaUrl, '_blank');
+}
+
+/* ===== FATTURA DA PIÙ APPUNTAMENTI — STESSA AZIENDA, STESSO MESE ===== */
+let selezioneMulti = { azienda: '', anno: 0, mese: 0 };
+// Registro delle fatture "salvate" (simulato): chiave azienda|anno|mese -> URL PDF.
+// In produzione questa informazione arriverà da Supabase (tabella fatture),
+// non da uno stato locale in memoria come qui nel prototipo.
+let fattureSalvate = {};
+function chiaveFattura(nome, anno, mese){ return nome+'|'+anno+'|'+mese; }
+const TIPI_OPERA = ['Film','Soap','Telefilm','Cartoni','TvMovie','Doc','Doc No Sync'];
+
+function formattaDataBreve(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.getDate()+' '+MESI[d.getMonth()].slice(0,3);
+}
+
+function opzioniTipoOperaHtml(){
+  let h = '<option value="">Tipo opera…</option>';
+  TIPI_OPERA.forEach(t=> h += '<option value="'+t+'">'+t+'</option>');
+  return h;
+}
+
+function apriSelezioneFattura(nome, anno, mese){
+  selezioneMulti = { azienda: nome, anno: anno, mese: mese };
+  document.getElementById('modal-title-multi').textContent = 'Genera fattura — '+nome;
+
+  const evs = eventi.filter(e=>{
+    const d = new Date(e.data+'T00:00:00');
+    return (e.azienda||'')===nome && d.getFullYear()===anno && d.getMonth()===mese;
+  }).sort((a,b)=> a.data.localeCompare(b.data) || a.inizio.localeCompare(b.inizio));
+
+  let html = '';
+  evs.forEach(e=>{
+    const pronto = !!e.tipoOpera && e.righe!=='' && e.turni!=='' && e.turni!=null;
+    html += '<div class="multi-item '+(pronto?'pronto':'incompleto')+'" id="multi-item-'+e.id+'">';
+    html += '<input type="checkbox" data-id="'+e.id+'" '+(pronto?'checked':'disabled')+' onchange="aggiornaStatoSelezioneMulti()">';
+    html += '<div class="multi-item-body">';
+    html += '<div class="multi-item-data">'+formattaDataBreve(e.data)+'</div>';
+    html += '<div class="multi-item-titolo">'+e.titolo+'</div>';
+    if(pronto){
+      html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.turni+' '+(e.turni===1?'turno':'turni')+' · '+e.righe+' righe</div>';
+    } else {
+      html += '<div class="multi-item-warn">Manca tipo opera, turni e/o righe — inseriscili e salvali qui</div>';
+      html += '<div class="multi-item-inline">';
+      html += '<select class="multi-inline-select" id="tipo-'+e.id+'" onchange="aggiornaCampiInline('+e.id+')">'+opzioniTipoOperaHtml()+'</select>';
+      html += '<input type="number" class="multi-inline-input multi-inline-turni" id="turni-'+e.id+'" placeholder="Turni" min="1" step="1" value="'+(e.turni || '')+'" oninput="aggiornaCampiInline('+e.id+')">';
+      html += '<input type="number" class="multi-inline-input" id="righe-'+e.id+'" placeholder="Righe" min="0" step="1" value="'+(e.righe!=='' && e.righe!=null ? e.righe : '')+'" oninput="aggiornaCampiInline('+e.id+')">';
+      html += '</div>';
+      html += '<button type="button" class="multi-inline-save" id="salva-'+e.id+'" onclick="salvaCampiInline('+e.id+')" disabled>Salva</button>';
+    }
+    html += '</div></div>';
+  });
+  document.getElementById('multi-list').innerHTML = html || '<div class="agenda-empty"><i>—</i>Nessun appuntamento trovato.</div>';
+
+  const salvata = fattureSalvate[chiaveFattura(nome, anno, mese)];
+  document.getElementById('btn-visualizza-multi').style.display = salvata ? 'block' : 'none';
+
+  aggiornaStatoSelezioneMulti();
+  document.getElementById('modal-overlay-multi').classList.add('show');
+}
+
+function chiudiModaleMulti(){
+  document.getElementById('modal-overlay-multi').classList.remove('show');
+}
+
+/* Legge tipo opera + turni + righe di un appuntamento: dal dato già
+   salvato se completo, altrimenti dai campi inline compilati lì per lì
+   in sede di emissione (non ancora salvati sull'appuntamento). */
+function leggiTipoRighe(id){
+  const e = eventi.find(x=>x.id===id);
+  if(e && e.tipoOpera && e.righe!=='' && e.turni!=='' && e.turni!=null){
+    return { tipoOpera: e.tipoOpera, righe: e.righe, turni: e.turni };
+  }
+  const selTipo = document.getElementById('tipo-'+id);
+  const inpTurni = document.getElementById('turni-'+id);
+  const inpRighe = document.getElementById('righe-'+id);
+  const tipoOpera = selTipo ? selTipo.value : '';
+  const turniVal = inpTurni ? inpTurni.value : '';
+  const righeVal = inpRighe ? inpRighe.value : '';
+  return {
+    tipoOpera: tipoOpera,
+    turni: turniVal==='' ? '' : Number(turniVal),
+    righe: righeVal==='' ? '' : Number(righeVal)
+  };
+}
+
+function aggiornaCampiInline(id){
+  const selTipo = document.getElementById('tipo-'+id);
+  const inpTurni = document.getElementById('turni-'+id);
+  const inpRighe = document.getElementById('righe-'+id);
+  const btnSalva = document.getElementById('salva-'+id);
+  const completo = !!(selTipo && inpTurni && inpRighe && selTipo.value!=='' && inpTurni.value!=='' && inpRighe.value!=='');
+  if(btnSalva) btnSalva.disabled = !completo;
+}
+
+/* Salva subito tipo opera, turni e righe sull'appuntamento, indipendentemente
+   dal fatto che si stia generando o meno una fattura in questo momento.
+   Dopo il salvataggio la card passa allo stato "pronto" e la checkbox
+   si spunta da sola, così il pulsante Genera fattura si può attivare. */
+async function salvaCampiInline(id){
+  const selTipo = document.getElementById('tipo-'+id);
+  const inpTurni = document.getElementById('turni-'+id);
+  const inpRighe = document.getElementById('righe-'+id);
+  const tipoOpera = selTipo ? selTipo.value : '';
+  const turni = (inpTurni && inpTurni.value!=='') ? Number(inpTurni.value) : '';
+  const righe = (inpRighe && inpRighe.value!=='') ? Number(inpRighe.value) : '';
+  if(!tipoOpera || turni==='' || righe===''){ return; }
+
+  const btnSalva = document.getElementById('salva-'+id);
+  if(btnSalva){ btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio…'; }
+  try{
+    await apiFetch('/agenda?id='+id, { method:'PATCH', body: JSON.stringify({ tipo_opera: tipoOpera, turni: turni, righe: righe }) });
+    const e = eventi.find(x=>x.id===id);
+    if(e) Object.assign(e, { tipoOpera: tipoOpera, turni: turni, righe: righe });
+    apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese);
+    render();
+  } catch(err){
+    alert('Errore nel salvataggio: '+err.message);
+    if(btnSalva){ btnSalva.disabled = false; btnSalva.textContent = 'Salva'; }
+  }
+}
+
+function aggiornaStatoSelezioneMulti(){
+  const checked = [...document.querySelectorAll('#multi-list input[type="checkbox"]:checked')];
+  const btn = document.getElementById('btn-genera-multi');
+  const summary = document.getElementById('multi-summary');
+
+  if(!checked.length){
+    summary.textContent = 'Seleziona almeno un appuntamento con tipo opera, turni e righe compilati.';
+    btn.classList.remove('attivo');
+    btn.disabled = true;
+    return;
+  }
+
+  let righeTot = 0, turniTot = 0;
+  checked.forEach(cb=>{
+    const dati = leggiTipoRighe(Number(cb.dataset.id));
+    righeTot += (typeof dati.righe==='number' ? dati.righe : 0);
+    turniTot += (typeof dati.turni==='number' ? dati.turni : 0);
+  });
+  summary.textContent = checked.length+' record selezionat'+(checked.length===1?'o':'i')+' · '+turniTot+' '+(turniTot===1?'turno':'turni')+' · '+righeTot+' righe totali · azienda '+selezioneMulti.azienda;
+  btn.classList.add('attivo');
+  btn.disabled = false;
+}
+
+async function confermaGeneraFatturaMultipla(){
+  const checked = [...document.querySelectorAll('#multi-list input[type="checkbox"]:checked')];
+  if(!checked.length) return;
+
+  const recordIds = [];
+  const records = checked.map(cb=>{
+    const id = Number(cb.dataset.id);
+    const e = eventi.find(x=>x.id===id);
+    const dati = leggiTipoRighe(id);
+    if(!dati.tipoOpera || dati.turni==='' || dati.righe===''){ return null; }
+    recordIds.push({ id, dati, cambiato: e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni) });
+    return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
+  }).filter(Boolean);
+
+  if(!records.length){ alert('Completa tipo opera, turni e righe per almeno un appuntamento selezionato.'); return; }
+
+  // TODO: qui andrà la vera chiamata al server — un'unica fattura con
+  // record r01, r02... (uno per appuntamento selezionato), stessa
+  // azienda in testata, stesso motore di calcolo già esistente, salvata
+  // su Supabase Storage (bucket fatture-pdf). Per ora simuliamo il
+  // salvataggio con un PDF placeholder per testare l'intero flusso.
+  const url = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+  const btnGenera = document.getElementById('btn-genera-multi');
+  if(btnGenera){ btnGenera.disabled = true; btnGenera.textContent = 'Generazione…'; }
+
+  try{
+    // Salva su ciascun appuntamento incluso: eventuali tipo/turni/righe non
+    // ancora persistiti (rete di sicurezza, di norma già salvati dal
+    // pulsante "Salva" per riga) + l'URL della fattura appena generata —
+    // è quello che accende lo sfondo verde nella vista mensile.
+    await Promise.all(recordIds.map(({id, dati, cambiato})=>{
+      const payload = { fattura_pdf_url: url };
+      if(cambiato){ payload.tipo_opera = dati.tipoOpera; payload.turni = dati.turni; payload.righe = dati.righe; }
+      return apiFetch('/agenda?id='+id, { method:'PATCH', body: JSON.stringify(payload) });
+    }));
+
+    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = url;
+    recordIds.forEach(({id, dati})=>{
+      const e = eventi.find(x=>x.id===id);
+      if(e){ e.fatturaUrl = url; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
+    });
+
+    alert('Fattura generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n')+'\n\n(PDF placeholder — il collegamento al vero motore di calcolo non è ancora fatto)');
+    document.getElementById('btn-visualizza-multi').style.display = 'block';
+    render();
+  } catch(err){
+    alert('Errore nel salvataggio della fattura: '+err.message);
+  } finally {
+    if(btnGenera){ btnGenera.disabled = false; btnGenera.textContent = 'Genera fattura'; }
+  }
+}
+
+function visualizzaFatturaSalvataMulti(){
+  const url = fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)];
+  if(!url) return;
+  window.open(url, '_blank');
+}
+
+async function eliminaEvento(){
+  if(!eventoInModifica) return;
+  if(!confirm('Eliminare questo appuntamento? L\'operazione non è recuperabile.')) return;
+  try{
+    await apiFetch('/agenda?id='+eventoInModifica, { method:'DELETE' });
+    chiudiModale();
+    await caricaEventi();
+  } catch(e){
+    alert('Errore nella eliminazione: '+e.message);
+  }
+}
+
+/* Punto di ingresso "integrato": se il calendario viene aperto dal
+   pulsante "Il mio calendario" nel wizard DIVA, il token e il nominativo
+   arrivano già pronti nell'URL (stesso meccanismo già usato per
+   "Le mie fatture" → gestione.html), quindi si salta il login qui.
+   Il form di login resta solo come fallback per aprire il file da solo,
+   ad esempio durante i test prima di collegare il bottone nel wizard. */
+/* Il calendario si apre sempre come nuova scheda (window.open) dal
+   pulsante "Il mio calendario" nel wizard — quindi "torna alla home"
+   qui significa semplicemente chiudere questa scheda e tornare a
+   quella del wizard, già aperta dietro. Se il browser impedisce la
+   chiusura (capita se la scheda non risulta aperta via script, es.
+   aprendo il file direttamente durante i test), mostriamo un avviso
+   invece di fallire silenziosamente. */
+function chiudiCalendario(){
+  window.close();
+  setTimeout(()=>{
+    alert('Chiudi pure questa scheda e torna al wizard DIVA.');
+  }, 300);
+}
+
+async function avviaApp(){
+  const qs = new URLSearchParams(window.location.search);
+  const tokenUrl = qs.get('token');
+  const nominativoUrl = qs.get('nominativo');
+  const ruoloUrl = qs.get('ruolo');
+
+  if(tokenUrl && nominativoUrl){
+    AUTH.token = tokenUrl;
+    AUTH.nominativo = nominativoUrl.toUpperCase();
+    AUTH.ruolo = ruoloUrl || 'utente';
+    document.getElementById('user-label').textContent = 'Ciao, '+AUTH.nominativo;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-root').style.display = '';
+    try{
+      await Promise.all([caricaEventi(), caricaAziende()]);
+    } catch(e){
+      // Token scaduto o non valido: non riproviamo un login qui dentro,
+      // rimandiamo l'utente al wizard dove il login (con i suoi retry)
+      // è già gestito correttamente.
+      alert('Sessione non valida o scaduta. Torna al wizard DIVA e riapri "Il mio calendario".');
+    }
+    return;
+  }
+
+  // Nessun token in URL: mostra il form di login manuale (solo per test diretti)
+  document.getElementById('login-screen').style.display = '';
+  document.getElementById('app-root').style.display = 'none';
+  document.getElementById('login-user').focus();
+}
+
+avviaApp();
+</script>
+
+</body>
+</html>
