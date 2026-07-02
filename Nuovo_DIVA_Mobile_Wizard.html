@@ -2981,9 +2981,13 @@ async function salvaSuDB(){
     data_lavoro:      S.righi[0]?.datalav||''
   };
 
-  // Nota di pagamento dall'agenda: solo in modalità agenda (generazione
-  // automatica dal calendario) e solo se il primo record aveva davvero
-  // una nota — altrimenti il campo resta come sempre, vuoto.
+  // Nota dall'agenda: solo in modalità agenda (generazione automatica dal
+  // calendario) e solo se il primo record aveva davvero una nota —
+  // altrimenti il campo resta come sempre, vuoto. Va su note_pagamento —
+  // campo dedicato alle note libere, ora mostrato/modificabile anche da
+  // gestione.html ed ENP-Management. data_pagamento resta sempre e solo
+  // una vera data, valorizzata a mano quando arriva il pagamento — non a
+  // questo punto della generazione.
   if(window._agendaMode && window._agendaNotaPagamento){
     rec.note_pagamento = window._agendaNotaPagamento;
   }

@@ -2582,6 +2582,7 @@ function renderFatture(fatture){
       "<th style='padding:6px 8px;text-align:center;'>Data Fatt.</th>"+
       "<th style='padding:6px 8px;text-align:right;'>Netto €</th>"+
       "<th style='padding:6px 8px;text-align:center;'>Pagata</th>"+
+      "<th style='padding:6px 8px;text-align:left;'>Note</th>"+
       "<th style='padding:6px 8px;text-align:center;'>Azioni</th>"+
       "</tr></thead><tbody>"+
       fatture.map((f,idx)=>`<tr style='border-bottom:1px solid #ddd;background:${idx%2===0?"#fff":"#f5f7ff"}'>
@@ -2591,12 +2592,36 @@ function renderFatture(fatture){
         <td style='padding:5px 8px;text-align:center;'>${f.data_fattura?f.data_fattura.split("-").reverse().join("/"):""}</td>
         <td style='padding:5px 8px;text-align:right;font-family:monospace;'>€ ${(f.tot_netto||0).toFixed(2).replace(".",",")}</td>
         <td style='padding:5px 8px;text-align:center;'>${f.data_pagamento?"✅ "+f.data_pagamento.split("-").reverse().join("/"):"⏳"}</td>
+        <td style='padding:5px 8px;color:#475569;'>${f.note_pagamento||"—"}</td>
         <td style='padding:5px 8px;text-align:center;display:flex;gap:4px;justify-content:center;'>
+          <button onclick='modificaPagamentoEnp(${f.rec_nbr},"${(f.data_pagamento||"")}","${(f.note_pagamento||"").replace(/"/g,"&quot;")}")' style='background:#0f766e;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;' title='Modifica data pagamento e nota'>✏️</button>
           <button onclick='caricaFattura(${f.rec_nbr})' style='background:#2563eb;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;'>⬆ Carica</button>
           <button onclick='eliminaFattura(${f.rec_nbr},"${f.rif_nbr}")' style='background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;'>🗑</button>
         </td>
       </tr>`).join("")+
       "</tbody></table>";
+}
+
+// Modifica data_pagamento e note_pagamento — due campi separati e indipendenti
+// (data_pagamento è una vera data, usata anche per l'indicatore ✅/⏳ qui sopra;
+// note_pagamento è testo libero, max 30 caratteri). Stessi due campi ora
+// gestiti anche da gestione.html — qui con prompt() nativi per coerenza
+// con lo stile "leggero" già usato dal resto di questo pannello admin.
+async function modificaPagamentoEnp(rec_nbr, dataAttuale, notaAttuale){
+  const nuovaData = prompt("Data pagamento (AAAA-MM-GG) — lascia vuoto se non ancora pagata:", dataAttuale || "");
+  if(nuovaData === null) return; // annullato
+  const nuovaNota = prompt("Nota libera (max 30 caratteri) — lascia vuota per cancellare:", notaAttuale || "");
+  if(nuovaNota === null) return;
+  try{
+    const r = await authFetch("/fatture?id="+rec_nbr, {
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ data_pagamento: nuovaData.trim(), note_pagamento: nuovaNota.trim().slice(0,30) })
+    });
+    const d = await r.json();
+    if(d.ok){ apriModaleFatture(); }
+    else { alert("Errore: "+(d.error||"risposta non valida")); }
+  }catch(e){ alert("Errore di rete: "+e.message); }
 }
 
 

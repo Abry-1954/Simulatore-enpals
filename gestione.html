@@ -315,7 +315,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     <table class="tbl"><thead><tr>
       <th style="width:28px;"></th><th>#</th><th id="gt-th-rif" style="max-width:320px;">Rif.</th><th>Nominativo</th><th>Azienda</th>
       <th>Data Fattura</th><th>GG</th><th>Turni</th><th>Righe</th><th>Imponibile</th><th>Netto</th>
-      <th id="gt-th-datapag">Data Pagamento / Note</th><th id="gt-th-azioni">Azioni</th>
+      <th id="gt-th-datapag">Data Pagamento</th><th id="gt-th-note">Note</th><th id="gt-th-azioni">Azioni</th>
     </tr></thead>
     <tbody id="fatture-tbody"></tbody></table>
   </div>
@@ -1074,7 +1074,7 @@ async function caricaFatture(){
   if(selDp){
     const curDp = selDp.value;
     selDp.innerHTML = '<option value="">Tutti i pagamenti</option><option value="__nessuno__">— Non pagato</option>';
-    pagamenti.forEach(dp=>{ const o=document.createElement('option'); o.value=dp; o.textContent=dp.length>20?dp.substring(0,20)+'…':dp; if(dp===curDp) o.selected=true; selDp.appendChild(o); });
+    pagamenti.forEach(dp=>{ const o=document.createElement('option'); o.value=dp; o.textContent=dp.split('-').reverse().join('/'); if(dp===curDp) o.selected=true; selDp.appendChild(o); });
     if(curDp) selDp.value=curDp;
   }
   // Popola select aziende
@@ -1110,7 +1110,8 @@ function renderFatture(){
     n++;
     const imp   = f.tot_imponibile!=null ? parseFloat(f.tot_imponibile).toFixed(2)+' €' : '—';
     const netto = f.tot_netto!=null      ? parseFloat(f.tot_netto).toFixed(2)+' €'      : '—';
-    const dataPag  = f.data_pagamento ? (f.data_pagamento.length>30 ? f.data_pagamento.substring(0,30)+'…' : f.data_pagamento) : '—';
+    const dataPag  = f.data_pagamento ? f.data_pagamento.substring(0,10).split('-').reverse().join('/') : '—';
+    const notePag  = f.note_pagamento ? (f.note_pagamento.length>30 ? f.note_pagamento.substring(0,30)+'…' : f.note_pagamento) : '—';
     const dataFatt = f.data_fattura   ? f.data_fattura.substring(0,10)   : '—';
     const gg    = f.tot_giorni!=null ? f.tot_giorni : '—';
     const turni = f.tot_turni!=null  ? f.tot_turni  : '—';
@@ -1127,10 +1128,11 @@ function renderFatture(){
     html += '<td>'+(f.nominativo||'—')+'</td><td>'+(f.azienda_rag||'—')+'</td>';
     const righe_tot = f.tot_righe!=null ? f.tot_righe : '—';
     html += '<td>'+dataFatt+'</td><td style="text-align:center;">'+gg+'</td><td style="text-align:center;">'+turni+'</td><td style="text-align:center;">'+righe_tot+'</td>';
-    html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td>';
+    html += '<td style="text-align:right;">'+imp+'</td><td style="text-align:right;">'+netto+'</td><td>'+dataPag+'</td><td>'+notePag+'</td>';
     html += '<td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;">';
     const dp = (f.data_pagamento||'');
-    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;)" title="Modifica data pagamento / Note (max 30 caratteri)">✏️</button>';
+    const np = (f.note_pagamento||'').replace(/"/g,'&quot;');
+    html += '<button class="btn btn-outline btn-sm" onclick="modificaDataPagamento('+f.rec_nbr+',&quot;'+dp+'&quot;,&quot;'+np+'&quot;)" title="Modifica data pagamento e/o nota">✏️</button>';
     if(f.pdf_url){
       html += '<button class="btn btn-sm" style="background:#1d4ed8;color:#fff;" onclick="apriPdf('+f.rec_nbr+')" title="Apri PDF">📄</button>';
       html += '<button class="btn btn-sm" style="background:#0f9960;color:#fff;" onclick="scaricaPdf('+f.rec_nbr+')" title="Scarica PDF">⬇</button>';
@@ -1228,15 +1230,17 @@ async function scaricaPdf(rec_nbr){
 
 var _dataPagRecNbr = null;
 
-function modificaDataPagamento(rec_nbr, valoreAttuale){
+function modificaDataPagamento(rec_nbr, dataAttuale, notaAttuale){
   _dataPagRecNbr = rec_nbr;
   const fat = _fattureAll.find(f=>f.rec_nbr===rec_nbr);
   const rif = fat ? (fat.rif_nbr||'') : '';
   document.getElementById('datapag-rif').textContent = rif ? 'Fattura: '+rif : '';
-  const inp = document.getElementById('datapag-input');
-  inp.value = valoreAttuale||'';
+  const inpData = document.getElementById('datapag-input');
+  const inpNota = document.getElementById('notepag-input');
+  inpData.value = (dataAttuale||'').substring(0,10);
+  inpNota.value = notaAttuale||'';
   document.getElementById('overlay-datapag').classList.add('open');
-  setTimeout(()=>inp.focus(),100);
+  setTimeout(()=>inpData.focus(),100);
 }
 
 function chiudiModalDataPag(){
@@ -1246,19 +1250,20 @@ function chiudiModalDataPag(){
 
 async function salvaDataPagamento(){
   if(!_dataPagRecNbr) return;
-  const nuovo = document.getElementById('datapag-input').value.trim();
+  const nuovaData = document.getElementById('datapag-input').value.trim();
+  const nuovaNota = document.getElementById('notepag-input').value.trim();
   const btnSalva = document.querySelector('#overlay-datapag .btn-primary');
   btnSalva.textContent = '⏳ Salvo...'; btnSalva.disabled = true;
   try {
-    const r = await api('/fatture?id='+_dataPagRecNbr, 'PATCH', {data_pagamento: nuovo});
+    const r = await api('/fatture?id='+_dataPagRecNbr, 'PATCH', {data_pagamento: nuovaData, note_pagamento: nuovaNota});
     if(r && r.ok){
       const fat = _fattureAll.find(f=>f.rec_nbr===_dataPagRecNbr);
-      if(fat) fat.data_pagamento = nuovo;
+      if(fat){ fat.data_pagamento = nuovaData; fat.note_pagamento = nuovaNota; }
       chiudiModalDataPag();
       renderFatture();
       // Messaggio conferma
       const av = document.createElement('div');
-      av.textContent = '✅ Data pagamento aggiornata!';
+      av.textContent = '✅ Aggiornato!';
       av.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);';
       document.body.appendChild(av);
       setTimeout(()=>av.remove(), 2500);
@@ -1344,20 +1349,27 @@ function buildFatturaDetail(f){
 
 </script>
 
-<!-- ══ MODAL DATA PAGAMENTO ══ -->
+<!-- ══ MODAL DATA PAGAMENTO / NOTE ══ -->
 <div class="overlay" id="overlay-datapag">
   <div class="modal" style="max-width:420px;">
     <div class="modal-title" style="display:flex;align-items:center;gap:8px;">
       <span style="font-size:20px;">💳</span>
-      <span>Aggiorna Data / Nota Pagamento</span>
+      <span>Data pagamento e nota</span>
     </div>
     <div style="font-size:12px;color:#64748b;margin-bottom:1rem;" id="datapag-rif"></div>
     <div class="form-group" style="margin-bottom:1rem;">
-      <label>Data pagamento o nota libera</label>
-      <input id="datapag-input" type="text" placeholder="es. 15/06/2026 oppure Pagato Luglio"
+      <label>Data pagamento</label>
+      <input id="datapag-input" type="date"
         style="font-size:14px;padding:10px 12px;"
         onkeydown="if(event.key==='Enter') salvaDataPagamento()">
-      <span style="font-size:11px;color:#94a3b8;margin-top:3px;">Lascia vuoto per cancellare il valore</span>
+      <span style="font-size:11px;color:#94a3b8;margin-top:3px;">Lascia vuoto se non ancora pagata</span>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>Nota</label>
+      <input id="notepag-input" type="text" maxlength="30" placeholder="es. Pagato Luglio"
+        style="font-size:14px;padding:10px 12px;"
+        onkeydown="if(event.key==='Enter') salvaDataPagamento()">
+      <span style="font-size:11px;color:#94a3b8;margin-top:3px;">Testo libero, max 30 caratteri — lascia vuoto per cancellare</span>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="chiudiModalDataPag()">Annulla</button>
@@ -1462,14 +1474,14 @@ const GT_STEPS = [
   {
     target: 'fatture-datapag',
     arrow: 'bottom',
-    title: 'Filtro Pagamenti / Note',
-    body: 'Filtra tramite le <b>informazioni che hai salvato</b> relative alla fattura — stato del pagamento, fattura pagata, non ancora pagata, eventuali commenti.'
+    title: 'Filtro Data Pagamento',
+    body: 'Filtra per <b>data di pagamento</b> — fattura pagata in una data specifica, oppure non ancora pagata.'
   },
   {
     target: 'gt-tbl-wrap',
     arrow: 'top',
     title: 'La Tabella Fatture',
-    body: 'Ogni riga è una fattura. Trovi il riferimento, la data, l\'azienda, i giorni e turni lavorati, l\'imponibile, il netto e le eventuali <b>informazioni che hai salvato</b> nel campo data pagamento.'
+    body: 'Ogni riga è una fattura. Trovi il riferimento, la data, l\'azienda, i giorni e turni lavorati, l\'imponibile, il netto, la <b>data di pagamento</b> e un\'eventuale <b>nota libera</b> in colonne separate.'
   },
   {
     target: 'gt-th-rif',
@@ -1480,8 +1492,8 @@ const GT_STEPS = [
   {
     target: 'gt-th-datapag',
     arrow: 'bottom',
-    title: '✏️ Data Pagamento / Note',
-    body: 'Il <b>pulsante con la matita</b> ti permette di registrare la data in cui hai ricevuto il pagamento, oppure di aggiungere una nota libera. Hai a disposizione fino a <b>30 caratteri</b>.'
+    title: '✏️ Data Pagamento e Nota',
+    body: 'Il <b>pulsante con la matita</b> ti permette di registrare la data in cui hai ricevuto il pagamento e, separatamente, una nota libera. La nota ha un limite di <b>30 caratteri</b>.'
   },
   {
     target: 'gt-th-azioni',
@@ -1559,10 +1571,11 @@ function gtMockAndStart(){
       <td>14/06/2026</td>
       <td>2</td><td>3</td><td>184</td>
       <td>334,00 €</td><td>301,77 €</td>
-      <td>Pagato Giugno 2026</td>
+      <td>15/06/2026</td>
+      <td>Pagato Giugno</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:4px;" id="gt-mock-azioni">
-          <button class="btn btn-outline btn-sm" title="Data Pagamento / Note" id="gt-mock-edit">✏️</button>
+          <button class="btn btn-outline btn-sm" title="Data Pagamento e Nota" id="gt-mock-edit">✏️</button>
           <button class="btn btn-sm" style="background:#1d4ed8;color:#fff;" title="Apri PDF" id="gt-mock-pdf-open">📄</button>
           <button class="btn btn-sm" style="background:#0f9960;color:#fff;" title="Scarica PDF" id="gt-mock-pdf-dl">⬇</button>
           <button class="btn btn-danger btn-sm" title="Elimina fattura" id="gt-mock-del">🗑</button>
