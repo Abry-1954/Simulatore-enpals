@@ -1274,18 +1274,22 @@ function renderRiepilogoMese(anno, mese){
   const giorniImpegnati = new Set();
   let oreTotali = 0;
   let righeTotali = 0;
+  let turniTotali = 0;
 
   evsMese.forEach(e=>{
     const nome = e.azienda || 'Senza azienda';
-    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, colore:e.colore};
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, colore:e.colore};
     const ore = durataOre(e.inizio, e.fine);
     const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
-    perAzienda[nome].turni += 1;
+    const turniEv = (typeof e.turni === 'number') ? e.turni : 0;
+    perAzienda[nome].turni += turniEv;
     perAzienda[nome].ore += ore;
     perAzienda[nome].righe += righeEv;
     if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
+    if(typeof e.turni === 'number') perAzienda[nome].turniNote = true;
     oreTotali += ore;
     righeTotali += righeEv;
+    turniTotali += turniEv;
     giorniImpegnati.add(e.data);
   });
 
@@ -1299,7 +1303,7 @@ function renderRiepilogoMese(anno, mese){
     html += '<div class="riepilogo-row-top">';
     html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
     html += '<div class="riepilogo-nome">'+nome+'</div>';
-    html += '<div class="riepilogo-stat">'+v.turni+' '+(v.turni===1?'turno':'turni')+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.turniNote ? v.turni+' '+(v.turni===1?'turno':'turni') : '— turni')+'</div>';
     html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
     html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
     html += '</div>';
@@ -1313,7 +1317,7 @@ function renderRiepilogoMese(anno, mese){
   html += '</div>';
 
   html += '<div class="riepilogo-totale">';
-  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+evsMese.length+'</span><span class="riepilogo-totale-lbl">'+(evsMese.length===1?'turno':'turni')+' totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+turniTotali+'</span><span class="riepilogo-totale-lbl">'+(turniTotali===1?'turno':'turni')+' totali</span></div>';
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+giorniImpegnati.size+'</span><span class="riepilogo-totale-lbl">'+(giorniImpegnati.size===1?'giorno':'giorni')+' impegnati</span></div>';
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+formattaOre(oreTotali)+'</span><span class="riepilogo-totale-lbl">ore totali</span></div>';
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+righeTotali+'</span><span class="riepilogo-totale-lbl">righe totali</span></div>';
