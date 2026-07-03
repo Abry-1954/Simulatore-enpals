@@ -311,6 +311,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     <span id="fatture-count" style="font-size:12px;color:#64748b;margin-left:4px;"></span>
     <button id="gt-btn-guida" onclick="gtStart()" style="background:#1e3a8a;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;">🎓 Guida</button>
   </div>
+  <div id="fatture-totali" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;"></div>
   <div class="tbl-wrap" id="gt-tbl-wrap">
     <table class="tbl"><thead><tr>
       <th style="width:28px;"></th><th>#</th><th id="gt-th-rif" style="max-width:320px;">Rif.</th><th>Nominativo</th><th>Azienda</th>
@@ -1103,6 +1104,27 @@ function renderFatture(){
     return nomOk && annoOk && azOk && dpOk;
   });
   document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
+
+  // Totali della selezione filtrata — si aggiornano insieme ai filtri
+  // perché renderFatture() gira ad ogni cambio filtro (stesso principio
+  // già usato per il contatore fatture qui sopra).
+  const totGiorni = righe.reduce((a,f)=>a+(f.tot_giorni!=null?Number(f.tot_giorni):0),0);
+  const totTurni  = righe.reduce((a,f)=>a+(f.tot_turni!=null?Number(f.tot_turni):0),0);
+  const totRighe  = righe.reduce((a,f)=>a+(f.tot_righe!=null?Number(f.tot_righe):0),0);
+  const totImp    = righe.reduce((a,f)=>a+(f.tot_imponibile!=null?Number(f.tot_imponibile):0),0);
+  const totNetto  = righe.reduce((a,f)=>a+(f.tot_netto!=null?Number(f.tot_netto):0),0);
+  const totaliEl = document.getElementById('fatture-totali');
+  if(totaliEl){
+    const pill = (label,val)=>'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;font-size:12px;"><span style="color:#64748b;">'+label+'</span> <strong style="color:#1e3a8a;">'+val+'</strong></div>';
+    totaliEl.innerHTML = righe.length ? (
+      pill('Giorni', totGiorni) +
+      pill('Turni', totTurni) +
+      pill('Righe', totRighe) +
+      pill('Imponibile', totImp.toFixed(2).replace('.',',')+' €') +
+      pill('Netto', totNetto.toFixed(2).replace('.',',')+' €')
+    ) : '';
+  }
+
   const tbody = document.getElementById('fatture-tbody');
   if(!righe.length){ tbody.innerHTML='<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:20px;">Nessuna fattura trovata</td></tr>'; return; }
   let n=0, html='';

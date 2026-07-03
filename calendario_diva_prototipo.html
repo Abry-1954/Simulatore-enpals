@@ -420,6 +420,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
   }
   .riepilogo-row-actions {
     display: flex;
@@ -1071,7 +1072,7 @@ async function eseguiLogin(){
     document.getElementById('user-label').textContent = 'Ciao, '+AUTH.nominativo;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
-    await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault()]);
+    await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault(), caricaFatture()]);
   } catch(e){
     err.textContent = e.message || 'Errore di accesso.';
     err.style.display = 'block';
@@ -1096,6 +1097,26 @@ let aziendeList = [];
 // al momento del salvataggio: un eventuale aggiornamento retroattivo va
 // fatto a mano, non è automatico.
 let RUOLO_DEFAULT = 'DOPPIATORE'; // fallback prudente se il recupero fallisce
+
+// Fatture dell'utente, indicizzate per rec_nbr — servono solo per il
+// "Netto fatturato" nel riepilogo mensile: a differenza di turni/righe/ore
+// (semplici campi dell'appuntamento, sommabili sempre) l'imponibile/netto
+// esistono solo DOPO l'emissione — il calcolo fiscale completo vive nel
+// motore del wizard, non nel calendario. Quindi il totale mostrato copre
+// solo ciò che è già fatturato, non una proiezione su tutto il mese.
+let fattureByRecNbr = {};
+
+async function caricaFatture(){
+  try{
+    const lista = await apiFetch('/fatture');
+    fattureByRecNbr = {};
+    (lista||[]).forEach(f=>{ fattureByRecNbr[f.rec_nbr] = f; });
+  } catch(e){
+    // Non blocchiamo il calendario: il riepilogo mensile mostrerà solo
+    // turni/giorni/ore/righe, senza il totale netto fatturato.
+    console.warn('Impossibile caricare le fatture per il riepilogo:', e.message);
+  }
+}
 
 async function caricaRuoloDefault(){
   try{
@@ -1321,13 +1342,14 @@ function renderRiepilogoMese(anno, mese){
 
   const perAzienda = {};
   const giorniImpegnati = new Set();
+  const recNbrGlobali = new Set();
   let oreTotali = 0;
   let righeTotali = 0;
   let turniTotali = 0;
 
   evsMese.forEach(e=>{
     const nome = e.azienda || 'Senza azienda';
-    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, tuttoFatturato:true, colore:e.colore};
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, tuttoFatturato:true, colore:e.colore, recNbrSet:new Set()};
     const ore = durataOre(e.inizio, e.fine);
     const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
     const turniEv = (typeof e.turni === 'number') ? e.turni : 0;
@@ -1337,11 +1359,25 @@ function renderRiepilogoMese(anno, mese){
     if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
     if(typeof e.turni === 'number') perAzienda[nome].turniNote = true;
     if(!e.fatturaRecNbr) perAzienda[nome].tuttoFatturato = false;
+    else { perAzienda[nome].recNbrSet.add(e.fatturaRecNbr); recNbrGlobali.add(e.fatturaRecNbr); }
     oreTotali += ore;
     righeTotali += righeEv;
     turniTotali += turniEv;
     giorniImpegnati.add(e.data);
   });
+
+  // Netto fatturato: somma di tot_netto delle fatture VERE collegate agli
+  // appuntamenti del mese — un rec_nbr contato una sola volta anche se
+  // copre più appuntamenti (fattura multipla), niente doppi conteggi.
+  // A differenza di turni/righe/ore, copre solo ciò che è già fatturato:
+  // per un appuntamento non ancora fatturato il netto non è calcolabile
+  // qui (serve il motore fiscale completo, che vive solo nel wizard).
+  function nettoDiRecNbrSet(set){
+    let tot = 0;
+    set.forEach(rn=>{ const f = fattureByRecNbr[rn]; if(f && typeof f.tot_netto==='number') tot += f.tot_netto; });
+    return tot;
+  }
+  const nettoTotaleMese = nettoDiRecNbrSet(recNbrGlobali);
 
   const aziendeOrdinate = Object.keys(perAzienda).sort((a,b)=> perAzienda[b].ore - perAzienda[a].ore);
 
@@ -1349,6 +1385,7 @@ function renderRiepilogoMese(anno, mese){
   aziendeOrdinate.forEach(nome=>{
     const v = perAzienda[nome];
     const c = colorOf(v.colore);
+    const nettoAzienda = nettoDiRecNbrSet(v.recNbrSet);
     html += '<div class="riepilogo-row">';
     html += '<div class="riepilogo-row-top">';
     html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
@@ -1356,6 +1393,7 @@ function renderRiepilogoMese(anno, mese){
     html += '<div class="riepilogo-stat">'+(v.turniNote ? v.turni+' '+(v.turni===1?'turno':'turni') : '— turni')+'</div>';
     html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
     html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.recNbrSet.size>0 ? '€ '+nettoAzienda.toFixed(2).replace('.',',')+' netto' : '— netto')+'</div>';
     html += '</div>';
     if(nome!=='Senza azienda'){
       html += '<div class="riepilogo-row-actions">';
@@ -1375,6 +1413,7 @@ function renderRiepilogoMese(anno, mese){
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+giorniImpegnati.size+'</span><span class="riepilogo-totale-lbl">'+(giorniImpegnati.size===1?'giorno':'giorni')+' impegnati</span></div>';
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+formattaOre(oreTotali)+'</span><span class="riepilogo-totale-lbl">ore totali</span></div>';
   html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+righeTotali+'</span><span class="riepilogo-totale-lbl">righe totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">€ '+nettoTotaleMese.toFixed(2).replace('.',',')+'</span><span class="riepilogo-totale-lbl">netto fatturato</span></div>';
   html += '</div>';
 
   html += '</div>';
@@ -2075,7 +2114,7 @@ async function avviaApp(){
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
     try{
-      await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault()]);
+      await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault(), caricaFatture()]);
     } catch(e){
       // Token scaduto o non valido: non riproviamo un login qui dentro,
       // rimandiamo l'utente al wizard dove il login (con i suoi retry)
