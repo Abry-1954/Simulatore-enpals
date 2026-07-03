@@ -852,9 +852,20 @@
       </div>
     </div>
 
-    <div class="field-group">
-      <label class="field-label">Righe</label>
-      <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Righe</label>
+        <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Ruolo</label>
+        <select class="field-select" id="f-ruolo">
+          <option value="DOPPIATORE">Doppiatore</option>
+          <option value="ADATTATORE">Adattatore</option>
+          <option value="ASSISTENTE AL DOPPIAGGIO">Assistente al doppiaggio</option>
+          <option value="DIRETTORE DEL DOPPIAGGIO">Direttore del doppiaggio</option>
+        </select>
+      </div>
     </div>
 
     <div class="field-group">
@@ -1021,7 +1032,8 @@ function toApiPayload(e){
     note: e.note || null,
     tipo_opera: e.tipoOpera || null,
     turni: (e.turni==='' || e.turni==null) ? null : Number(e.turni),
-    righe: (e.righe==='' || e.righe==null) ? null : Number(e.righe)
+    righe: (e.righe==='' || e.righe==null) ? null : Number(e.righe),
+    ruolo: e.ruolo || null
   };
 }
 function fromApiRecord(r){
@@ -1037,6 +1049,7 @@ function fromApiRecord(r){
     tipoOpera: r.tipo_opera || '',
     turni: (r.turni===null || r.turni===undefined) ? '' : r.turni,
     righe: (r.righe===null || r.righe===undefined) ? '' : r.righe,
+    ruolo: r.ruolo || null,
     fatturaUrl: r.fattura_pdf_url || null,
     fatturaRecNbr: r.fattura_rec_nbr || null
   };
@@ -1057,7 +1070,7 @@ async function eseguiLogin(){
     document.getElementById('user-label').textContent = 'Ciao, '+AUTH.nominativo;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
-    await Promise.all([caricaEventi(), caricaAziende()]);
+    await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault()]);
   } catch(e){
     err.textContent = e.message || 'Errore di accesso.';
     err.style.display = 'block';
@@ -1073,6 +1086,29 @@ async function caricaEventi(){
 }
 
 let aziendeList = [];
+
+// Ruolo professionale di default (Doppiatore/Adattatore/ecc.), letto da
+// Persone al login — precompila la tendina su ogni nuovo appuntamento.
+// Una volta salvato, il valore scelto (di default o cambiato a mano) è
+// sempre esplicito sul record — mai null. Se in futuro cambia il default
+// su Persone, gli appuntamenti già salvati restano con quello che avevano
+// al momento del salvataggio: un eventuale aggiornamento retroattivo va
+// fatto a mano, non è automatico.
+let RUOLO_DEFAULT = 'DOPPIATORE'; // fallback prudente se il recupero fallisce
+
+async function caricaRuoloDefault(){
+  try{
+    const dbData = await apiFetch('/db');
+    const persone = dbData.persone || [];
+    const uNorm = (AUTH.nominativo||'').toUpperCase().trim();
+    const match = persone.find(p=>p.nominativo && p.nominativo.toUpperCase()===uNorm);
+    if(match && match.attivita) RUOLO_DEFAULT = match.attivita;
+  } catch(e){
+    // Non blocchiamo il calendario: resta il fallback DOPPIATORE, l'utente
+    // può comunque scegliere manualmente il ruolo giusto se serve.
+    console.warn('Impossibile recuperare il ruolo di default da Persone:', e.message);
+  }
+}
 
 async function caricaAziende(){
   try{
@@ -1473,7 +1509,7 @@ function buildColorPicker(selezionato){
    già fatturato (campi disabilitati), un nuovo appuntamento partirebbe
    ereditando quel blocco per errore. */
 function sbloccaFormAppuntamento(){
-  ['f-titolo','f-azienda','f-data','f-inizio','f-fine','f-note','f-tipo-opera','f-turni','f-righe'].forEach(fid=>{
+  ['f-titolo','f-azienda','f-data','f-inizio','f-fine','f-note','f-tipo-opera','f-turni','f-righe','f-ruolo'].forEach(fid=>{
     const el = document.getElementById(fid);
     if(el) el.disabled = false;
   });
@@ -1498,6 +1534,7 @@ function apriModaleNuovo(){
   document.getElementById('f-tipo-opera').value = '';
   document.getElementById('f-turni').value = '';
   document.getElementById('f-righe').value = '';
+  document.getElementById('f-ruolo').value = RUOLO_DEFAULT;
   document.getElementById('btn-elimina').style.display = 'none';
   document.getElementById('btn-genera').style.display = 'none';
   document.getElementById('btn-visualizza').style.display = 'none';
@@ -1519,6 +1556,7 @@ function apriModaleSuSlot(iso, ora){
   document.getElementById('f-tipo-opera').value = '';
   document.getElementById('f-turni').value = '';
   document.getElementById('f-righe').value = '';
+  document.getElementById('f-ruolo').value = RUOLO_DEFAULT;
   document.getElementById('btn-elimina').style.display = 'none';
   document.getElementById('btn-genera').style.display = 'none';
   document.getElementById('btn-visualizza').style.display = 'none';
@@ -1541,6 +1579,7 @@ function apriDettaglio(id){
   document.getElementById('f-tipo-opera').value = e.tipoOpera || '';
   document.getElementById('f-turni').value = (e.turni===0 || e.turni) ? e.turni : '';
   document.getElementById('f-righe').value = (e.righe===0 || e.righe) ? e.righe : '';
+  document.getElementById('f-ruolo').value = e.ruolo || RUOLO_DEFAULT;
 
   const giaFatturato = !!e.fatturaRecNbr;
 
@@ -1548,7 +1587,7 @@ function apriDettaglio(id){
   // già salvata su Supabase non devono più poter divergere da quelli
   // dell'appuntamento. Per correggere, va prima eliminata la fattura
   // (eliminaFatturaConCollegati), non semplicemente ri-salvato il form.
-  ['f-titolo','f-azienda','f-data','f-inizio','f-fine','f-note','f-tipo-opera','f-turni','f-righe'].forEach(fid=>{
+  ['f-titolo','f-azienda','f-data','f-inizio','f-fine','f-note','f-tipo-opera','f-turni','f-righe','f-ruolo'].forEach(fid=>{
     const el = document.getElementById(fid);
     if(el) el.disabled = giaFatturato;
   });
@@ -1587,6 +1626,7 @@ async function salvaEvento(){
   const colSel = document.querySelector('.color-dot.selected');
   const turniVal = document.getElementById('f-turni').value;
   const righeVal = document.getElementById('f-righe').value;
+  const ruoloSel = document.getElementById('f-ruolo').value;
   const dati = {
     titolo: titolo,
     azienda: document.getElementById('f-azienda').value,
@@ -1597,7 +1637,15 @@ async function salvaEvento(){
     note: document.getElementById('f-note').value.trim(),
     tipoOpera: document.getElementById('f-tipo-opera').value,
     turni: turniVal === '' ? '' : Number(turniVal),
-    righe: righeVal === '' ? '' : Number(righeVal)
+    righe: righeVal === '' ? '' : Number(righeVal),
+    // Salviamo un override esplicito solo se diverso dal default del
+    // profilo — altrimenti null, così l'appuntamento segue sempre il
+    // default aggiornato invece di uno congelato al momento del salvataggio.
+    // Sempre il valore reale selezionato — mai null. Parte dal default del
+    // profilo, ma una volta salvato è un dato esplicito sull'appuntamento,
+    // non più legato a un confronto con un default che potrebbe cambiare
+    // in futuro (quello lo gestisce l'admin direttamente su Persone).
+    ruolo: ruoloSel
   };
   if(dati.fine <= dati.inizio){ alert("L'orario di fine deve essere dopo l'inizio."); return; }
 
@@ -1643,7 +1691,7 @@ async function generaFattura(){
 
   try{
     const risultato = await generaFatturaViaMotore(e.azienda, [{
-      titolo: e.titolo, data: e.data, tipoOpera: e.tipoOpera, turni: e.turni, righe: e.righe, note: e.note
+      titolo: e.titolo, data: e.data, tipoOpera: e.tipoOpera, turni: e.turni, righe: e.righe, note: e.note, ruolo: e.ruolo
     }]);
     await apiFetch('/agenda?id='+e.id, { method:'PATCH', body: JSON.stringify({
       fattura_rec_nbr: risultato.rec_nbr, fattura_pdf_url: risultato.pdf_url
@@ -1867,7 +1915,7 @@ async function confermaGeneraFatturaMultipla(){
     const dati = leggiTipoRighe(id);
     if(!dati.tipoOpera || dati.turni==='' || dati.righe===''){ return null; }
     recordIds.push({ id, dati, cambiato: e && (e.tipoOpera!==dati.tipoOpera || e.righe!==dati.righe || e.turni!==dati.turni) });
-    recordsPerMotore.push({ titolo: e.titolo, data: e.data, tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe, note: e.note });
+    recordsPerMotore.push({ titolo: e.titolo, data: e.data, tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe, note: e.note, ruolo: e.ruolo });
     return e.data+' — '+e.titolo+' ('+dati.tipoOpera+', '+dati.turni+' '+(dati.turni===1?'turno':'turni')+', '+dati.righe+' righe)';
   }).filter(Boolean);
 
@@ -2026,7 +2074,7 @@ async function avviaApp(){
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
     try{
-      await Promise.all([caricaEventi(), caricaAziende()]);
+      await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault()]);
     } catch(e){
       // Token scaduto o non valido: non riproviamo un login qui dentro,
       // rimandiamo l'utente al wizard dove il login (con i suoi retry)

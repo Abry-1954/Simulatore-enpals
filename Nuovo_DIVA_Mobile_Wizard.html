@@ -2287,7 +2287,19 @@ function generaFatturaAutomaticaDaAgenda(payload){
           const to = mapTipoOperaDaLabel(r.tipoOpera);
           if(!to) throw new Error('Tipo opera "'+r.tipoOpera+'" non riconosciuto per il record "'+(r.titolo||'')+'".');
 
-          S.tipoLav = tl.cod; S.tipoLavLabel = tl.label;
+          // Ruolo per questo record: se l'agenda porta un override esplicito
+          // (diverso dal default del profilo), usa quello — altrimenti il
+          // default già validato sopra. Ogni record può avere un ruolo
+          // diverso nella stessa fattura, il motore lo gestisce già così
+          // (S.tipoLav viene letto record per record da salvaRigo).
+          let tlRecord = tl;
+          if(r.ruolo){
+            const tlOverride = mapPersonaAttivita(r.ruolo);
+            if(!tlOverride) throw new Error('Ruolo "'+r.ruolo+'" non riconosciuto per il record "'+(r.titolo||'')+'".');
+            tlRecord = tlOverride;
+          }
+
+          S.tipoLav = tlRecord.cod; S.tipoLavLabel = tlRecord.label;
           S.tipoOpera = to.cod; S.tipoOperaLabel = to.label;
 
           const inpTitolo=document.getElementById('inp-titolo');
