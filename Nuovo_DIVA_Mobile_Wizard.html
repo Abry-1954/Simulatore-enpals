@@ -774,29 +774,20 @@ function divaNotifica(evento, dettagli){
   </div>
 </div>
 
-<!-- QUANTI RECORDS -->
-<div id="s-nrighi" class="screen">
-  <div class="nav-row no-print"><button class="btn-back" onclick="showScreen('s-home')"><i class="fa-solid fa-arrow-left"></i></button></div>
-  <div class="progress" id="prog1"></div>
-  <div class="step-label">Passo 1 di 5</div>
-  <div class="question">Quanti Records ha questa fattura?</div>
-  <div class="option-grid" id="opt-nrighi"></div>
-</div>
-
 <!-- TIPO FATTURA -->
 <div id="s-tipofatt" class="screen">
   <div class="progress" id="prog2"></div>
-  <div class="step-label">Passo 2 di 5</div>
+  <div class="step-label">Passo 1 di 5</div>
   <div class="question">Tipo di fattura?</div>
   <div class="option-grid" id="opt-tipofatt"></div>
-  <div class="nav-row no-print"><button class="btn-back" onclick="showScreen('s-nrighi')"><i class="fa-solid fa-arrow-left"></i></button></div>
+  <div class="nav-row no-print"><button class="btn-back" onclick="showScreen('s-home')"><i class="fa-solid fa-arrow-left"></i></button></div>
 </div>
 
 
 <!-- SCELTA AZIENDA -->
 <div id="s-azienda" class="screen">
   <div class="progress" id="prog-az"></div>
-  <div class="step-label">Passo 3 di 6</div>
+  <div class="step-label">Passo 2 di 5</div>
   <div class="question">Società di doppiaggio?</div>
 
   <div class="field-group">
@@ -834,7 +825,7 @@ function divaNotifica(evento, dettagli){
 <!-- ATTIVITÀ -->
 <div id="s-tipolav" class="screen">
   <div class="progress" id="prog3"></div>
-  <div class="step-label">Passo 4 di 6</div>
+  <div class="step-label">Passo 3 di 5</div>
   <div id="rb-lav" class="rigo-badge"></div>
   <div class="question">Attività svolta?</div>
   <div class="opt-grid2" id="opt-tipolav"></div>
@@ -844,7 +835,7 @@ function divaNotifica(evento, dettagli){
 <!-- TIPO OPERA -->
 <div id="s-tipoop" class="screen">
   <div class="progress" id="prog4"></div>
-  <div class="step-label">Passo 5 di 6</div>
+  <div class="step-label">Passo 4 di 5</div>
   <div id="rb-op" class="rigo-badge"></div>
   <div class="question">Tipo di opera?</div>
   <div class="opt-grid2" id="opt-tipoop"></div>
@@ -854,7 +845,7 @@ function divaNotifica(evento, dettagli){
 <!-- DATI RECORD -->
 <div id="s-dettaglio" class="screen">
   <div class="progress" id="prog5"></div>
-  <div class="step-label">Passo 6 di 6 — dati record</div>
+  <div class="step-label">Passo 5 di 5 — dati record</div>
   <div id="rb-det" class="rigo-badge"></div>
   <div class="sec-label">Titolo opera</div>
   <div class="field-group"><input id="inp-titolo" type="text" placeholder="es. Il Nome della Rosa"></div>
@@ -1529,28 +1520,12 @@ const TOUR_STEPS=[
   {screen:'s-home', target:null, targetQuery:'#home-btn-logout', arrow:'top',
    title:`Esci`,
    body:`Clicca qui per <b>uscire dall'applicazione</b> e tornare alla schermata di login.`},
-  // QUANTI RECORDS — intro
-  {screen:'s-nrighi', target:null, targetQuery:'#s-nrighi .question', arrow:'bottom',
-   title:`Quanti Records ha questa fattura?`,
-   body:`Un <b>Record</b> corrisponde a una singola lavorazione: un titolo e una data. Se nella fattura hai lavorato su più titoli o in date diverse, ogni combinazione è un record separato.`},
-  {screen:'s-nrighi', target:null, targetQuery:'#s-nrighi .option-btn:nth-child(1)', arrow:'bottom',
-   title:`1 Record`,
-   body:`Scegli <b>1 record</b> se la fattura riguarda un solo titolo lavorato in una sola data. È il caso più comune per una singola sessione.`},
-  {screen:'s-nrighi', target:null, targetQuery:'#s-nrighi .option-btn:nth-child(2)', arrow:'bottom',
-   title:`2 Records`,
-   body:`Scegli <b>2 records</b> se hai lavorato su due titoli diversi o in due date diverse. Se le date coincidono, il sistema aggrega i contributi automaticamente.`},
-  {screen:'s-nrighi', target:null, targetQuery:'#s-nrighi .option-btn:nth-child(3)', arrow:'bottom',
-   title:`3 Records`,
-   body:`Scegli <b>3 records</b> per tre lavorazioni distinte nella stessa fattura. Puoi combinare liberamente titoli e date.`},
-  {screen:'s-nrighi', target:null, targetQuery:'#s-nrighi .option-btn:nth-child(4)', arrow:'bottom',
-   title:`4 Records`,
-   body:`Scegli <b>4 records</b> per quattro lavorazioni. Ricorda: stessa data = contributi aggregati su quell'imponibile giornaliero.`},
-  {screen:'s-nrighi', target:null, targetQuery:'#s-nrighi .option-btn:nth-child(5)', arrow:'bottom',
-   title:`5 Records`,
-   body:`Scegli <b>5 records</b> per cinque lavorazioni distinte nella stessa fattura.`},
-  {screen:'s-nrighi', target:null, targetQuery:'#s-nrighi .option-btn:nth-child(6)', arrow:'bottom',
-   title:`6 o più Records `,
-   body:`Scegli <b>Da 6 a 31 records</b> se hai molte lavorazioni. Il sistema supporta fino a <b>31 records</b> per fattura.`},
+  // RECORD — spiegazione spostata qui, dove ora si sceglie davvero
+  // se aggiungerne un altro (prima c'era una schermata dedicata a
+  // "quanti records", eliminata: si decide di volta in volta)
+  {screen:'s-altrariga', target:null, targetQuery:'#s-altrariga .question', arrow:'bottom',
+   title:`Un Record alla volta`,
+   body:`Un <b>Record</b> corrisponde a una singola lavorazione: un titolo e una data. Dopo ogni record inserito, ti chiediamo se vuoi aggiungerne un altro — puoi arrivare fino a <b>31 records</b> nella stessa fattura, decidendo di volta in volta senza doverlo dichiarare in anticipo.`},
   // 6. TIPO FATTURA
   // Tipo fattura — intro
   {screen:'s-tipofatt', target:null, targetQuery:'#s-tipofatt .option-btn:nth-child(1)', arrow:'bottom',
@@ -1664,7 +1639,6 @@ function tourGo(){
   if(step.screen==='s-tipofatt') buildTipoFatt();
   else if(step.screen==='s-tipolav') buildTipoLav();
   else if(step.screen==='s-tipoop') buildTipoOpera();
-  else if(step.screen==='s-nrighi') buildNRighi();
   // s-azioni non ha build dinamico
 
   // Aspetta render DOM
@@ -2009,8 +1983,7 @@ function wtRender(){
 // config: {back, main, ok, danger}
 // ════════════════════════════════════════════
 const AB_CONFIG={
-  's-nrighi':   {back:null},
-  's-tipofatt': {back:"showScreen('s-nrighi')"},
+  's-tipofatt': {back:"showScreen('s-home')"},
   's-azienda':  {back:"showScreen('s-tipofatt')"},
   's-tipolav':  {back:"showScreen('s-tipofatt')"},
   's-tipoop':   {back:"showScreen('s-tipolav')"},
@@ -2545,8 +2518,9 @@ async function doLogin(){
 // ════════════════════════════════════════════
 // NAVIGAZIONE HOME
 function goEmettiFattura(){
-  buildNRighi();
-  showScreen('s-nrighi');
+  S.righi=[]; S.rigoIdx=0;
+  buildTipoFatt();
+  showScreen('s-tipofatt');
 }
 
 function goMieFatture(){
@@ -2698,24 +2672,14 @@ async function confermaNuovaAzienda(){
 }
 
 function openSelezioneAzienda(){
-  pips('prog-az', 6, 3);
+  pips('prog-az', 5, 2);
   document.getElementById('az-search').value = '';
   filtraAziende();
   showScreen('s-azienda');
 }
 
-function buildNRighi(){
-  pips('prog1',5,1);
-  const c=document.getElementById('opt-nrighi');c.innerHTML='';
-  [1,2,3,4,5,6].forEach(n=>{
-    const b=document.createElement('button');b.className='option-btn';
-    b.innerHTML=`<span class="opt-icon"><i class="fa-solid fa-file-lines"></i></span><div><div class="opt-label">${n} ${n===1?'record':'records'}</div><div class="opt-sub">${n===1?'Una sola data / titolo':'Più date o titoli'}</div></div>`;
-    b.onclick=()=>{c.querySelectorAll('.option-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');S.nPrevisti=n;S.righi=[];S.rigoIdx=0;setTimeout(()=>{buildTipoFatt();showScreen('s-tipofatt');},200);};
-    c.appendChild(b);
-  });
-}
 function buildTipoFatt(){
-  pips('prog2',5,2);
+  pips('prog2',5,1);
   const c=document.getElementById('opt-tipofatt');c.innerHTML='';
   const ICONE={'FO':'fa-file-invoice','FA':'fa-file-invoice','RS':'fa-receipt','RA':'fa-receipt','RGA':'fa-receipt'};
   const SUBS={'FO':'IVA 22% + ritenuta 20%','FA':'No IVA, no ritenuta (forfettari)','RS':'No P.IVA, no IVA, SI ritenuta','RA':'Ritenuta 60% (<36 anni) / 75% (≥36 anni)','RGA':'No IVA, no ritenuta'};
@@ -2727,8 +2691,8 @@ function buildTipoFatt(){
   });
 }
 function buildTipoLav(){
-  pips('prog3',6,4);
-  document.getElementById('rb-lav').innerHTML=`<i class="fa-solid fa-list-ol"></i>&nbsp;Record ${S.rigoIdx+1} di ${S.nPrevisti}`;
+  pips('prog3',5,3);
+  document.getElementById('rb-lav').innerHTML=`<i class="fa-solid fa-list-ol"></i>&nbsp;Record ${S.rigoIdx+1}`;
   const c=document.getElementById('opt-tipolav');c.innerHTML='';
   TIPI_LAV.forEach(it=>{
     const b=document.createElement('button');b.className='opt-pill';
@@ -2738,8 +2702,8 @@ function buildTipoLav(){
   });
 }
 function buildTipoOpera(){
-  pips('prog4',6,5);
-  document.getElementById('rb-op').innerHTML=`<i class="fa-solid fa-list-ol"></i>&nbsp;Record ${S.rigoIdx+1} di ${S.nPrevisti} · ${S.tipoLavLabel}`;
+  pips('prog4',5,4);
+  document.getElementById('rb-op').innerHTML=`<i class="fa-solid fa-list-ol"></i>&nbsp;Record ${S.rigoIdx+1} · ${S.tipoLavLabel}`;
   const c=document.getElementById('opt-tipoop');c.innerHTML='';
   TIPI_OPERA.forEach(it=>{
     const b=document.createElement('button');b.className='opt-pill';b.textContent=it.label;
@@ -2748,8 +2712,8 @@ function buildTipoOpera(){
   });
 }
 function openDettaglio(){
-  pips('prog5',6,6);
-  document.getElementById('rb-det').innerHTML=`<i class="fa-solid fa-list-ol"></i>&nbsp;Record ${S.rigoIdx+1}/${S.nPrevisti} · ${S.tipoLavLabel}/${S.tipoOperaLabel}`;
+  pips('prog5',5,5);
+  document.getElementById('rb-det').innerHTML=`<i class="fa-solid fa-list-ol"></i>&nbsp;Record ${S.rigoIdx+1} · ${S.tipoLavLabel}/${S.tipoOperaLabel}`;
   ['inp-titolo','inp-datalav','inp-datafatt','inp-turni','inp-righe'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('calc-preview').style.display='none';
   document.getElementById('warn-sameday').style.display='none';
@@ -2804,12 +2768,14 @@ function salvaRigo(){
   S.righi.push(nuovoRigo);
   inviaLogSimulazione(nuovoRigo); // LOG SIMULAZIONI
   S.rigoIdx++;
-  const rimasti=S.nPrevisti-S.rigoIdx;
+  const limiteRaggiunto = S.rigoIdx >= 31;
   document.getElementById('altra-saved').innerHTML=`<i class="fa-solid fa-circle-check" style="font-size:18px"></i>&nbsp;Record ${S.rigoIdx} — ${titolo} — ${fe(imp)}`;
-  document.getElementById('altra-counter').innerHTML=`Records inseriti: <strong>${S.rigoIdx}/${S.nPrevisti}</strong>${rimasti>0?' &nbsp;·&nbsp; mancano <strong>'+rimasti+'</strong>':' &nbsp;·&nbsp; tutti inseriti'}`;
+  document.getElementById('altra-counter').innerHTML = limiteRaggiunto
+    ? `Records inseriti: <strong>${S.rigoIdx}</strong> &nbsp;·&nbsp; limite massimo raggiunto`
+    : `Records inseriti finora: <strong>${S.rigoIdx}</strong>`;
   const bSi=document.getElementById('btn-altra-si');
-  document.getElementById('altra-sub').textContent=rimasti>0?`Record ${S.rigoIdx+1} di ${S.nPrevisti}`:'Tutti i records già inseriti';
-  bSi.style.opacity=rimasti===0?'0.35':'1';bSi.disabled=rimasti===0;
+  document.getElementById('altra-sub').textContent = limiteRaggiunto ? 'Limite massimo di 31 records raggiunto' : `Record ${S.rigoIdx+1}`;
+  bSi.style.opacity=limiteRaggiunto?'0.35':'1';bSi.disabled=limiteRaggiunto;
   showScreen('s-altrariga');
 }
 function aggiungiRigo(){S.tipoLav='';S.tipoLavLabel='';S.tipoOpera='';S.tipoOperaLabel='';buildTipoLav();showScreen('s-tipolav');}
@@ -3304,12 +3270,18 @@ function dialogAvviaPercorso(tipo){
         _audioSalvata.onerror = function(){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); };
         try{ _audioSalvata.play(); }catch(e){ rilasciaWakeLock(); setTimeout(function(){ doLogoutSilenzioso(); }, 500); }
       } else {
-        // Modalità manuale: comportamento normale
-        window.print();
+        // Modalità manuale: automatica come l'agenda — niente finestra di
+        // stampa/salvataggio locale, solo upload su Supabase. Il messaggio
+        // finale riflette l'esito vero dell'upload (uploadOk), non è più
+        // sempre "✅" a prescindere.
         if(step2b) step2b.style.display='none';
         document.getElementById('salva-step3').style.display='block';
         const msg = document.getElementById('salva-step3-msg');
-        if(msg) msg.textContent='PDF salvato su archivio ✅';
+        if(msg){
+          msg.textContent = uploadOk
+            ? 'PDF salvato su archivio ✅'
+            : '⚠ PDF generato ma upload su Supabase non riuscito — riprova o controlla la connessione';
+        }
       }
 
     }).catch(function(e){
@@ -3487,7 +3459,7 @@ function usciFattura(){
 }
 function nuovaFattura(){
   S={user:S.user,anzianita:S.anzianita,tipoFatt:null,tipoLav:'',tipoLavLabel:'',tipoOpera:'',tipoOperaLabel:'',righi:[],rigoIdx:0,nPrevisti:0,lav:S.lav,soc:S.soc};
-  buildNRighi();showScreen('s-nrighi');
+  buildTipoFatt();showScreen('s-tipofatt');
 }
 </script>
 <script>
