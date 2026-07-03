@@ -1794,11 +1794,26 @@ async function inviaIscrizione(){
 
   try{
     const SERVER = 'https://enpals-server.onrender.com';
-    const res=await fetch(SERVER+'/richieste_utenti',{
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body:JSON.stringify(record)
-    });
+    // Stesso pattern robusto del login: Render può essere "a freddo".
+    const MAX_TENTATIVI = 5;
+    let tentativo = 0;
+    let res = null;
+    while(!res && tentativo < MAX_TENTATIVI){
+      tentativo++;
+      try{
+        if(tentativo > 1){
+          btn.textContent = 'Tentativo '+tentativo+'/'+MAX_TENTATIVI+'...';
+          await new Promise(r=>setTimeout(r,12000));
+        }
+        const fetchOpts = { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record) };
+        try{ fetchOpts.signal = AbortSignal.timeout(55000); }catch(_ex){}
+        res = await fetch(SERVER+'/richieste_utenti', fetchOpts);
+      }catch(_e1){
+        console.warn('Tentativo '+tentativo+' fallito:', _e1.message);
+        if(tentativo >= MAX_TENTATIVI) res = null;
+      }
+    }
+    if(!res) throw new Error('Server non raggiungibile dopo '+MAX_TENTATIVI+' tentativi');
     const out = await res.json().catch(()=>({}));
     if(res.ok && out.ok){
       document.getElementById('mi-modal-ok').classList.add('show');
@@ -2617,7 +2632,13 @@ async function confermaNuovaAzienda(){
   // Invia richiesta di aggiunta azienda al server (in background) — sostituisce
   // la scrittura diretta su Supabase con chiave anon; richiesto_da viene
   // dal server (sessione), non serve più mandarlo dal client.
-  try {
+  // Davvero non bloccante stavolta: la funzione NON aspetta la fine della
+  // richiesta prima di avanzare — un solo retry leggero in background,
+  // non il pattern a 5 tentativi del login (qui non c'è nessuna UI di
+  // errore per l'utente, fallisce in silenzio anche oggi per design;
+  // farlo attendere fino a un minuto solo per cambiare schermata sarebbe
+  // peggio del problema che risolve).
+  (async function(){
     const record = {
       ragione_sociale: S.soc.ragione_sociale,
       via: S.soc.via || null,
@@ -2629,18 +2650,22 @@ async function confermaNuovaAzienda(){
     const SERVER = 'https://enpals-server.onrender.com';
     const tok = sessionStorage.getItem('enpals_auth')||'';
     const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
-    await fetch(SERVER+'/richieste_aziende', {
+    const opts = {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + authH
-      },
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+authH },
       body: JSON.stringify(record)
-    });
-    // Non blocchiamo il flusso anche in caso di errore
-  } catch(e) {
-    console.warn('Richiesta azienda non inviata:', e);
-  }
+    };
+    try{
+      await fetch(SERVER+'/richieste_aziende', opts);
+    }catch(_e1){
+      try{
+        await new Promise(r=>setTimeout(r,4000));
+        await fetch(SERVER+'/richieste_aziende', opts);
+      }catch(e2){
+        console.warn('Richiesta azienda non inviata (dopo retry):', e2);
+      }
+    }
+  })();
 
   buildTipoLav(); showScreen('s-tipolav');
 }
