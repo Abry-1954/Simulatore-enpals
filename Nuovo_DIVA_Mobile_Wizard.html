@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- rebuild 2: nuovo tentativo dopo esecuzione annullata (bloccata in coda) -->
+<!-- rebuild 3: nuovo tentativo dopo fallimenti ripetuti, da caricare tra ~30 minuti -->
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -3139,12 +3139,15 @@ function mostraDialogDopoSalvataggio(rif_nbr){
              ' | ' + rif_nbr +
              ' | Netto €' + _netto.toFixed(2).replace('.',',');
   divaNotifica('💾 FATTURA SALVATA', _det);
-  // Reset: mostra solo step1
+  // Modalità manuale: ora automatica come agenda/vocale — niente più
+  // scelta "Stampa / Salva PDF", si genera e carica subito il PDF.
+  // Il dialog resta visibile (mostra riferimento e poi l'esito), ma si
+  // salta lo step1 (la domanda) andando dritti alla generazione.
   ['salva-step1','salva-step2a','salva-step2b','salva-step3'].forEach(id=>{
     document.getElementById(id).style.display='none';
   });
-  document.getElementById('salva-step1').style.display='block';
   if(d){ d.style.display='flex'; }
+  setTimeout(function(){ dialogAvviaPercorso('pdf'); }, 100);
 }
 
 function dialogAvviaPercorso(tipo){
