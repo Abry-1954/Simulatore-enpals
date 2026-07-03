@@ -276,8 +276,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <script>
-const SUPABASE_URL='https://ugwhijpmcejxcsubopga.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd2hpanBtY2VqeGNzdWJvcGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjczNDksImV4cCI6MjA5NTU0MzM0OX0.yA_VevVZGRY4gA7nQp_K0sWa8NSezUuvzTkJx5NbK8k';
+const SERVER_URL='https://enpals-server.onrender.com';
 function oggi(){return new Date().toISOString().split('T')[0];}
 document.getElementById('data_compilazione').value=oggi();
 document.getElementById('data-display').textContent=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
@@ -311,19 +310,27 @@ async function inviaModulo(e){
   };
   Object.keys(record).forEach(k=>{if(record[k]==='')delete record[k];});
   try{
-    const res=await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Prefer':'return=minimal'},
-      body:JSON.stringify(record)
-    });
-    if(res.ok||res.status===201){
+    // Render "dorme" dopo inattività: un tentativo con un retry basta a
+    // coprire il cold-start (10-30s) senza far percepire un errore falso.
+    let res;
+    try{
+      res = await fetch(SERVER_URL+'/richieste_utenti', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record)
+      });
+    }catch(_e1){
+      await new Promise(r=>setTimeout(r,4000));
+      res = await fetch(SERVER_URL+'/richieste_utenti', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record)
+      });
+    }
+    const out = await res.json().catch(()=>({}));
+    if(res.ok && out.ok){
       document.getElementById('modulo').reset();
       document.getElementById('data_compilazione').value=oggi();
       document.getElementById('data-display').textContent=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
       document.getElementById('overlay-ok').classList.add('show');
     } else {
-      const err=await res.json().catch(()=>({}));
-      document.getElementById('err-msg').textContent='Errore '+res.status+': '+(err.message||'Riprova più tardi.');
+      document.getElementById('err-msg').textContent='Errore '+res.status+': '+(out.error||'Riprova più tardi.');
       document.getElementById('overlay-err').classList.add('show');
     }
   }catch(ex){

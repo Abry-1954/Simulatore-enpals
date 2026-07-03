@@ -1729,8 +1729,7 @@ function tourGo(){
   },180);
 }
 
-const SUPABASE_URL='https://ugwhijpmcejxcsubopga.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd2hpanBtY2VqeGNzdWJvcGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjczNDksImV4cCI6MjA5NTU0MzM0OX0.yA_VevVZGRY4gA7nQp_K0sWa8NSezUuvzTkJx5NbK8k';
+
 
 function apriRichiesta(){
   // Inizializza data compilazione
@@ -1794,21 +1793,17 @@ async function inviaIscrizione(){
   Object.keys(record).forEach(k=>{if(record[k]===undefined)delete record[k];});
 
   try{
-    const res=await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti',{
+    const SERVER = 'https://enpals-server.onrender.com';
+    const res=await fetch(SERVER+'/richieste_utenti',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'apikey':SUPABASE_ANON_KEY,
-        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
-        'Prefer':'return=minimal'
-      },
+      headers:{ 'Content-Type':'application/json' },
       body:JSON.stringify(record)
     });
-    if(res.ok||res.status===201){
+    const out = await res.json().catch(()=>({}));
+    if(res.ok && out.ok){
       document.getElementById('mi-modal-ok').classList.add('show');
     } else {
-      const err=await res.json().catch(()=>({}));
-      document.getElementById('mi-err-msg').textContent='Errore '+res.status+': '+(err.message||'Riprova più tardi.');
+      document.getElementById('mi-err-msg').textContent='Errore '+res.status+': '+(out.error||'Riprova più tardi.');
       document.getElementById('mi-modal-err').classList.add('show');
     }
   }catch(ex){
@@ -2619,7 +2614,9 @@ async function confermaNuovaAzienda(){
     cod_destinatario: document.getElementById('naz-cod').value.trim()
   };
 
-  // Invia richiesta di aggiunta azienda a Supabase (in background)
+  // Invia richiesta di aggiunta azienda al server (in background) — sostituisce
+  // la scrittura diretta su Supabase con chiave anon; richiesto_da viene
+  // dal server (sessione), non serve più mandarlo dal client.
   try {
     const record = {
       ragione_sociale: S.soc.ragione_sociale,
@@ -2627,17 +2624,16 @@ async function confermaNuovaAzienda(){
       cap: S.soc.cap || null,
       comune: S.soc.comune || null,
       piva_cf: S.soc.piva_cf || null,
-      cod_destinatario: S.soc.cod_destinatario || null,
-      richiesto_da: S.user || 'DIVA_MOBILE',
-      stato: 'in_attesa'
+      cod_destinatario: S.soc.cod_destinatario || null
     };
-    await fetch(SUPABASE_URL+'/rest/v1/richieste_aziende', {
+    const SERVER = 'https://enpals-server.onrender.com';
+    const tok = sessionStorage.getItem('enpals_auth')||'';
+    const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
+    await fetch(SERVER+'/richieste_aziende', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer '+SUPABASE_ANON_KEY,
-        'Prefer': 'return=minimal'
+        'Authorization': 'Bearer ' + authH
       },
       body: JSON.stringify(record)
     });

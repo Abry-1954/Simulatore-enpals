@@ -2675,11 +2675,9 @@ async function checkRichiestePendenti(){
 
 async function checkAziendePendenti(){
   try{
-    const res=await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?stato=eq.in_attesa&select=id',{
-      headers:{'apikey':_SUPA_KEY_AZ,'Authorization':'Bearer '+_SUPA_KEY_AZ}
-    });
+    const res=await authFetch('/richieste_aziende');
     const rows=await res.json();
-    const n=Array.isArray(rows)?rows.length:0;
+    const n=Array.isArray(rows)?rows.filter(r=>r.stato==='in_attesa').length:0;
     const badge=document.getElementById('badge-aziende');
     const toast=document.getElementById('toast-aziende');
     if(n>0){
@@ -3682,16 +3680,11 @@ async function scaricaUsersGitHub(){
 // ════════════════════════════════════════════
 // RICHIESTE NUOVE AZIENDE (da DIVA Mobile)
 // ════════════════════════════════════════════
-const _SUPA_URL_AZ = 'https://ugwhijpmcejxcsubopga.supabase.co';
-const _SUPA_KEY_AZ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd2hpanBtY2VqeGNzdWJvcGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjczNDksImV4cCI6MjA5NTU0MzM0OX0.yA_VevVZGRY4gA7nQp_K0sWa8NSezUuvzTkJx5NbK8k';
-
 async function apriPannelloRichiesteAziende(){
   document.getElementById('pannello-rich-az').style.display = 'block';
   document.getElementById('rich-az-body').innerHTML = '<div style="text-align:center;padding:30px;color:#6b7280;">⏳ Caricamento...</div>';
   try {
-    const res = await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?order=created_at.desc', {
-      headers: { 'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ }
-    });
+    const res = await authFetch('/richieste_aziende');
     const rows = await res.json();
     if(!rows || !rows.length){
       document.getElementById('rich-az-body').innerHTML = '<div style="text-align:center;padding:30px;color:#6b7280;">Nessuna richiesta presente.</div>';
@@ -3762,32 +3755,19 @@ async function salvaModificaAzienda(id){
   if(btn){ btn.disabled=true; btn.textContent='⏳'; }
 
   try {
-    // 1. Inserisci in tabella aziende con dati modificati
-    const sede = (cap && cit) ? cap+' - '+cit : (cap||cit);
-    const insRes = await fetch(_SUPA_URL_AZ+'/rest/v1/aziende', {
+    // Un'unica chiamata atomica lato server: inserisce in aziende con i
+    // dati corretti dall'admin e marca la richiesta come approvata,
+    // invece delle due chiamate separate di prima (rischio di stato
+    // incoerente se la seconda falliva dopo che la prima era andata a segno).
+    const res = await authFetch('/richieste_aziende/approva?id='+id, {
       method: 'POST',
-      headers: {
-        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
-        'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=ignore-duplicates'
-      },
-      body: JSON.stringify({ rag: rag, ind: ind, sede: sede, fisc: fisc, coddest: cod })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ragione_sociale: rag, via: ind, cap: cap, comune: cit, piva_cf: fisc, cod_destinatario: cod })
     });
-    if(!insRes.ok) throw new Error('Errore inserimento azienda: '+insRes.status);
+    const out = await res.json().catch(()=>({}));
+    if(!res.ok || !out.ok) throw new Error(out.error || ('Errore '+res.status));
 
-    // 2. Aggiorna stato richiesta → approvata
-    await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
-      method: 'PATCH',
-      headers: {
-        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ stato: 'approvata' })
-    });
-
-    // 3. Log
     logAzione('APPROVA_AZIENDA', rag + ' (dati modificati, approvata da admin)');
-
-    // 4. Ricarica pannello
     apriPannelloRichiesteAziende();
   } catch(e) {
     alert('Errore: '+e.message);
@@ -3803,39 +3783,13 @@ async function approvaAzienda(id, btn){
   if(!confirm('Aggiungere questa azienda al database?')) return;
   btn.disabled = true; btn.textContent = '⏳';
   try {
-    const res = await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
-      headers: { 'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ }
-    });
-    const rows = await res.json();
-    if(!rows || !rows.length) throw new Error('Richiesta non trovata');
-    const r = rows[0];
+    // Nessun corpo: il server usa i dati originali della richiesta.
+    // Inserimento in aziende + stato→approvata in un'unica operazione atomica.
+    const res = await authFetch('/richieste_aziende/approva?id='+id, { method: 'POST' });
+    const out = await res.json().catch(()=>({}));
+    if(!res.ok || !out.ok) throw new Error(out.error || ('Errore '+res.status));
 
-    const insRes = await fetch(_SUPA_URL_AZ+'/rest/v1/aziende', {
-      method: 'POST',
-      headers: {
-        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
-        'Content-Type': 'application/json', 'Prefer': 'return=minimal,resolution=ignore-duplicates'
-      },
-      body: JSON.stringify({
-        rag: r.ragione_sociale,
-        ind: r.via || '',
-        sede: ((r.cap||'') + (r.cap && r.comune ? ' - ' : '') + (r.comune||'')).trim(),
-        fisc: r.piva_cf || '',
-        coddest: r.cod_destinatario || ''
-      })
-    });
-    if(!insRes.ok) throw new Error('Errore inserimento azienda: '+insRes.status);
-
-    await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
-      method: 'PATCH',
-      headers: {
-        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ stato: 'approvata' })
-    });
-
-    logAzione('APPROVA_AZIENDA', r.ragione_sociale + ' (richiesta da ' + (r.richiesto_da||'?') + ')');
+    logAzione('APPROVA_AZIENDA', 'id='+id+' (approvata da admin)');
     apriPannelloRichiesteAziende();
   } catch(e) {
     alert('Errore: '+e.message);
@@ -3847,22 +3801,11 @@ async function rifiutaAzienda(id, btn){
   if(!confirm('Rifiutare questa richiesta?')) return;
   btn.disabled = true; btn.textContent = '⏳';
   try {
-    const res = await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
-      headers: { 'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ }
-    });
-    const rows = await res.json();
-    const r = rows && rows[0] ? rows[0] : { ragione_sociale: '?', richiesto_da: '?' };
+    const res = await authFetch('/richieste_aziende/rifiuta?id='+id, { method: 'POST' });
+    const out = await res.json().catch(()=>({}));
+    if(!res.ok || !out.ok) throw new Error(out.error || ('Errore '+res.status));
 
-    await fetch(_SUPA_URL_AZ+'/rest/v1/richieste_aziende?id=eq.'+id, {
-      method: 'PATCH',
-      headers: {
-        'apikey': _SUPA_KEY_AZ, 'Authorization': 'Bearer '+_SUPA_KEY_AZ,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ stato: 'rifiutata' })
-    });
-
-    logAzione('RIFIUTA_AZIENDA', r.ragione_sociale + ' (richiesta da ' + (r.richiesto_da||'?') + ')');
+    logAzione('RIFIUTA_AZIENDA', 'id='+id);
     apriPannelloRichiesteAziende();
   } catch(e) {
     alert('Errore: '+e.message);
