@@ -553,7 +553,7 @@
   .field-row { display: flex; gap: 10px; }
   .field-row .field-group { flex: 1; }
 
-  .color-picker { display: flex; gap: 8px; }
+  .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
   .color-dot {
     width: 30px; height: 30px;
     border-radius: 50%;
@@ -805,16 +805,17 @@
       <input type="text" class="field-input" id="f-titolo" placeholder="Es. Doppiaggio episodio 4">
     </div>
 
-    <div class="field-group">
-      <label class="field-label">Azienda</label>
-      <select class="field-select" id="f-azienda">
-        <option value="">Nessuna azienda</option>
-      </select>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Data</label>
-      <input type="date" class="field-input" id="f-data">
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Azienda</label>
+        <select class="field-select" id="f-azienda">
+          <option value="">Nessuna azienda</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Data</label>
+        <input type="date" class="field-input" id="f-data">
+      </div>
     </div>
 
     <div class="field-row">
@@ -826,11 +827,15 @@
         <label class="field-label">Fine</label>
         <input type="time" class="field-input" id="f-fine">
       </div>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Colore</label>
-      <div class="color-picker" id="color-picker"></div>
+      <div class="field-group">
+        <label class="field-label">Ruolo</label>
+        <select class="field-select" id="f-ruolo">
+          <option value="DOPPIATORE">Doppiatore</option>
+          <option value="ADATTATORE">Adattatore</option>
+          <option value="ASSISTENTE AL DOPPIAGGIO">Assistente al doppiaggio</option>
+          <option value="DIRETTORE DEL DOPPIAGGIO">Direttore del doppiaggio</option>
+        </select>
+      </div>
     </div>
 
     <div class="field-row">
@@ -851,27 +856,20 @@
         <label class="field-label">Turni</label>
         <input type="number" class="field-input" id="f-turni" placeholder="Es. 1" min="1" step="1" oninput="aggiornaStatoGenera()">
       </div>
-    </div>
-
-    <div class="field-row">
       <div class="field-group">
         <label class="field-label">Righe</label>
         <input type="number" class="field-input" id="f-righe" placeholder="Es. 42" min="0" step="1" oninput="aggiornaStatoGenera()">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Ruolo</label>
-        <select class="field-select" id="f-ruolo">
-          <option value="DOPPIATORE">Doppiatore</option>
-          <option value="ADATTATORE">Adattatore</option>
-          <option value="ASSISTENTE AL DOPPIAGGIO">Assistente al doppiaggio</option>
-          <option value="DIRETTORE DEL DOPPIAGGIO">Direttore del doppiaggio</option>
-        </select>
       </div>
     </div>
 
     <div class="field-group">
       <label class="field-label">Note</label>
       <input type="text" class="field-input" id="f-note" placeholder="Note facoltative">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Colore</label>
+      <div class="color-picker" id="color-picker"></div>
     </div>
 
     <div class="field-hint" id="blocco-fatturato" style="display:none;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:600;">
@@ -904,11 +902,13 @@
 
 <script>
 const COLORI = [
-  {id:'arancio', bg:'#fff7ed', bar:'#f97316', text:'#9a3412'},
-  {id:'blu',     bg:'#eff6ff', bar:'#3b82f6', text:'#1e40af'},
-  {id:'verde',   bg:'#f0fdf4', bar:'#22c55e', text:'#166534'},
-  {id:'viola',   bg:'#faf5ff', bar:'#a855f7', text:'#6b21a8'},
-  {id:'rosa',    bg:'#fdf2f8', bar:'#ec4899', text:'#9d174d'},
+  {id:'arancio',  bg:'#fff7ed', bar:'#f97316', text:'#9a3412'},
+  {id:'blu',      bg:'#eff6ff', bar:'#3b82f6', text:'#1e40af'},
+  {id:'verde',    bg:'#f0fdf4', bar:'#22c55e', text:'#166534'},
+  {id:'viola',    bg:'#faf5ff', bar:'#a855f7', text:'#6b21a8'},
+  {id:'rosa',     bg:'#fdf2f8', bar:'#ec4899', text:'#9d174d'},
+  {id:'bluscuro', bg:'#eef2ff', bar:'#1e3a8a', text:'#1e3a8a'},
+  {id:'nero',     bg:'#f4f4f5', bar:'#18181b', text:'#18181b'},
 ];
 
 function oggiISO(d){
