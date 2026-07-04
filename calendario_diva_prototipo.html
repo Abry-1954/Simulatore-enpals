@@ -194,11 +194,39 @@
     padding-bottom: 90px;
   }
 
+  /* ===== VISTA ANNO ===== */
+  .year-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 1rem 0.85rem;
+  }
+  .year-month-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(46,16,101,0.08);
+    cursor: pointer;
+  }
+  .year-month-card:active { opacity: 0.8; }
+  .year-month-card.today { border: 2px solid #fb923c; }
+  .year-month-nome {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2e2a3d;
+    text-transform: capitalize;
+    margin-bottom: 4px;
+  }
+  .year-month-count {
+    font-size: 11.5px;
+    color: #8a8598;
+  }
+
   /* ===== VISTA MESE ===== */
   .month-grid {
     padding: 1rem 0.85rem 0;
   }
-  .month-weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     margin-bottom: 6px;
@@ -787,6 +815,7 @@
     <div class="cal-tab" data-view="day" onclick="cambiaVista('day')">Giorno</div>
     <div class="cal-tab active" data-view="week" onclick="cambiaVista('week')">Settimana</div>
     <div class="cal-tab" data-view="month" onclick="cambiaVista('month')">Mese</div>
+    <div class="cal-tab" data-view="year" onclick="cambiaVista('year')">Anno</div>
   </div>
 
   <div class="reminder-banner" id="reminder-banner"></div>
@@ -1185,6 +1214,7 @@ function cambiaVista(v){
 function navPeriodo(dir){
   if(vistaCorrente==='day') dataCorrente.setDate(dataCorrente.getDate()+dir);
   else if(vistaCorrente==='week') dataCorrente.setDate(dataCorrente.getDate()+dir*7);
+  else if(vistaCorrente==='year') dataCorrente.setFullYear(dataCorrente.getFullYear()+dir);
   else dataCorrente.setMonth(dataCorrente.getMonth()+dir);
   render();
 }
@@ -1202,6 +1232,7 @@ function render(){
   const body = document.getElementById('cal-body');
   document.body.classList.toggle('week-needs-rotate', vistaCorrente === 'week');
   if(vistaCorrente==='month') body.innerHTML = renderMese();
+  else if(vistaCorrente==='year') body.innerHTML = renderAnno();
   else body.innerHTML = renderTimeView(vistaCorrente);
   posizionaEventi();
   renderReminderBanner();
@@ -1264,7 +1295,9 @@ function vaiASettimana(iso){
 
 function renderNavLabel(){
   const lbl = document.getElementById('nav-label');
-  if(vistaCorrente==='month'){
+  if(vistaCorrente==='year'){
+    lbl.textContent = String(dataCorrente.getFullYear());
+  } else if(vistaCorrente==='month'){
     lbl.textContent = MESI[dataCorrente.getMonth()] + ' ' + dataCorrente.getFullYear();
   } else if(vistaCorrente==='week'){
     const s = startOfWeek(dataCorrente);
@@ -1278,6 +1311,120 @@ function renderNavLabel(){
 
 function eventiDelGiorno(iso){
   return eventi.filter(e=>e.data===iso).sort((a,b)=>a.inizio.localeCompare(b.inizio));
+}
+
+/* ===== VISTA ANNO =====
+   Cruscotto di sola lettura: mostra i 12 mesi e i totali dell'anno intero,
+   ma NON offre pulsanti di generazione fattura — quelli restano solo nella
+   vista Mese, l'unico contesto dove hanno un significato fiscale corretto
+   (le fatture DIVA, e le regole ENPALS sottostanti, sono pensate a livello
+   mensile, mai su un arco di 12 mesi insieme). Click su un mese porta
+   dritti alla vista Mese di quel mese, dove le azioni tornano disponibili. */
+function renderAnno(){
+  const anno = dataCorrente.getFullYear();
+  const oggiD = new Date(OGGI_ISO+'T00:00:00');
+  let html = '<div class="year-grid">';
+  for(let m=0; m<12; m++){
+    const evsDelMese = eventi.filter(e=>{
+      const d = new Date(e.data+'T00:00:00');
+      return d.getFullYear()===anno && d.getMonth()===m;
+    });
+    const isCurrentMonth = (anno===oggiD.getFullYear() && m===oggiD.getMonth());
+    html += '<div class="year-month-card'+(isCurrentMonth?' today':'')+'" onclick="apriMeseDaAnno('+anno+','+m+')">';
+    html += '<div class="year-month-nome">'+MESI[m]+'</div>';
+    html += '<div class="year-month-count">'+(evsDelMese.length ? evsDelMese.length+' appuntament'+(evsDelMese.length===1?'o':'i') : '—')+'</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  html += renderRiepilogoAnno(anno);
+  return html;
+}
+
+function apriMeseDaAnno(anno, mese){
+  dataCorrente = new Date(anno, mese, 1);
+  vistaCorrente = 'month';
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.toggle('active', t.dataset.view==='month'));
+  render();
+}
+
+function renderRiepilogoAnno(anno){
+  const evsAnno = eventi.filter(e=>{
+    const d = new Date(e.data+'T00:00:00');
+    return d.getFullYear()===anno;
+  });
+
+  let html = '<div class="day-agenda"><div class="day-agenda-title">Riepilogo anno '+anno+'</div>';
+
+  if(!evsAnno.length){
+    html += '<div class="agenda-empty"><i>—</i>Nessun appuntamento in questo anno.</div></div>';
+    return html;
+  }
+
+  const perAzienda = {};
+  const giorniImpegnati = new Set();
+  const recNbrGlobali = new Set();
+  let oreTotali = 0;
+  let righeTotali = 0;
+  let turniTotali = 0;
+
+  evsAnno.forEach(e=>{
+    const nome = e.azienda || 'Senza azienda';
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, colore:e.colore, recNbrSet:new Set()};
+    const ore = durataOre(e.inizio, e.fine);
+    const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
+    const turniEv = (typeof e.turni === 'number') ? e.turni : 0;
+    perAzienda[nome].turni += turniEv;
+    perAzienda[nome].ore += ore;
+    perAzienda[nome].righe += righeEv;
+    if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
+    if(typeof e.turni === 'number') perAzienda[nome].turniNote = true;
+    if(e.fatturaRecNbr){ perAzienda[nome].recNbrSet.add(e.fatturaRecNbr); recNbrGlobali.add(e.fatturaRecNbr); }
+    oreTotali += ore;
+    righeTotali += righeEv;
+    turniTotali += turniEv;
+    giorniImpegnati.add(e.data);
+  });
+
+  // Stessa funzione di netto usata nel riepilogo mensile — copre solo il
+  // già fatturato, un rec_nbr contato una volta sola anche a cavallo di
+  // più appuntamenti nello stesso anno.
+  function nettoDiRecNbrSet(set){
+    let tot = 0;
+    set.forEach(rn=>{ const f = fattureByRecNbr[rn]; if(f && typeof f.tot_netto==='number') tot += f.tot_netto; });
+    return tot;
+  }
+  const nettoTotaleAnno = nettoDiRecNbrSet(recNbrGlobali);
+
+  const aziendeOrdinate = Object.keys(perAzienda).sort((a,b)=> perAzienda[b].ore - perAzienda[a].ore);
+
+  html += '<div class="riepilogo-list">';
+  aziendeOrdinate.forEach(nome=>{
+    const v = perAzienda[nome];
+    const c = colorOf(v.colore);
+    const nettoAzienda = nettoDiRecNbrSet(v.recNbrSet);
+    html += '<div class="riepilogo-row">';
+    html += '<div class="riepilogo-row-top">';
+    html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
+    html += '<div class="riepilogo-nome">'+nome+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.turniNote ? v.turni+' '+(v.turni===1?'turno':'turni') : '— turni')+'</div>';
+    html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.recNbrSet.size>0 ? '€ '+nettoAzienda.toFixed(2).replace('.',',')+' netto' : '— netto')+'</div>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="riepilogo-totale">';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+turniTotali+'</span><span class="riepilogo-totale-lbl">'+(turniTotali===1?'turno':'turni')+' totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+giorniImpegnati.size+'</span><span class="riepilogo-totale-lbl">'+(giorniImpegnati.size===1?'giorno':'giorni')+' impegnati</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+formattaOre(oreTotali)+'</span><span class="riepilogo-totale-lbl">ore totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">'+righeTotali+'</span><span class="riepilogo-totale-lbl">righe totali</span></div>';
+  html += '<div class="riepilogo-totale-item"><span class="riepilogo-totale-num">€ '+nettoTotaleAnno.toFixed(2).replace('.',',')+'</span><span class="riepilogo-totale-lbl">netto fatturato</span></div>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
 }
 
 /* ===== VISTA MESE ===== */
