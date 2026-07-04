@@ -2509,7 +2509,10 @@ async function doLogin(){
   // ── DIVA AI: mostra microfono ──
   divaAiMostra();
   // ── DIVA MONITOR: notifica login ──
-  divaNotifica('🔐 LOGIN', S.lav.nominativo || u);
+  // SOSPESA il 4 luglio 2026, su richiesta esplicita — troppe email durante
+  // la fase di test/sviluppo. Per riattivarla quando si sarà operativi con
+  // utenti reali, basta togliere il commento dalla riga sotto.
+  // divaNotifica('🔐 LOGIN', S.lav.nominativo || u);
   // Se login avviato da modalita vocale, salta direttamente al flusso vocale
   if(_voc&&_voc._dopoLoginVocale){
     _voc._dopoLoginVocale=false;
@@ -3153,7 +3156,14 @@ function mostraDialogDopoSalvataggio(rif_nbr){
              ' | ' + (S.soc&&S.soc.ragione_sociale||'') +
              ' | ' + rif_nbr +
              ' | Netto €' + _netto.toFixed(2).replace('.',',');
-  divaNotifica('💾 FATTURA SALVATA', _det);
+  // SOSPESA il 4 luglio 2026, su richiesta esplicita — stesso motivo della
+  // notifica login. In futuro questo tipo di notifica va ripensato: non più
+  // inviata dal client (wizard) via EmailJS, ma spostata dentro
+  // ENP-Management.html e nella futura pagina leggera "Assistente Admin"
+  // (vedi Da Fare — chat con gli utenti), così l'admin la vede lì invece
+  // di riceverla via email. Per riattivare la versione attuale nel
+  // frattempo, basta togliere il commento dalla riga sotto.
+  // divaNotifica('💾 FATTURA SALVATA', _det);
   // Modalità manuale: ora automatica come agenda/vocale — niente più
   // scelta "Stampa / Salva PDF", si genera e carica subito il PDF.
   // Il dialog resta visibile (mostra riferimento e poi l'esito), ma si
