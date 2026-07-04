@@ -3137,15 +3137,10 @@ async function azzeraLog(){
   if(!confirm("Sei sicuro di voler cancellare TUTTI i record del log?\nQuesta operazione non può essere annullata.")) return;
   var btn = document.querySelector('[onclick="azzeraLog()"]');
   try{
-    // 1. Cancella direttamente su Supabase via RPC
-    const SUPA_URL = 'https://ugwhijpmcejxcsubopga.supabase.co';
-    const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd2hpanBtY2VqeGNzdWJvcGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjczNDksImV4cCI6MjA5NTU0MzM0OX0.yA_VevVZGRY4gA7nQp_K0sWa8NSezUuvzTkJx5NbK8k';
-    await fetch(SUPA_URL+'/rest/v1/rpc/reset_log', {
-      method: 'POST',
-      headers: {'apikey': SUPA_ANON, 'Authorization': 'Bearer '+SUPA_ANON, 'Content-Type': 'application/json'},
-      body: '{}'
-    });
-    // 2. Poi svuota RAM e GitHub via server
+    // Un'unica chiamata al server, che ora gestisce internamente anche lo
+    // svuotamento della tabella log su Supabase (prima lo faceva il browser
+    // direttamente con la chiave anon — sistemato il 4 luglio, in vista
+    // dell'attivazione delle RLS).
     var cu = sessionStorage.getItem("enpals_cu") || "";
     var cp = sessionStorage.getItem("enpals_cp") || "";
     var r = await fetch("https://enpals-server.onrender.com/log-reset", {
