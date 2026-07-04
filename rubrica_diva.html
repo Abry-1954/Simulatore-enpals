@@ -62,7 +62,7 @@
     width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg, #fb923c, #f97316);
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 700; font-size: 15px;
+    color: #fff; font-weight: 700; font-size: 19px;
   }
   .rub-info { flex: 1; min-width: 0; }
   .rub-nome { font-size: 14.5px; font-weight: 700; color: #2e2a3d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -132,6 +132,14 @@
     border: 1.5px solid #fecaca; background: #fff; color: #dc2626;
     font-size: 13.5px; font-weight: 700; cursor: pointer;
   }
+  .import-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid #f1eff6;
+  }
+  .import-row:last-child { border-bottom: none; }
+  .import-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; }
+  .import-row-nome { font-size: 14px; font-weight: 700; color: #2e2a3d; }
+  .import-row-dett { font-size: 12px; color: #8a8598; margin-top: 2px; }
 
   /* ===== LOGIN (identico al calendario) ===== */
   .login-screen {
@@ -184,6 +192,8 @@
 
   <div class="rub-search-wrap">
     <input type="text" class="rub-search" id="rub-search" placeholder="🔍 Cerca per cognome, nome o pseudonimo..." oninput="renderContatti()">
+    <button onclick="document.getElementById('import-file').click()" style="width:100%;margin-top:8px;background:rgba(255,255,255,0.12);border:none;border-radius:12px;padding:9px 12px;font-size:12.5px;color:#fff;font-weight:600;cursor:pointer;">📥 Importa da vCard (.vcf) — Gmail, Outlook, Thunderbird, telefono</button>
+    <input type="file" id="import-file" accept=".vcf,text/vcard" style="display:none" onchange="gestisciFileImportato(event)">
   </div>
 
   <div class="rub-body" id="rub-body"></div>
@@ -239,6 +249,20 @@
       <button class="btn-primary" id="btn-salva-contatto" onclick="salvaContatto()">Salva</button>
     </div>
     <button class="btn-delete" id="btn-elimina-contatto" style="display:none" onclick="eliminaContatto()">🗑 Elimina contatto</button>
+  </div>
+</div>
+
+<!-- ══ MODALE ANTEPRIMA IMPORTAZIONE ══ -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Importa contatti</div>
+    <div id="import-info" style="font-size:12.5px;color:#8a8598;margin-bottom:12px;"></div>
+    <div id="import-list" style="max-height:50vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="chiudiModaleImport()">Annulla</button>
+      <button class="btn-primary" id="btn-conferma-import" onclick="confermaImportazione()">Importa selezionati</button>
+    </div>
   </div>
 </div>
 
@@ -329,12 +353,6 @@ async function caricaContatti(){
   renderContatti();
 }
 
-function iniziali(c){
-  const a = (c.nome||'').trim().charAt(0);
-  const b = (c.cognome||'').trim().charAt(0);
-  return ((b||a||'?')+(a&&b?a:'')).toUpperCase().slice(0,2);
-}
-
 function renderContatti(){
   const body = document.getElementById('rub-body');
   const q = (document.getElementById('rub-search').value||'').trim().toLowerCase();
@@ -363,7 +381,7 @@ function renderContatti(){
     const nomeCompleto = (c.cognome+' '+c.nome).trim();
     html += '<div class="rub-card">';
     html += '<div class="rub-card-top">';
-    html += '<div class="rub-avatar">'+iniziali(c)+'</div>';
+    html += '<div class="rub-avatar">👤</div>';
     html += '<div class="rub-info">';
     html += '<div class="rub-nome">'+nomeCompleto+'</div>';
     if(c.pseudonimo) html += '<div class="rub-pseudo">'+c.pseudonimo+'</div>';
@@ -453,6 +471,116 @@ async function eliminaContatto(){
   } catch(e){
     alert('Errore nell\'eliminazione: '+e.message);
   }
+}
+
+// ── IMPORTAZIONE DA VCARD (.vcf) ────────────────────────────
+// Formato universale esportabile da Gmail, Outlook/Hotmail,
+// Thunderbird, iCloud e dalla rubrica di qualsiasi telefono —
+// niente integrazione diretta con le API di quei servizi (avrebbe
+// richiesto chiavi sviluppatore e schermate di autorizzazione,
+// un progetto a sé): l'utente esporta un file, lo carica qui.
+let contattiDaImportare = [];
+
+function parseVCard(testo){
+  const risultati = [];
+  const blocchi = testo.split(/BEGIN:VCARD/i).slice(1);
+  blocchi.forEach(blocco=>{
+    const righe = blocco.split(/\r\n|\r|\n/);
+    let cognome='', nome='', telefoni=[], email='', note='';
+    righe.forEach(rigaRaw=>{
+      const riga = rigaRaw.trim();
+      if(!riga) return;
+      const idx = riga.indexOf(':');
+      if(idx<0) return;
+      const chiaveBase = riga.substring(0,idx).split(';')[0].toUpperCase();
+      const valore = riga.substring(idx+1).trim();
+      if(chiaveBase==='N'){
+        const parti = valore.split(';');
+        if(parti[0]) cognome = parti[0].trim();
+        if(parti[1]) nome = parti[1].trim();
+      } else if(chiaveBase==='FN'){
+        if(!cognome && !nome){
+          const p = valore.trim().split(/\s+/);
+          cognome = p.pop()||''; nome = p.join(' ');
+        }
+      } else if(chiaveBase==='TEL'){
+        if(valore) telefoni.push(valore);
+      } else if(chiaveBase==='EMAIL'){
+        if(!email) email = valore;
+      } else if(chiaveBase==='NOTE'){
+        note = valore;
+      }
+    });
+    if(cognome || nome){
+      risultati.push({
+        cognome: cognome || nome, nome: cognome ? nome : '',
+        telefono1: telefoni[0]||'', telefono2: telefoni[1]||'',
+        email: email, note: note, selezionato: true
+      });
+    }
+  });
+  return risultati;
+}
+
+function gestisciFileImportato(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const parsed = parseVCard(e.target.result);
+    if(!parsed.length){
+      alert('Nessun contatto valido trovato nel file. Verifica che sia un vero export vCard (.vcf).');
+      event.target.value = '';
+      return;
+    }
+    contattiDaImportare = parsed;
+    renderAnteprimaImport();
+    document.getElementById('modal-import').classList.add('show');
+  };
+  reader.onerror = function(){ alert('Impossibile leggere il file selezionato.'); };
+  reader.readAsText(file);
+  event.target.value = ''; // permette di ricaricare lo stesso file una seconda volta
+}
+
+function renderAnteprimaImport(){
+  document.getElementById('import-info').textContent =
+    contattiDaImportare.length+' contatt'+(contattiDaImportare.length===1?'o trovato':'i trovati')+' nel file — deseleziona quelli che non vuoi importare.';
+  const lista = document.getElementById('import-list');
+  lista.innerHTML = contattiDaImportare.map((c,i)=>{
+    const dett = [c.telefono1, c.telefono2, c.email].filter(Boolean).join(' · ');
+    return '<div class="import-row">'
+      + '<input type="checkbox" '+(c.selezionato?'checked':'')+' onchange="contattiDaImportare['+i+'].selezionato=this.checked">'
+      + '<div><div class="import-row-nome">'+(c.cognome+' '+c.nome).trim()+'</div>'
+      + (dett ? '<div class="import-row-dett">'+dett+'</div>' : '')
+      + '</div></div>';
+  }).join('');
+}
+
+function chiudiModaleImport(){
+  document.getElementById('modal-import').classList.remove('show');
+  contattiDaImportare = [];
+}
+
+async function confermaImportazione(){
+  const selezionati = contattiDaImportare.filter(c=>c.selezionato);
+  if(!selezionati.length){ alert('Nessun contatto selezionato.'); return; }
+  const btn = document.getElementById('btn-conferma-import');
+  btn.disabled = true;
+  let riusciti = 0, falliti = 0;
+  for(const c of selezionati){
+    btn.textContent = 'Importazione '+(riusciti+falliti+1)+'/'+selezionati.length+'...';
+    try{
+      await apiFetch('/rubrica', { method:'POST', body: JSON.stringify(toApiPayload(c)) });
+      riusciti++;
+    } catch(e){
+      falliti++;
+      console.warn('Import fallito per', c.cognome, c.nome, ':', e.message);
+    }
+  }
+  btn.disabled = false; btn.textContent = 'Importa selezionati';
+  chiudiModaleImport();
+  await caricaContatti();
+  alert(riusciti+' contatt'+(riusciti===1?'o importato':'i importati')+(falliti ? ', '+falliti+' non riusciti (vedi console)' : '')+'.');
 }
 
 function chiudiRubrica(){
