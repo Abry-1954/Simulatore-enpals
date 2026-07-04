@@ -72,9 +72,9 @@
     background: #f4f2f9; color: #6b6678; font-size: 13px;
     cursor: pointer; flex-shrink: 0;
   }
-  .rub-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .rub-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
   .rub-action {
-    flex: 1; min-width: 100px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
     padding: 9px 10px; border-radius: 10px; text-decoration: none;
     font-size: 12.5px; font-weight: 700; border: 1.5px solid transparent;
     overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
@@ -391,9 +391,9 @@ function renderContatti(){
     html += '</div>';
     if(c.telefono1 || c.telefono2 || c.email){
       html += '<div class="rub-actions">';
-      if(c.telefono1) html += '<a class="rub-action call" href="tel:'+c.telefono1.replace(/\s/g,'')+'">📞 '+c.telefono1+'</a>';
-      if(c.telefono2) html += '<a class="rub-action call" href="tel:'+c.telefono2.replace(/\s/g,'')+'">📞 '+c.telefono2+'</a>';
-      if(c.email) html += '<a class="rub-action mail" href="mailto:'+c.email+'">✉️ '+c.email+'</a>';
+      if(c.telefono1) html += '<a class="rub-action call" style="grid-column:1" href="tel:'+c.telefono1.replace(/\s/g,'')+'">📞 '+c.telefono1+'</a>';
+      if(c.telefono2) html += '<a class="rub-action call" style="grid-column:2" href="tel:'+c.telefono2.replace(/\s/g,'')+'">📞 '+c.telefono2+'</a>';
+      if(c.email) html += '<a class="rub-action mail" style="grid-column:3" href="mailto:'+c.email+'">✉️ '+c.email+'</a>';
       html += '</div>';
     }
     if(c.note) html += '<div class="rub-note">'+c.note+'</div>';
