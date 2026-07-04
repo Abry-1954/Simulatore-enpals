@@ -770,6 +770,10 @@ function divaNotifica(evento, dettagli){
       <span style="font-size:28px;">📅</span>
       <span style="text-align:left;"><div>Il mio calendario</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Appuntamenti e fatture da agenda</div></span>
     </button>
+    <button id="home-btn-rubrica" onclick="goRubrica()" style="width:100%;max-width:320px;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(15,118,110,0.4);">
+      <span style="font-size:28px;">📇</span>
+      <span style="text-align:left;"><div>La mia rubrica</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Contatti, telefono ed email</div></span>
+    </button>
     <button id="home-btn-logout" onclick="doLogout()" style="margin-top:10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:8px;padding:10px 24px;font-size:13px;cursor:pointer;">⏻ Esci</button>
   </div>
 </div>
@@ -2545,6 +2549,17 @@ function goCalendario(){
   if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
   const _cb = Date.now();
   window.open('https://abry-1954.github.io/Simulatore-enpals/calendario_diva_prototipo.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
+}
+
+function goRubrica(){
+  const nome = encodeURIComponent(S.lav.nominativo || S.user || '');
+  if(!nome){ alert('Utente non identificato'); return; }
+  const tokRaw = sessionStorage.getItem('enpals_auth') || '';
+  const tok = tokRaw.startsWith('tok:') ? tokRaw.slice(4) : '';
+  const ruolo = encodeURIComponent(sessionStorage.getItem('enpals_ruolo') || 'utente');
+  if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
+  const _cb = Date.now();
+  window.open('https://abry-1954.github.io/Simulatore-enpals/rubrica_diva.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
 }
 
 function doLogout(){
