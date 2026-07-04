@@ -774,6 +774,10 @@ function divaNotifica(evento, dettagli){
       <span style="font-size:28px;">📇</span>
       <span style="text-align:left;"><div>La mia rubrica</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Contatti, telefono ed email</div></span>
     </button>
+    <button id="home-btn-assistente" onclick="goAssistente()" style="display:none;width:100%;max-width:320px;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(30,58,138,0.4);">
+      <span style="font-size:28px;">🛡️</span>
+      <span style="text-align:left;"><div>Assistente Admin</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Richieste, notifiche, gestione</div></span>
+    </button>
     <button id="home-btn-logout" onclick="doLogout()" style="margin-top:10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:8px;padding:10px 24px;font-size:13px;cursor:pointer;">⏻ Esci</button>
   </div>
 </div>
@@ -2168,6 +2172,28 @@ function popolaSLavDaPersona(match){
   };
   S.anzianita = match.anzianita || 'SY';
   S.user = match.nominativo;
+  caricaImpostazioni(); // fire-and-forget: interruttore notifiche email
+}
+
+// Interruttore centrale delle notifiche email (DIVA Monitor) — controllabile
+// dall'admin dalla nuova pagina Assistente, senza dover più commentare/
+// scommentare codice a mano ogni volta. Fallback prudente: se il recupero
+// fallisce o non ha ancora fatto in tempo, le notifiche restano disattivate
+// (comportamento sicuro, non l'opposto).
+window._impostazioni = { notifiche_login_attive:false, notifiche_fattura_attive:false };
+async function caricaImpostazioni(){
+  try{
+    const tok = sessionStorage.getItem('enpals_auth')||'';
+    const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
+    const SERVER = 'https://enpals-server.onrender.com';
+    const res = await fetch(SERVER+'/impostazioni', { headers:{ 'Authorization':'Bearer '+authH } });
+    if(res.ok){
+      const imp = await res.json();
+      window._impostazioni = Object.assign(window._impostazioni, imp);
+    }
+  }catch(e){
+    console.warn('Impostazioni non caricate, notifiche disattivate per default:', e.message);
+  }
 }
 
 // Mappa il regime fiscale salvato in Persone al codice TIPI_FATT esatto.
@@ -2447,6 +2473,8 @@ async function doLogin(){
     sessionStorage.setItem('enpals_cu', u);
     sessionStorage.setItem('enpals_cp', p);
     sessionStorage.setItem('enpals_ruolo', loginData.ruolo||'utente');
+    var btnAssistente = document.getElementById('home-btn-assistente');
+    if(btnAssistente) btnAssistente.style.display = (loginData.ruolo==='admin') ? 'flex' : 'none';
     serverOk = true;
   }catch(e){
     ovHide();
@@ -2509,10 +2537,11 @@ async function doLogin(){
   // ── DIVA AI: mostra microfono ──
   divaAiMostra();
   // ── DIVA MONITOR: notifica login ──
-  // SOSPESA il 4 luglio 2026, su richiesta esplicita — troppe email durante
-  // la fase di test/sviluppo. Per riattivarla quando si sarà operativi con
-  // utenti reali, basta togliere il commento dalla riga sotto.
-  // divaNotifica('🔐 LOGIN', S.lav.nominativo || u);
+  // Ricondizionata all'interruttore in "impostazioni" (attivabile/disattivabile
+  // dall'admin dalla pagina Assistente) invece di essere commentata a mano.
+  if(window._impostazioni && window._impostazioni.notifiche_login_attive){
+    divaNotifica('🔐 LOGIN', S.lav.nominativo || u);
+  }
   // Se login avviato da modalita vocale, salta direttamente al flusso vocale
   if(_voc&&_voc._dopoLoginVocale){
     _voc._dopoLoginVocale=false;
@@ -2563,6 +2592,17 @@ function goRubrica(){
   if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
   const _cb = Date.now();
   window.open('https://abry-1954.github.io/Simulatore-enpals/rubrica_diva.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
+}
+
+function goAssistente(){
+  const nome = encodeURIComponent(S.lav.nominativo || S.user || '');
+  if(!nome){ alert('Utente non identificato'); return; }
+  const tokRaw = sessionStorage.getItem('enpals_auth') || '';
+  const tok = tokRaw.startsWith('tok:') ? tokRaw.slice(4) : '';
+  const ruolo = encodeURIComponent(sessionStorage.getItem('enpals_ruolo') || 'utente');
+  if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
+  const _cb = Date.now();
+  window.open('https://abry-1954.github.io/Simulatore-enpals/assistente_admin.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
 }
 
 function doLogout(){
@@ -3156,14 +3196,11 @@ function mostraDialogDopoSalvataggio(rif_nbr){
              ' | ' + (S.soc&&S.soc.ragione_sociale||'') +
              ' | ' + rif_nbr +
              ' | Netto €' + _netto.toFixed(2).replace('.',',');
-  // SOSPESA il 4 luglio 2026, su richiesta esplicita — stesso motivo della
-  // notifica login. In futuro questo tipo di notifica va ripensato: non più
-  // inviata dal client (wizard) via EmailJS, ma spostata dentro
-  // ENP-Management.html e nella futura pagina leggera "Assistente Admin"
-  // (vedi Da Fare — chat con gli utenti), così l'admin la vede lì invece
-  // di riceverla via email. Per riattivare la versione attuale nel
-  // frattempo, basta togliere il commento dalla riga sotto.
-  // divaNotifica('💾 FATTURA SALVATA', _det);
+  // Ricondizionata all'interruttore in "impostazioni" (attivabile/disattivabile
+  // dall'admin dalla pagina Assistente) — non più commentata a mano.
+  if(window._impostazioni && window._impostazioni.notifiche_fattura_attive){
+    divaNotifica('💾 FATTURA SALVATA', _det);
+  }
   // Modalità manuale: ora automatica come agenda/vocale — niente più
   // scelta "Stampa / Salva PDF", si genera e carica subito il PDF.
   // Il dialog resta visibile (mostra riferimento e poi l'esito), ma si
