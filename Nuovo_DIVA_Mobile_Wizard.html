@@ -4073,9 +4073,27 @@ async function vocaleGestisciAzienda(){
       // Se non capisce ripete tutto dall'inizio
 
     }else{
-      // CASO 1: non trovata - solo MP3 "non trovata", poi riepilogo
+      // CASO 1: non trovata — chiede se crearne una nuova o procedere senza.
+      // Prima qui si riproduceva solo l'audio della domanda ma non si
+      // ascoltava mai la risposta: si andava avanti senza azienda a
+      // prescindere da cosa si diceva, e vocaleNuovaAzienda() non veniva
+      // mai chiamata da nessuna parte nel codice — corretto oggi.
       await riproduciAudio("nonTrovata");
       await pausa(300);
+      var vuoleCrearla=false;
+      try{
+        var rispCrea=await ascoltaVoce(10000);
+        var rc=rispCrea.toLowerCase();
+        var rcNo=rc.includes("non confermo")||rc.includes("no")||rc.includes("negativo")||rc.includes("senza azienda")||rc.includes("procedi");
+        var rcSi=!rcNo&&(rc.includes("confermo")||rc.includes("crea")||rc.includes("nuova")||rc.includes("si")||rc.includes("yes")||rc.includes("ok"));
+        vuoleCrearla=rcSi;
+      }catch(e){
+        if(e===_ANNULLA_VOCALE){await vocaleEsci();return;}
+        vuoleCrearla=false; // non ho capito: procedo senza, come comportamento sicuro di fallback
+      }
+      if(vuoleCrearla){
+        await vocaleNuovaAzienda();
+      }
       trovata=true;
     }
   }
@@ -4101,6 +4119,40 @@ async function vocaleNuovaAzienda(){
     await saraVocale(val);await pausa(400);
   }
   _voc.dati.azienda={ragione_sociale:nuovaAz.ragione_sociale,indirizzo:nuovaAz.indirizzo,cap:nuovaAz.cap,citta:nuovaAz.citta,piva:nuovaAz.piva,cf:nuovaAz.cf,cod_dest:nuovaAz.cod_dest};
+
+  // Invia richiesta di aggiunta azienda al server — mancava del tutto in
+  // questo flusso: prima i dati detti vocalmente restavano solo in memoria
+  // per la fattura corrente, senza mai arrivare all'admin per l'approvazione
+  // permanente. Stesso identico meccanismo già usato dal flusso manuale
+  // (stesso endpoint, stesso pattern non bloccante con un retry leggero).
+  (async function(){
+    const record = {
+      ragione_sociale: nuovaAz.ragione_sociale,
+      via: nuovaAz.indirizzo || null,
+      cap: nuovaAz.cap || null,
+      comune: nuovaAz.citta || null,
+      piva_cf: nuovaAz.piva || nuovaAz.cf || null,
+      cod_destinatario: nuovaAz.cod_dest || null
+    };
+    const SERVER = 'https://enpals-server.onrender.com';
+    const tok = sessionStorage.getItem('enpals_auth')||'';
+    const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
+    const opts = {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+authH },
+      body: JSON.stringify(record)
+    };
+    try{
+      await fetch(SERVER+'/richieste_aziende', opts);
+    }catch(_e1){
+      try{
+        await new Promise(r=>setTimeout(r,4000));
+        await fetch(SERVER+'/richieste_aziende', opts);
+      }catch(e2){
+        console.warn('Richiesta azienda (vocale) non inviata dopo retry:', e2);
+      }
+    }
+  })();
 }
 
 // ─── CONVERSIONE DATA ─────────────────────────────────────
