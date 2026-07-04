@@ -51,14 +51,14 @@
   .ad-switch input { opacity: 0; width: 0; height: 0; }
   .ad-switch-slider {
     position: absolute; cursor: pointer; inset: 0;
-    background: #e2e8f0; border-radius: 26px; transition: background 0.2s;
+    background: #94a3b8; border: 1.5px solid #64748b; border-radius: 26px; transition: background 0.2s;
   }
   .ad-switch-slider::before {
-    content: ""; position: absolute; width: 20px; height: 20px;
-    left: 3px; bottom: 3px; background: #fff; border-radius: 50%;
-    transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    content: ""; position: absolute; width: 18px; height: 18px;
+    left: 2px; bottom: 2px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.35);
   }
-  .ad-switch input:checked + .ad-switch-slider { background: #16a34a; }
+  .ad-switch input:checked + .ad-switch-slider { background: #16a34a; border-color: #15803d; }
   .ad-switch input:checked + .ad-switch-slider::before { transform: translateX(20px); }
   .ad-switch input:disabled + .ad-switch-slider { opacity: 0.5; cursor: not-allowed; }
 
