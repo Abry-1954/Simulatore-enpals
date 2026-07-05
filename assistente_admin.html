@@ -216,7 +216,7 @@
           </label>
         </div>
         <div class="ad-toggle-row">
-          <div><div class="ad-toggle-label">Tour guidati (Panoramica)</div></div>
+          <div><div class="ad-toggle-label">Tour guidati (Panoramica)</div><div class="ad-toggle-hint">⚠ Diverso dagli altri: vale per tutti, anche per te da admin — sono visibili già prima del login</div></div>
           <label class="ad-switch">
             <input type="checkbox" id="tog-tour" onchange="salvaImpostazione('mostra_tour', this.checked)">
             <span class="ad-switch-slider"></span>
@@ -241,6 +241,14 @@
       <div class="ad-section">
         <div class="ad-section-title">💬 Chat con gli utenti</div>
         <div class="ad-section-sub">In arrivo — questa sezione crescerà nei prossimi aggiornamenti.</div>
+      </div>
+
+      <div class="ad-section">
+        <div class="ad-section-title">🖥️ Gestione completa</div>
+        <div class="ad-section-sub">ENP-Management — fatture, log, anagrafica completa. Pensato per desktop: richiede login separato (username e password), non è collegato automaticamente a questo accesso.</div>
+        <button onclick="window.open('https://abry-1954.github.io/Simulatore-enpals/ENP-Management.html','_blank')" style="width:100%;padding:11px;border-radius:10px;border:1.5px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;font-size:13.5px;font-weight:700;cursor:pointer;">
+          ↗ Apri ENP-Management
+        </button>
       </div>
 
     </div>

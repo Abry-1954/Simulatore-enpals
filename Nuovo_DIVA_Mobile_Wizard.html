@@ -2221,13 +2221,33 @@ function applicaVisibilitaPulsanti(){
     const visibile = isAdmin || imp[mappaPulsanti[btnId]] !== false;
     el.style.display = visibile ? 'flex' : 'none';
   });
-  ['home-btn-tour-emetti','home-btn-tour-fatture'].forEach(function(btnId){
-    const el = document.getElementById(btnId);
-    if(!el) return;
-    const visibile = isAdmin || imp.mostra_tour !== false;
-    el.style.display = visibile ? 'block' : 'none';
-  });
+  // I due pulsanti tour NON sono più gestiti qui: sono controllati da
+  // applicaVisibilitaTourPubblica(), che gira PRIMA del login (i tour
+  // sono una vetrina pre-accesso) ed è universale — vale per tutti,
+  // admin compreso, senza eccezioni. Vedi quella funzione più sotto.
 }
+
+// Controllo pubblico, indipendente dal login — i due pulsanti "tour"
+// vivono sulla schermata di login stessa (sono una vetrina per mostrare
+// la facilità d'uso PRIMA di accedere), quindi devono poter essere
+// nascosti/mostrati senza bisogno di autenticazione. Un solo interruttore,
+// vale per tutti allo stesso modo — nessuna eccezione per l'admin: se
+// vuole rivederli, li riaccende lui stesso dal pannello Assistente.
+(async function applicaVisibilitaTourPubblica(){
+  try{
+    const res = await fetch('https://enpals-server.onrender.com/impostazioni');
+    if(res.ok){
+      const imp = await res.json();
+      const visibile = imp.mostra_tour !== false;
+      ['home-btn-tour-emetti','home-btn-tour-fatture'].forEach(function(id){
+        const el = document.getElementById(id);
+        if(el) el.style.display = visibile ? 'block' : 'none';
+      });
+    }
+  }catch(e){
+    console.warn('Impostazione tour non caricata (restano visibili per default):', e.message);
+  }
+})();
 
 // Mappa il regime fiscale salvato in Persone al codice TIPI_FATT esatto.
 // Nel sistema risultano in uso DUE formati per lo stesso dato: quello
