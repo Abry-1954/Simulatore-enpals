@@ -248,7 +248,7 @@ function renderMessaggi(lista){
 
 async function caricaMessaggi(){
   try{
-    const lista = await apiFetch('/messaggi');
+    const lista = await apiFetch('/messaggi?nominativo='+encodeURIComponent(AUTH.nominativo));
     const cambiato = JSON.stringify(lista) !== JSON.stringify(_listaAttuale);
     _listaAttuale = lista;
     if(cambiato){
@@ -256,7 +256,7 @@ async function caricaMessaggi(){
       // Ci sono messaggi dell'admin e la pagina è aperta davvero: segnali letti.
       const ciSonoMsgAdmin = lista.some(function(m){ return m.autore_ruolo==='admin'; });
       if(ciSonoMsgAdmin){
-        apiFetch('/messaggi/segna_letti', {method:'PATCH', body: JSON.stringify({})}).catch(function(){});
+        apiFetch('/messaggi/segna_letti', {method:'PATCH', body: JSON.stringify({nominativo:AUTH.nominativo})}).catch(function(){});
       }
     }
   }catch(e){
@@ -289,7 +289,7 @@ async function inviaMessaggio(){
   if(!testo) return;
   btn.disabled = true;
   try{
-    await apiFetch('/messaggi', {method:'POST', body: JSON.stringify({testo:testo})});
+    await apiFetch('/messaggi', {method:'POST', body: JSON.stringify({nominativo:AUTH.nominativo, testo:testo})});
     ta.value = '';
     ta.style.height = 'auto';
     await caricaMessaggi();
