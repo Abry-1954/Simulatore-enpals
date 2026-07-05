@@ -130,8 +130,12 @@ tr:hover td{background:rgba(255,255,255,.02);}
   <div class="login-card">
     <div class="login-title">🔑 Accesso Amministratore</div>
     <div class="login-group">
-      <label>Chiave API Supabase (Service Role)</label>
-      <input type="password" id="api-key" placeholder="eyJhbGciOiJIUzI1NiIs...">
+      <label>Utente</label>
+      <input type="text" id="login-user" autocomplete="username" placeholder="nome utente">
+    </div>
+    <div class="login-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="password">
     </div>
     <button class="login-btn" onclick="doLogin()">Accedi</button>
     <div class="login-err" id="login-err"></div>
@@ -187,55 +191,79 @@ tr:hover td{background:rgba(255,255,255,.02);}
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://ugwhijpmcejxcsubopga.supabase.co';
 const SERVER_URL = 'https://enpals-server.onrender.com';
 const _urlToken = new URLSearchParams(window.location.search).get('token') || '';
+let _authToken = '';
+
+async function apiFetch(path, opts={}){
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if(_authToken) headers['Authorization'] = 'Bearer '+_authToken;
+  const res = await fetch(SERVER_URL+path, Object.assign({}, opts, {headers}));
+  let body = null;
+  try{ body = await res.json(); } catch(e){}
+  if(!res.ok){
+    const msg = (body && body.error) ? body.error : ('Errore '+res.status);
+    throw new Error(msg);
+  }
+  return body;
+}
 
 async function logAzione(azione, dettaglio){
   try {
-    const token = _urlToken || sessionStorage.getItem('enpals_auth_admin') || '';
     await fetch(SERVER_URL+'/log-action', {
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_authToken},
       body: JSON.stringify({azione, dettaglio})
     });
   } catch(e){} // silenzioso
 }
-let _apiKey = '';
 let _richieste = [];
 let _filtro = 'tutti';
 let _currentId = null;
 
 async function doLogin(){
-  const key = document.getElementById('api-key').value.trim();
-  if(!key){ document.getElementById('login-err').textContent='Inserisci la chiave API'; return; }
-  // Test connessione
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  if(!user || !pass){ errEl.textContent='Inserisci utente e password'; return; }
   try {
-    const r = await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?limit=1', {
-      headers:{'apikey':key,'Authorization':'Bearer '+key}
+    const r = await fetch(SERVER_URL+'/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:pass})
     });
-    if(!r.ok){ document.getElementById('login-err').textContent='Chiave non valida ('+r.status+')'; return; }
-    _apiKey = key;
-    sessionStorage.setItem('enpals_auth_admin', key);
-    document.getElementById('login-wrap').style.display='none';
-    document.getElementById('main-panel').style.display='block';
-    document.getElementById('hdr-status').textContent='● Connesso';
-    caricaRichieste();
+    const d = await r.json();
+    if(!r.ok || !d.ok){ errEl.textContent = d.error || 'Credenziali non valide'; return; }
+    if(d.ruolo !== 'admin'){ errEl.textContent = 'Accesso riservato agli amministratori.'; return; }
+    _authToken = d.token;
+    avviaSezione();
   } catch(e){
-    document.getElementById('login-err').textContent='Errore di rete: '+e.message;
+    errEl.textContent = 'Errore di rete: '+e.message;
   }
 }
 
-document.getElementById('api-key').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+function avviaSezione(){
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('main-panel').style.display='block';
+  document.getElementById('hdr-status').textContent='● Connesso';
+  caricaRichieste();
+}
+
+// Se arriva già un token valido dall'URL (aperto dal wizard o da
+// ENP-Management), salta il login manuale — stesso principio già
+// usato da calendario, rubrica e Assistente Admin.
+if(_urlToken){
+  _authToken = _urlToken;
+  avviaSezione();
+}
 
 async function caricaRichieste(){
   document.getElementById('loading').style.display='block';
   document.getElementById('tbody').innerHTML='';
   try {
-    const r = await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?order=id.desc&select=*', {
-      headers:{'apikey':_apiKey,'Authorization':'Bearer '+_apiKey}
-    });
-    _richieste = await r.json();
+    _richieste = await apiFetch('/richieste_utenti');
     renderStats();
     renderTabella();
   } catch(e){ showToast('Errore caricamento: '+e.message, false); }
@@ -355,19 +383,13 @@ async function aggiornaStato(id, stato, note){
   const body={stato, data_gestione:new Date().toISOString()};
   if(note) body.note_admin=note;
   try {
-    const r=await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?id=eq.'+id,{
-      method:'PATCH',
-      headers:{'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify(body)
-    });
-    if(r.ok){
-      const idx=_richieste.findIndex(x=>x.id===id);
-      if(idx>=0){ _richieste[idx].stato=stato; _richieste[idx].note_admin=note; _richieste[idx].data_gestione=body.data_gestione; }
-      renderStats(); renderTabella();
-      showToast(stato==='approvato'?'✓ Richiesta approvata':'✗ Richiesta rifiutata', stato==='approvato');
-      const nom = (_richieste.find(x=>x.id===id)||{}).nominativo||'#'+id;
-      logAzione(stato==='approvato'?'RICHIESTA_APPROVATA':'RICHIESTA_RIFIUTATA', nom+(note?' — '+note:''));
-    } else { showToast('Errore aggiornamento', false); }
+    await apiFetch('/richieste_utenti?id='+id, { method:'PATCH', body: JSON.stringify(body) });
+    const idx=_richieste.findIndex(x=>x.id===id);
+    if(idx>=0){ _richieste[idx].stato=stato; _richieste[idx].note_admin=note; _richieste[idx].data_gestione=body.data_gestione; }
+    renderStats(); renderTabella();
+    showToast(stato==='approvato'?'✓ Richiesta approvata':'✗ Richiesta rifiutata', stato==='approvato');
+    const nom = (_richieste.find(x=>x.id===id)||{}).nominativo||'#'+id;
+    logAzione(stato==='approvato'?'RICHIESTA_APPROVATA':'RICHIESTA_RIFIUTATA', nom+(note?' — '+note:''));
   } catch(e){ showToast('Errore: '+e.message,false); }
 }
 
@@ -376,39 +398,14 @@ async function uploadPersona(id){
   if(!r){ showToast('Richiesta non trovata',false); return; }
   if(!confirm('Caricare "'+r.nominativo+'" su persone (Supabase)?\n\nQuesta operazione aggiungerà il record nella tabella persone.')) return;
 
-  const persona={
-    nominativo:       r.nominativo,
-    codfisc:          r.codfisc,
-    anzianita_sy_sc:  r.anzianita_sy_sc,
-    tipo_fatt:        r.tipo_fatt,
-    iban:             r.iban,
-    attivita_dopp_adat:r.attivita_dopp_adat,
-    residenza_via:    r.residenza_via,
-    residenza_comune: r.residenza_comune,
-    cap:              r.cap,
-    piva:             r.piva,
-    email:            r.email,
-    luogo_di_nascita: r.luogo_di_nascita,
-    data_di_nascita:  r.data_di_nascita,
-    matricola_enpals: r.matricola_enpals,
-  };
-  // Rimuovi campi null/undefined
-  Object.keys(persona).forEach(k=>{ if(!persona[k]) delete persona[k]; });
-
   try {
-    const res=await fetch(SUPABASE_URL+'/rest/v1/persone',{
-      method:'POST',
-      headers:{'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify(persona)
-    });
-    if(res.ok||res.status===201){
+    const res = await apiFetch('/richieste_utenti/upload_persona?id='+id, { method:'POST' });
+    if(res.ok){
       showToast('✓ "'+r.nominativo+'" caricato su persone!', true);
       logAzione('UTENTE_CREATO', r.nominativo);
-      // Aggiorna nota
-      await aggiornaStato(id,'approvato','Caricato su persone il '+new Date().toLocaleDateString('it-IT'));
+      await caricaRichieste(); // ricarica per riflettere la nota aggiornata dal server
     } else {
-      const err=await res.json().catch(()=>({}));
-      showToast('Errore upload: '+(err.message||res.status), false);
+      showToast('Errore upload: '+(res.error||'sconosciuto'), false);
     }
   } catch(e){ showToast('Errore: '+e.message,false); }
 }
@@ -416,29 +413,24 @@ async function uploadPersona(id){
 async function eliminaRichiesta(id, nome){
   if(!confirm('⚠️ Eliminare la richiesta di "'+nome+'" da richieste_utenti?\n\nQuesta operazione NON è recuperabile.')) return;
   try {
-    const r = await fetch(SUPABASE_URL+'/rest/v1/richieste_utenti?id=eq.'+id, {
-      method: 'DELETE',
-      headers: {'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Prefer':'return=minimal'}
-    });
-    if(r.ok){
-      _richieste = _richieste.filter(x=>x.id!==id);
-      renderStats(); renderTabella();
-      showToast('🗑 Richiesta #'+id+' "'+nome+'" eliminata', true);
-      logAzione('RICHIESTA_ELIMINATA', nome);
-    } else { showToast('Errore eliminazione richiesta', false); }
+    await apiFetch('/richieste_utenti?id='+id, { method:'DELETE' });
+    _richieste = _richieste.filter(x=>x.id!==id);
+    renderStats(); renderTabella();
+    showToast('🗑 Richiesta #'+id+' "'+nome+'" eliminata', true);
+    logAzione('RICHIESTA_ELIMINATA', nome);
   } catch(e){ showToast('Errore: '+e.message, false); }
 }
 
 async function eliminaPersona(nominativo){
   if(!confirm('⚠️ Eliminare "'+nominativo+'" dalla tabella PERSONE su Supabase?\n\nQuesta operazione eliminerà definitivamente l\'anagrafica dal database. NON è recuperabile.')) return;
   try {
-    const r = await fetch(SUPABASE_URL+'/rest/v1/persone?nominativo=eq.'+encodeURIComponent(nominativo), {
-      method: 'DELETE',
-      headers: {'apikey':_apiKey,'Authorization':'Bearer '+_apiKey,'Prefer':'return=minimal'}
-    });
-    if(r.ok){
-      showToast('🗑 "'+nominativo+'" eliminato da persone', true);
-    } else { showToast('Errore eliminazione da persone', false); }
+    // Il DELETE lato server richiede l'id, non il nominativo — lo cerchiamo
+    // prima nell'elenco persone (stesso endpoint già usato altrove).
+    const persone = await apiFetch('/persone');
+    const trovata = persone.find(p => (p.nominativo||'').toUpperCase() === nominativo.toUpperCase());
+    if(!trovata){ showToast('Persona non trovata in anagrafica', false); return; }
+    await apiFetch('/persone?id='+trovata.id, { method: 'DELETE' });
+    showToast('🗑 "'+nominativo+'" eliminato da persone', true);
   } catch(e){ showToast('Errore: '+e.message, false); }
 }
 
