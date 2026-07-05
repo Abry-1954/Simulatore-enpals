@@ -736,10 +736,10 @@ function divaNotifica(evento, dettagli){
   <style>
     @keyframes spin-slow { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
   </style>
-  <button onclick="wtOpen()" style="width:100%;margin-top:.75rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+  <button id="home-btn-tour-emetti" onclick="wtOpen()" style="width:100%;margin-top:.75rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
     <i class="fa-solid fa-circle-question"></i> 🎓 Panoramica — Emetti Fattura
   </button>
-  <button onclick="apriTourMieFatture()" style="width:100%;margin-top:.5rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:var(--radius);padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+  <button id="home-btn-tour-fatture" onclick="apriTourMieFatture()" style="width:100%;margin-top:.5rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:var(--radius);padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
     <i class="fa-solid fa-circle-question"></i> 🎓 Panoramica — Le Mie Fatture
   </button>
   <button onclick="apriRichiesta()" style="width:100%;margin-top:.5rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:var(--radius);padding:11px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;">
@@ -2180,7 +2180,11 @@ function popolaSLavDaPersona(match){
 // scommentare codice a mano ogni volta. Fallback prudente: se il recupero
 // fallisce o non ha ancora fatto in tempo, le notifiche restano disattivate
 // (comportamento sicuro, non l'opposto).
-window._impostazioni = { notifiche_login_attive:false, notifiche_fattura_attive:false };
+window._impostazioni = {
+  notifiche_login_attive:false, notifiche_fattura_attive:false,
+  mostra_emetti_fattura:true, mostra_fattura_vocale:true,
+  mostra_calendario:true, mostra_rubrica:true, mostra_mie_fatture:true, mostra_tour:true
+};
 async function caricaImpostazioni(){
   try{
     const tok = sessionStorage.getItem('enpals_auth')||'';
@@ -2194,6 +2198,35 @@ async function caricaImpostazioni(){
   }catch(e){
     console.warn('Impostazioni non caricate, notifiche disattivate per default:', e.message);
   }
+  applicaVisibilitaPulsanti();
+}
+
+// Nasconde i pulsanti home disattivati dall'admin per gli utenti normali —
+// l'admin vede sempre tutto, a prescindere dagli interruttori. "Non ancora
+// caricato" equivale a "visibile" (fail-safe verso il non bloccare nessuno
+// per errore), non il contrario.
+function applicaVisibilitaPulsanti(){
+  const isAdmin = (sessionStorage.getItem('enpals_ruolo')||'utente') === 'admin';
+  const imp = window._impostazioni || {};
+  const mappaPulsanti = {
+    'home-btn-emetti':     'mostra_emetti_fattura',
+    'home-btn-vocale':     'mostra_fattura_vocale',
+    'home-btn-calendario': 'mostra_calendario',
+    'home-btn-rubrica':    'mostra_rubrica',
+    'home-btn-fatture':    'mostra_mie_fatture',
+  };
+  Object.keys(mappaPulsanti).forEach(function(btnId){
+    const el = document.getElementById(btnId);
+    if(!el) return;
+    const visibile = isAdmin || imp[mappaPulsanti[btnId]] !== false;
+    el.style.display = visibile ? 'flex' : 'none';
+  });
+  ['home-btn-tour-emetti','home-btn-tour-fatture'].forEach(function(btnId){
+    const el = document.getElementById(btnId);
+    if(!el) return;
+    const visibile = isAdmin || imp.mostra_tour !== false;
+    el.style.display = visibile ? 'block' : 'none';
+  });
 }
 
 // Mappa il regime fiscale salvato in Persone al codice TIPI_FATT esatto.

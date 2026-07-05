@@ -177,6 +177,53 @@
       </div>
 
       <div class="ad-section">
+        <div class="ad-section-title">🎛️ Funzionalità visibili agli utenti</div>
+        <div class="ad-section-sub">Nascondi un pulsante agli utenti normali senza toccare il codice — gli admin vedono sempre tutto, a prescindere da questi interruttori.</div>
+        <div class="ad-toggle-row">
+          <div><div class="ad-toggle-label">Emetti Fattura (manuale)</div></div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-emetti" onchange="salvaImpostazione('mostra_emetti_fattura', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+        <div class="ad-toggle-row">
+          <div><div class="ad-toggle-label">Fattura Vocale</div></div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-vocale" onchange="salvaImpostazione('mostra_fattura_vocale', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+        <div class="ad-toggle-row">
+          <div><div class="ad-toggle-label">Il mio calendario</div></div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-calendario" onchange="salvaImpostazione('mostra_calendario', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+        <div class="ad-toggle-row">
+          <div><div class="ad-toggle-label">La mia rubrica</div></div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-rubrica" onchange="salvaImpostazione('mostra_rubrica', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+        <div class="ad-toggle-row">
+          <div><div class="ad-toggle-label">Le mie fatture</div></div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-mie-fatture" onchange="salvaImpostazione('mostra_mie_fatture', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+        <div class="ad-toggle-row">
+          <div><div class="ad-toggle-label">Tour guidati (Panoramica)</div></div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-tour" onchange="salvaImpostazione('mostra_tour', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ad-section">
         <div class="ad-section-title">🏢 Richieste nuove aziende <span class="ad-badge-count" id="badge-aziende" style="display:none;"></span></div>
         <div class="ad-section-sub">Da wizard (manuale e vocale) — approva per aggiungerle in anagrafica, o rifiuta.</div>
         <div id="lista-richieste-aziende"><div class="ad-empty">Caricamento...</div></div>
@@ -268,13 +315,30 @@ async function caricaImpostazioni(){
     const imp = await apiFetch('/impostazioni');
     document.getElementById('tog-login').checked = !!imp.notifiche_login_attive;
     document.getElementById('tog-fattura').checked = !!imp.notifiche_fattura_attive;
+    document.getElementById('tog-emetti').checked = imp.mostra_emetti_fattura !== false;
+    document.getElementById('tog-vocale').checked = imp.mostra_fattura_vocale !== false;
+    document.getElementById('tog-calendario').checked = imp.mostra_calendario !== false;
+    document.getElementById('tog-rubrica').checked = imp.mostra_rubrica !== false;
+    document.getElementById('tog-mie-fatture').checked = imp.mostra_mie_fatture !== false;
+    document.getElementById('tog-tour').checked = imp.mostra_tour !== false;
   }catch(e){
     console.warn('Impostazioni non caricate:', e.message);
   }
 }
 
+const MAPPA_CAMPO_TOGGLE = {
+  notifiche_login_attive: 'tog-login',
+  notifiche_fattura_attive: 'tog-fattura',
+  mostra_emetti_fattura: 'tog-emetti',
+  mostra_fattura_vocale: 'tog-vocale',
+  mostra_calendario: 'tog-calendario',
+  mostra_rubrica: 'tog-rubrica',
+  mostra_mie_fatture: 'tog-mie-fatture',
+  mostra_tour: 'tog-tour',
+};
 async function salvaImpostazione(campo, valore){
-  const el = campo==='notifiche_login_attive' ? document.getElementById('tog-login') : document.getElementById('tog-fattura');
+  const el = document.getElementById(MAPPA_CAMPO_TOGGLE[campo]);
+  if(!el) return;
   el.disabled = true;
   try{
     const body = {}; body[campo] = valore;
