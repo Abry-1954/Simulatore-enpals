@@ -476,9 +476,7 @@ self.addEventListener('fetch',e=>{
   // ═══════════════════════════════════════════════════════
   // ENP-Management: il master sceglie la modalità nel login
   // Default: online se da web, locale se da file://
-  var _isLocale = window.location.protocol === 'file:' || window.location.hostname === 'localhost';
-  var _storedModo = sessionStorage.getItem('enpals_modo_mgmt');
-  var _spOnline = _storedModo ? (_storedModo === 'online') : !_isLocale;
+  var _spOnline = true;
   var SERVER_URL = _spOnline ? "https://enpals-server.onrender.com" : "http://localhost:8765";
   window.SERVER_URL = SERVER_URL;
   window._spOnline = _spOnline;
@@ -885,10 +883,7 @@ function toggleMain(){
       if(btnHeader){ btnHeader.textContent = _spOnline ? '☁ Online' : '💾 Locale'; btnHeader.style.background = _spOnline ? '#1e3a8a' : '#374151'; }
     }
     document.addEventListener('DOMContentLoaded', function(){
-      var stored = sessionStorage.getItem('enpals_modo_mgmt');
-      var isLocale = window.location.protocol === 'file:' || window.location.hostname === 'localhost';
-      var modo = stored ? stored : (isLocale ? 'locale' : 'online');
-      mgmtSetModo(modo);
+      mgmtSetModo('online');
     });
     </script>
     <button onclick="if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(function(){});}avviaWalkthrough();" style="width:100%;background:transparent;color:#2563eb;border:1px solid #2563eb;border-radius:6px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;" title="Guida rapida per emettere una fattura">▶ Primi cenni sull'utilizzo di DIVA</button>
