@@ -245,8 +245,8 @@
 
       <div class="ad-section">
         <div class="ad-section-title">🖥️ Gestione completa</div>
-        <div class="ad-section-sub">ENP-Management — fatture, log, anagrafica completa. Pensato per desktop: richiede login separato (username e password), non è collegato automaticamente a questo accesso.</div>
-        <button onclick="window.open('https://abry-1954.github.io/Simulatore-enpals/ENP-Management.html','_blank')" style="width:100%;padding:11px;border-radius:10px;border:1.5px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;font-size:13.5px;font-weight:700;cursor:pointer;">
+        <div class="ad-section-sub">ENP-Management — fatture, log, anagrafica completa. Pensato per desktop: si apre già online con l'accesso corrente, senza richiedere di nuovo le credenziali.</div>
+        <button onclick="apriEnpManagement()" style="width:100%;padding:11px;border-radius:10px;border:1.5px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;font-size:13.5px;font-weight:700;cursor:pointer;">
           ↗ Apri ENP-Management
         </button>
       </div>
@@ -439,6 +439,14 @@ async function caricaRichiesteUtenti(){
   }catch(e){
     box.innerHTML = '<div class="ad-empty">Errore: '+e.message+'</div>';
   }
+}
+
+function apriEnpManagement(){
+  var url = 'https://abry-1954.github.io/Simulatore-enpals/ENP-Management.html'
+    + '?token=' + encodeURIComponent(AUTH.token)
+    + '&nominativo=' + encodeURIComponent(AUTH.nominativo)
+    + '&ruolo=' + encodeURIComponent(AUTH.ruolo || 'utente');
+  window.open(url, '_blank');
 }
 
 function chiudiAssistente(){

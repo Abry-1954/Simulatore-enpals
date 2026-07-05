@@ -728,7 +728,38 @@ self.addEventListener('fetch',e=>{
     if(ruolo && user){ window._userRuolo=ruolo; window._userName=user; applicaRuolo(ruolo, user); }
   }
 
+  // ── Login automatico da URL: arrivo da assistente/wizard con token già valido ──
+  function applyLoginDaURL(){
+    var qs = new URLSearchParams(window.location.search);
+    var tokenUrl = qs.get('token');
+    var nominativoUrl = qs.get('nominativo');
+    var ruoloUrl = qs.get('ruolo');
+    if(!tokenUrl || !nominativoUrl) return;
+
+    window._authToken = tokenUrl;
+    window._userRuolo = ruoloUrl || 'utente';
+    window._userName  = nominativoUrl;
+    sessionStorage.setItem(K, "tok:"+tokenUrl);
+    sessionStorage.setItem('enpals_ruolo', window._userRuolo);
+    sessionStorage.setItem('enpals_user', nominativoUrl);
+
+    // Toglie il token dalla barra indirizzi/cronologia una volta usato
+    try{
+      var urlPulito = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, urlPulito);
+    }catch(e){}
+
+    // In modalità online il login "manuale" avvierebbe subito fetchDB(): lo facciamo anche qui
+    if(window._spOnline && !_dbCaricatiDaServer){
+      _dbCaricatiDaServer = true;
+      var st = document.getElementById("server-status");
+      if(st){ st.textContent = "🟡 Caricamento DB..."; st.style.color = "#fcd34d"; }
+      fetchDB();
+    }
+  }
+
   window.addEventListener("DOMContentLoaded", function(){
+    applyLoginDaURL();
     applyLogin();
     ripristinaRuolo();
   });
