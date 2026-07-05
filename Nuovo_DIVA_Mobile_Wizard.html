@@ -774,6 +774,11 @@ function divaNotifica(evento, dettagli){
       <span style="font-size:28px;">📇</span>
       <span style="text-align:left;"><div>La mia rubrica</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Contatti, telefono ed email</div></span>
     </button>
+    <button id="home-btn-chat" onclick="goChat()" style="width:100%;max-width:320px;background:linear-gradient(135deg,#be185d,#ec4899);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(190,24,93,0.4);position:relative;">
+      <span style="font-size:28px;">💬</span>
+      <span style="text-align:left;"><div>Chatta con l'Admin</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Domande o richieste dirette</div></span>
+      <span id="badge-chat-non-letti" style="display:none;position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;min-width:22px;height:22px;border-radius:11px;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 6px rgba(0,0,0,.3);">0</span>
+    </button>
     <button id="home-btn-assistente" onclick="goAssistente()" style="display:none;width:100%;max-width:320px;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(30,58,138,0.4);">
       <span style="font-size:28px;">🛡️</span>
       <span style="text-align:left;"><div>Assistente Admin</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Richieste, notifiche, gestione</div></span>
@@ -2173,6 +2178,37 @@ function popolaSLavDaPersona(match){
   S.anzianita = match.anzianita || 'SY';
   S.user = match.nominativo;
   caricaImpostazioni(); // fire-and-forget: interruttore notifiche email
+  avviaBadgeChatPolling(); // fire-and-forget: badge messaggi non letti in home
+}
+
+let _badgeChatTimer = null;
+async function aggiornaBadgeChat(){
+  try{
+    const tok = sessionStorage.getItem('enpals_auth')||'';
+    const authH = tok.startsWith('tok:') ? tok.slice(4) : (window._authToken||'');
+    if(!authH) return;
+    const res = await fetch('https://enpals-server.onrender.com/messaggi', { headers:{ 'Authorization':'Bearer '+authH } });
+    if(!res.ok) return;
+    const lista = await res.json();
+    const nonLetti = Array.isArray(lista) ? lista.filter(function(m){ return m.autore_ruolo==='admin' && !m.letto_utente; }).length : 0;
+    const badge = document.getElementById('badge-chat-non-letti');
+    if(!badge) return;
+    if(nonLetti > 0){
+      badge.textContent = nonLetti > 9 ? '9+' : String(nonLetti);
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }catch(e){
+    console.warn('Badge chat non aggiornato:', e.message);
+  }
+}
+function avviaBadgeChatPolling(){
+  aggiornaBadgeChat();
+  if(_badgeChatTimer) clearInterval(_badgeChatTimer);
+  _badgeChatTimer = setInterval(function(){
+    if(document.visibilityState === 'visible') aggiornaBadgeChat();
+  }, 30000);
 }
 
 // Interruttore centrale delle notifiche email (DIVA Monitor) — controllabile
@@ -2183,7 +2219,8 @@ function popolaSLavDaPersona(match){
 window._impostazioni = {
   notifiche_login_attive:false, notifiche_fattura_attive:false,
   mostra_emetti_fattura:true, mostra_fattura_vocale:true,
-  mostra_calendario:true, mostra_rubrica:true, mostra_mie_fatture:true, mostra_tour:true
+  mostra_calendario:true, mostra_rubrica:true, mostra_mie_fatture:true, mostra_tour:true,
+  mostra_chat:true
 };
 async function caricaImpostazioni(){
   try{
@@ -2214,6 +2251,7 @@ function applicaVisibilitaPulsanti(){
     'home-btn-calendario': 'mostra_calendario',
     'home-btn-rubrica':    'mostra_rubrica',
     'home-btn-fatture':    'mostra_mie_fatture',
+    'home-btn-chat':       'mostra_chat',
   };
   Object.keys(mappaPulsanti).forEach(function(btnId){
     const el = document.getElementById(btnId);
@@ -2645,6 +2683,21 @@ function goRubrica(){
   if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
   const _cb = Date.now();
   window.open('https://abry-1954.github.io/Simulatore-enpals/rubrica_diva.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
+}
+
+function goChat(){
+  const nome = encodeURIComponent(S.lav.nominativo || S.user || '');
+  if(!nome){ alert('Utente non identificato'); return; }
+  const tokRaw = sessionStorage.getItem('enpals_auth') || '';
+  const tok = tokRaw.startsWith('tok:') ? tokRaw.slice(4) : '';
+  const ruolo = encodeURIComponent(sessionStorage.getItem('enpals_ruolo') || 'utente');
+  if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
+  const _cb = Date.now();
+  window.open('https://abry-1954.github.io/Simulatore-enpals/chat_diva.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
+  // Appena aperta la chat l'utente la legge: azzeriamo subito il badge in
+  // home, senza aspettare il prossimo giro di polling (che potrebbe
+  // impiegare fino a 30s e mostrerebbe per un po' un numero non più vero).
+  setTimeout(aggiornaBadgeChat, 4000);
 }
 
 function goAssistente(){

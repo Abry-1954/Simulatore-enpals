@@ -91,6 +91,60 @@
   .ad-denied { text-align: center; padding: 3rem 1.5rem; color: rgba(255,255,255,0.85); }
   .ad-denied-icon { font-size: 44px; margin-bottom: 14px; }
 
+  /* ===== CHAT: LISTA CONVERSAZIONI ===== */
+  .chat-conv-item { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+  .chat-conv-item:last-child { border-bottom: none; }
+  .chat-conv-item:active { background: #f8fafc; }
+  .chat-conv-avatar { width: 38px; height: 38px; border-radius: 50%; background: #dbeafe; color: #1e3a8a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .chat-conv-info { flex: 1; min-width: 0; }
+  .chat-conv-nome { font-size: 13.5px; font-weight: 700; color: #1e293b; }
+  .chat-conv-ultimo { font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .chat-conv-meta { text-align: right; flex-shrink: 0; }
+  .chat-conv-ora { font-size: 10.5px; color: #94a3b8; }
+  .chat-conv-badge { display: inline-block; background: #dc2626; color: #fff; font-size: 10.5px; font-weight: 700; border-radius: 9px; padding: 1px 6px; margin-top: 4px; }
+
+  /* ===== CHAT: FINESTRA CONVERSAZIONE (overlay a tutto schermo) ===== */
+  .chat-thread-overlay {
+    position: fixed; inset: 0; z-index: 600; background: #f5f7fb;
+    display: none; flex-direction: column;
+  }
+  .chat-thread-overlay.aperto { display: flex; }
+  .chat-thread-header {
+    background: linear-gradient(155deg, rgb(30,58,138) 0%, rgb(29,78,216) 50%, rgb(59,130,246) 100%);
+    padding: 1.1rem 1rem 0.9rem; flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+  }
+  .chat-thread-title { font-size: 16px; font-weight: 700; color: #fff; }
+  .chat-thread-body {
+    flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 16px 12px 100px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .msg-day-sep { text-align: center; font-size: 11px; color: #94a3b8; margin: 12px 0 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .msg-row { display: flex; margin: 3px 0; }
+  .msg-row.mine { justify-content: flex-end; }
+  .msg-row.theirs { justify-content: flex-start; }
+  .bubble { max-width: 78%; padding: 9px 13px; border-radius: 16px; font-size: 14px; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,.08); word-wrap: break-word; white-space: pre-wrap; }
+  .bubble.mine { background: linear-gradient(135deg,#1d4ed8,#3b82f6); color: #fff; border-bottom-right-radius: 4px; }
+  .bubble.theirs { background: #fff; color: #1e293b; border-bottom-left-radius: 4px; }
+  .bubble-time { font-size: 10px; margin-top: 4px; opacity: .65; text-align: right; }
+  .bubble.theirs .bubble-time { text-align: left; }
+  .chat-thread-input-bar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 760px; background: #fff;
+    padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end;
+    box-shadow: 0 -2px 10px rgba(0,0,0,.08);
+  }
+  .chat-thread-input-bar textarea {
+    flex: 1; resize: none; border: 1.5px solid #e2e8f0; border-radius: 14px;
+    padding: 10px 13px; font-size: 14px; font-family: inherit; max-height: 100px; min-height: 40px;
+  }
+  .chat-thread-input-bar textarea:focus { outline: none; border-color: #3b82f6; }
+  .chat-thread-send-btn {
+    width: 42px; height: 42px; border-radius: 50%; border: none; flex-shrink: 0;
+    background: linear-gradient(135deg,#1d4ed8,#3b82f6); color: #fff; font-size: 18px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .chat-thread-send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
   /* ===== LOGIN ===== */
   .login-screen {
     position: fixed; inset: 0; z-index: 500;
@@ -216,6 +270,13 @@
           </label>
         </div>
         <div class="ad-toggle-row">
+          <div><div class="ad-toggle-label">Chatta con l'Admin</div></div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-chat" onchange="salvaImpostazione('mostra_chat', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+        <div class="ad-toggle-row">
           <div><div class="ad-toggle-label">Tour guidati (Panoramica)</div><div class="ad-toggle-hint">⚠ Diverso dagli altri: vale per tutti, anche per te da admin — sono visibili già prima del login</div></div>
           <label class="ad-switch">
             <input type="checkbox" id="tog-tour" onchange="salvaImpostazione('mostra_tour', this.checked)">
@@ -239,8 +300,10 @@
       </div>
 
       <div class="ad-section">
-        <div class="ad-section-title">💬 Chat con gli utenti</div>
-        <div class="ad-section-sub">In arrivo — questa sezione crescerà nei prossimi aggiornamenti.</div>
+        <div class="ad-section-title">💬 Chat con gli utenti <span class="ad-badge-count" id="badge-chat" style="display:none;"></span></div>
+        <div class="ad-section-sub">Conversazioni iniziate dal wizard. Tocca per aprire e rispondere.</div>
+        <div id="lista-conversazioni"><div class="ad-empty">Caricamento...</div></div>
+        <button class="ad-refresh-btn" onclick="caricaConversazioni()">🔄 Aggiorna</button>
       </div>
 
       <div class="ad-section">
@@ -252,6 +315,19 @@
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- FINESTRA CONVERSAZIONE — overlay a tutto schermo, sopra al pannello -->
+<div class="chat-thread-overlay" id="chat-thread-overlay">
+  <div class="chat-thread-header">
+    <button class="ad-back" aria-label="Chiudi conversazione" onclick="chiudiConversazione()">←</button>
+    <span class="chat-thread-title" id="chat-thread-title"></span>
+  </div>
+  <div class="chat-thread-body" id="chat-thread-body"></div>
+  <div class="chat-thread-input-bar">
+    <textarea id="chat-thread-testo" placeholder="Scrivi una risposta…" rows="1" onkeydown="onKeyDownRisposta(event)" oninput="autoresizeRisposta(this)"></textarea>
+    <button class="chat-thread-send-btn" id="chat-thread-send-btn" onclick="inviaRispostaAdmin()">➤</button>
   </div>
 </div>
 
@@ -316,6 +392,15 @@ function avviaSezione(){
   caricaImpostazioni();
   caricaRichiesteAziende();
   caricaRichiesteUtenti();
+  caricaConversazioni();
+  if(_pollingConversazioniTimer) clearInterval(_pollingConversazioniTimer);
+  _pollingConversazioniTimer = setInterval(function(){
+    // Se una conversazione è aperta, la lista in sottofondo non serve
+    // aggiornarla adesso: la aggiorneremo alla chiusura del thread.
+    if(document.visibilityState === 'visible' && !document.getElementById('chat-thread-overlay').classList.contains('aperto')){
+      caricaConversazioni();
+    }
+  }, 20000);
 }
 
 // ── IMPOSTAZIONI (interruttore notifiche) ──────────────────
@@ -329,6 +414,7 @@ async function caricaImpostazioni(){
     document.getElementById('tog-calendario').checked = imp.mostra_calendario !== false;
     document.getElementById('tog-rubrica').checked = imp.mostra_rubrica !== false;
     document.getElementById('tog-mie-fatture').checked = imp.mostra_mie_fatture !== false;
+    document.getElementById('tog-chat').checked = imp.mostra_chat !== false;
     document.getElementById('tog-tour').checked = imp.mostra_tour !== false;
   }catch(e){
     console.warn('Impostazioni non caricate:', e.message);
@@ -343,6 +429,7 @@ const MAPPA_CAMPO_TOGGLE = {
   mostra_calendario: 'tog-calendario',
   mostra_rubrica: 'tog-rubrica',
   mostra_mie_fatture: 'tog-mie-fatture',
+  mostra_chat: 'tog-chat',
   mostra_tour: 'tog-tour',
 };
 async function salvaImpostazione(campo, valore){
@@ -438,6 +525,171 @@ async function caricaRichiesteUtenti(){
     }).join('');
   }catch(e){
     box.innerHTML = '<div class="ad-empty">Errore: '+e.message+'</div>';
+  }
+}
+
+// ── CHAT CON GLI UTENTI ──────────────────────────────────
+let _pollingConversazioniTimer = null;
+let _pollingThreadTimer = null;
+let _nominativoAperto = null;
+let _threadAttuale = [];
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+function formattaOraChat(ts){
+  try{
+    const d = new Date(/[Z+]/.test(ts) ? ts : ts+'Z');
+    return d.toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return ''; }
+}
+function formattaOraRelativa(ts){
+  try{
+    const d = new Date(/[Z+]/.test(ts) ? ts : ts+'Z');
+    const oggi = new Date();
+    if(d.toDateString() === oggi.toDateString()) return d.toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'});
+    return d.toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'});
+  }catch(e){ return ''; }
+}
+function formattaGiornoChat(ts){
+  try{
+    const d = new Date(/[Z+]/.test(ts) ? ts : ts+'Z');
+    const oggi = new Date();
+    const ieri = new Date(); ieri.setDate(oggi.getDate()-1);
+    const sameDay = (a,b)=> a.toDateString()===b.toDateString();
+    if(sameDay(d,oggi)) return 'Oggi';
+    if(sameDay(d,ieri)) return 'Ieri';
+    return d.toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'});
+  }catch(e){ return ''; }
+}
+
+async function caricaConversazioni(){
+  const box = document.getElementById('lista-conversazioni');
+  try{
+    const conv = await apiFetch('/messaggi');
+    const totaleNonLetti = conv.reduce((tot,c)=>tot+(c.non_letti||0),0);
+    const badge = document.getElementById('badge-chat');
+    if(totaleNonLetti>0){ badge.textContent = totaleNonLetti; badge.style.display='inline-block'; }
+    else badge.style.display = 'none';
+
+    if(!conv.length){ box.innerHTML = '<div class="ad-empty">Nessuna conversazione ancora.</div>'; return; }
+    box.innerHTML = conv.map(c=>{
+      const iniziali = (c.nominativo||'??').trim().slice(0,2).toUpperCase();
+      const prefisso = c.ultimo_autore_ruolo==='admin' ? 'Tu: ' : '';
+      const badgeHtml = c.non_letti>0 ? '<span class="chat-conv-badge">'+c.non_letti+'</span>' : '';
+      return '<div class="chat-conv-item" onclick="apriConversazione(\''+c.nominativo.replace(/'/g,"\\'")+'\')">'
+        + '<div class="chat-conv-avatar">'+iniziali+'</div>'
+        + '<div class="chat-conv-info">'
+        + '  <div class="chat-conv-nome">'+escapeHtml(c.nominativo)+'</div>'
+        + '  <div class="chat-conv-ultimo">'+prefisso+escapeHtml(c.ultimo_testo||'')+'</div>'
+        + '</div>'
+        + '<div class="chat-conv-meta">'
+        + '  <div class="chat-conv-ora">'+formattaOraRelativa(c.ultimo_ts)+'</div>'
+        + '  '+badgeHtml
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }catch(e){
+    box.innerHTML = '<div class="ad-empty">Errore: '+e.message+'</div>';
+  }
+}
+
+function renderThread(lista){
+  const body = document.getElementById('chat-thread-body');
+  if(!lista || !lista.length){
+    body.innerHTML = '<div class="ad-empty">Nessun messaggio ancora in questa conversazione.</div>';
+    return;
+  }
+  let html = '';
+  let giornoCorrente = '';
+  lista.forEach(function(m){
+    const giorno = formattaGiornoChat(m.ts);
+    if(giorno !== giornoCorrente){
+      html += '<div class="msg-day-sep">'+giorno+'</div>';
+      giornoCorrente = giorno;
+    }
+    const mine = m.autore_ruolo === 'admin';
+    html += '<div class="msg-row '+(mine?'mine':'theirs')+'">';
+    html += '  <div class="bubble '+(mine?'mine':'theirs')+'">';
+    html += '    <div>'+escapeHtml(m.testo)+'</div>';
+    html += '    <div class="bubble-time">'+formattaOraChat(m.ts)+'</div>';
+    html += '  </div>';
+    html += '</div>';
+  });
+  body.innerHTML = html;
+  body.scrollTop = body.scrollHeight;
+}
+
+async function apriConversazione(nominativo){
+  _nominativoAperto = nominativo;
+  document.getElementById('chat-thread-title').textContent = nominativo;
+  document.getElementById('chat-thread-body').innerHTML = '<div class="ad-empty">Caricamento...</div>';
+  document.getElementById('chat-thread-overlay').classList.add('aperto');
+  await caricaThread();
+  // Segna subito come letti i messaggi dell'utente: l'admin li sta guardando davvero.
+  apiFetch('/messaggi/segna_letti', { method:'PATCH', body: JSON.stringify({nominativo:nominativo}) }).catch(()=>{});
+  if(_pollingThreadTimer) clearInterval(_pollingThreadTimer);
+  _pollingThreadTimer = setInterval(function(){
+    if(document.visibilityState === 'visible') caricaThread();
+  }, 8000);
+  document.getElementById('chat-thread-testo').focus();
+}
+
+async function caricaThread(){
+  if(!_nominativoAperto) return;
+  try{
+    const lista = await apiFetch('/messaggi?nominativo='+encodeURIComponent(_nominativoAperto));
+    const cambiato = JSON.stringify(lista) !== JSON.stringify(_threadAttuale);
+    _threadAttuale = lista;
+    if(cambiato){
+      renderThread(lista);
+      const ciSonoNonLetti = lista.some(m=>m.autore_ruolo==='utente');
+      if(ciSonoNonLetti){
+        apiFetch('/messaggi/segna_letti', { method:'PATCH', body: JSON.stringify({nominativo:_nominativoAperto}) }).catch(()=>{});
+      }
+    }
+  }catch(e){
+    console.warn('Errore caricamento thread:', e.message);
+  }
+}
+
+function chiudiConversazione(){
+  document.getElementById('chat-thread-overlay').classList.remove('aperto');
+  if(_pollingThreadTimer){ clearInterval(_pollingThreadTimer); _pollingThreadTimer = null; }
+  _nominativoAperto = null;
+  _threadAttuale = [];
+  caricaConversazioni(); // aggiorna subito la lista/badge in sottofondo
+}
+
+function autoresizeRisposta(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100)+'px';
+}
+function onKeyDownRisposta(ev){
+  if(ev.key==='Enter' && !ev.shiftKey){
+    ev.preventDefault();
+    inviaRispostaAdmin();
+  }
+}
+
+async function inviaRispostaAdmin(){
+  const ta = document.getElementById('chat-thread-testo');
+  const btn = document.getElementById('chat-thread-send-btn');
+  const testo = ta.value.trim();
+  if(!testo || !_nominativoAperto) return;
+  btn.disabled = true;
+  try{
+    await apiFetch('/messaggi', { method:'POST', body: JSON.stringify({nominativo:_nominativoAperto, testo:testo}) });
+    ta.value = '';
+    ta.style.height = 'auto';
+    await caricaThread();
+  }catch(e){
+    alert('Errore invio: '+e.message);
+  }finally{
+    btn.disabled = false;
+    ta.focus();
   }
 }
 
