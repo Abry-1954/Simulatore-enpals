@@ -1115,13 +1115,31 @@ function renderFatture(){
   const totNetto  = righe.reduce((a,f)=>a+(f.tot_netto!=null?Number(f.tot_netto):0),0);
   const totaliEl = document.getElementById('fatture-totali');
   if(totaliEl){
-    const pill = (label,val)=>'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;font-size:12px;"><span style="color:#64748b;">'+label+'</span> <strong style="color:#1e3a8a;">'+val+'</strong></div>';
+    // Stessa palette colori già usata nel calendario DIVA — un colore per
+    // ogni totale invece del blu unico di prima, così sono distinguibili
+    // a colpo d'occhio invece che un blocco anonimo tutto uguale.
+    const PILL_COLORI = {
+      giorni:     {bg:'#f0fdf4', bar:'#22c55e', text:'#166534'},
+      turni:      {bg:'#eff6ff', bar:'#3b82f6', text:'#1e40af'},
+      righe:      {bg:'#faf5ff', bar:'#a855f7', text:'#6b21a8'},
+      imponibile: {bg:'#fff7ed', bar:'#f97316', text:'#9a3412'},
+      netto:      {bg:'#eef2ff', bar:'#1e3a8a', text:'#1e3a8a'},
+    };
+    const pill = (label,val,chiave)=>{
+      const c = PILL_COLORI[chiave];
+      const risalto = chiave==='netto'; // il numero finale, messo in risalto
+      return '<div style="background:'+c.bg+';border:1.5px solid '+c.bar+';border-radius:10px;'
+        + 'padding:'+(risalto?'8px 16px':'6px 13px')+';font-size:12.5px;display:flex;align-items:center;gap:7px;">'
+        + '<span style="color:'+c.text+';opacity:.7;">'+label+'</span>'
+        + '<strong style="color:'+c.text+';font-size:'+(risalto?'16px':'13.5px')+';">'+val+'</strong>'
+        + '</div>';
+    };
     totaliEl.innerHTML = righe.length ? (
-      pill('Giorni', totGiorni) +
-      pill('Turni', totTurni) +
-      pill('Righe', totRighe) +
-      pill('Imponibile', totImp.toFixed(2).replace('.',',')+' €') +
-      pill('Netto', totNetto.toFixed(2).replace('.',',')+' €')
+      pill('Giorni', totGiorni, 'giorni') +
+      pill('Turni', totTurni, 'turni') +
+      pill('Righe', totRighe, 'righe') +
+      pill('Imponibile', totImp.toFixed(2).replace('.',',')+' €', 'imponibile') +
+      pill('Netto', totNetto.toFixed(2).replace('.',',')+' €', 'netto')
     ) : '';
   }
 
