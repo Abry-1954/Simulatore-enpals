@@ -301,6 +301,9 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);fon
     <select id="fatture-anno" style="padding:6px 10px;border:1px solid #6ee7b7;border-radius:6px;font-size:13px;background:#d1fae5;color:#065f46;" onchange="renderFatture()">
       <option value="">Tutti gli anni</option>
     </select>
+    <select id="fatture-mese" style="padding:6px 10px;border:1px solid #6ee7b7;border-radius:6px;font-size:13px;background:#d1fae5;color:#065f46;" onchange="renderFatture()">
+      <option value="">Tutti i mesi</option>
+    </select>
     <select id="fatture-azienda" style="padding:6px 10px;border:1px solid #6ee7b7;border-radius:6px;font-size:13px;min-width:160px;background:#d1fae5;color:#065f46;" onchange="renderFatture()">
       <option value="">Tutte le aziende</option>
     </select>
@@ -1069,6 +1072,17 @@ async function caricaFatture(){
   sel.innerHTML = '<option value="">Tutti gli anni</option>';
   anni.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
   if(valAtt) sel.value = valAtt;
+  // Popola select mese — solo i mesi che compaiono davvero in almeno una
+  // fattura, stesso principio già usato per anno e aziende qui sotto.
+  const NOMI_MESI = {'01':'Gennaio','02':'Febbraio','03':'Marzo','04':'Aprile','05':'Maggio','06':'Giugno','07':'Luglio','08':'Agosto','09':'Settembre','10':'Ottobre','11':'Novembre','12':'Dicembre'};
+  const mesiPresenti = [...new Set(_fattureAll.map(f=>(f.data_fattura||'').substring(5,7)).filter(Boolean))].sort();
+  const selMese = document.getElementById('fatture-mese');
+  if(selMese){
+    const valMeseAtt = selMese.value;
+    selMese.innerHTML = '<option value="">Tutti i mesi</option>';
+    mesiPresenti.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=NOMI_MESI[m]||m; selMese.appendChild(o); });
+    if(valMeseAtt) selMese.value = valMeseAtt;
+  }
   // Popola select data pagamento
   const pagamenti = [...new Set(_fattureAll.map(f=>(f.data_pagamento||'').trim()).filter(Boolean))].sort();
   const selDp = document.getElementById('fatture-datapag');
@@ -1094,14 +1108,16 @@ var _fattureExpanded = new Set();
 function renderFatture(){
   const cerca = (document.getElementById('fatture-cerca-nom').value||'').toLowerCase();
   const anno = document.getElementById('fatture-anno').value;
+  const mese = document.getElementById('fatture-mese')?.value || '';
   const azienda = (document.getElementById('fatture-azienda')?.value||'');
   const datapag = (document.getElementById('fatture-datapag')?.value||'');
   let righe = _fattureAll.filter(f=>{
     const nomOk = !cerca || (f.nominativo||'').toLowerCase().includes(cerca);
     const annoOk = !anno || (f.rif_nbr||'').startsWith(anno+'-');
+    const meseOk = !mese || (f.data_fattura||'').substring(5,7)===mese;
     const azOk = !azienda || (f.azienda_rag||'').trim()===azienda;
     const dpOk = !datapag || (datapag==='__nessuno__' ? !(f.data_pagamento||'').trim() : (f.data_pagamento||'').trim()===datapag);
-    return nomOk && annoOk && azOk && dpOk;
+    return nomOk && annoOk && meseOk && azOk && dpOk;
   });
   document.getElementById('fatture-count').textContent = righe.length+' / '+_fattureAll.length+' fatture';
 
