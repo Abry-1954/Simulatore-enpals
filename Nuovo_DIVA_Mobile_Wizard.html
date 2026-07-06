@@ -4959,42 +4959,69 @@ async function divaAiAvviaFlusso(){
     return;
   }
 
-  // Elabora con Claude
-  await riproduciAudio('sto_elaborando');
-  divaAiStato('risposta', '🔵 Sto pensando...');
+  // ── Ciclo domanda/risposta ──
+  // Normalmente un solo giro (domanda -> risposta -> fine). Ma se il server
+  // segnala "attesa_risposta" (es. Sara ha chiesto "Confermi?" per un
+  // appuntamento), il ciclo continua da solo: riascolta subito la risposta
+  // dell'utente invece di fermarsi e aspettare che ritocchi il pallino —
+  // altrimenti la domanda resta lì senza che nessuno ascolti la risposta.
+  var continuaCiclo = true;
+  var giriFatti = 0;
+  var GIRI_MASSIMI = 4; // rete di sicurezza: mai un ciclo infinito
 
-  try{
-    var _aiServer = (typeof SERVER !== 'undefined') ? SERVER : 'https://enpals-server.onrender.com';
-    var authH = window._authToken || sessionStorage.getItem('enpals_auth') || '';
-    var resp = await fetch(_aiServer + '/ai?q=' + encodeURIComponent(domanda), {
-      headers: { 'Authorization': 'Bearer ' + authH }
-    });
-    var data = await resp.json();
+  while(continuaCiclo && giriFatti < GIRI_MASSIMI){
+    giriFatti++;
+    continuaCiclo = false;
 
-    if(data.risposta){
-      // Rimuovi markdown
-      data.risposta = data.risposta
-        .replace(/\*\*/g,'')
-        .replace(/\*/g,'')
-        .replace(/_{1,2}([^_]+)_{1,2}/g,'$1')
-        .replace(/#{1,6}\s/g,'')
-        .replace(/`/g,'')
-        .trim();
+    await riproduciAudio('sto_elaborando');
+    divaAiStato('risposta', '🔵 Sto pensando...');
 
-      if(data.risposta.includes('Posso aiutarti solo')){
-        divaAiStato('negato', '🔴 Fuori contesto');
-      } else {
-        divaAiStato('risposta', '🔵 ' + data.risposta.substring(0,40) + '...');
+    try{
+      var _aiServer = (typeof SERVER !== 'undefined') ? SERVER : 'https://enpals-server.onrender.com';
+      var authH = window._authToken || sessionStorage.getItem('enpals_auth') || '';
+      var resp = await fetch(_aiServer + '/ai?q=' + encodeURIComponent(domanda), {
+        headers: { 'Authorization': 'Bearer ' + authH }
+      });
+      var data = await resp.json();
+
+      if(data.risposta){
+        // Rimuovi markdown
+        data.risposta = data.risposta
+          .replace(/\*\*/g,'')
+          .replace(/\*/g,'')
+          .replace(/_{1,2}([^_]+)_{1,2}/g,'$1')
+          .replace(/#{1,6}\s/g,'')
+          .replace(/`/g,'')
+          .trim();
+
+        if(data.risposta.includes('Posso aiutarti solo')){
+          divaAiStato('negato', '🔴 Fuori contesto');
+        } else {
+          divaAiStato('risposta', '🔵 ' + data.risposta.substring(0,40) + '...');
+        }
+        await saraVocale(data.risposta);
+        // Mostra lista PDF se presente
+        if(data.pdf_list && data.pdf_list.length > 0){
+          divaPdfMostra(data.pdf_list);
+        }
+
+        // Il server aspetta una risposta (es. conferma appuntamento) —
+        // riascolta subito, senza bisogno di un altro tocco sul pallino.
+        if(data.attesa_risposta){
+          divaAiStato('wakeword', '🟣 Ti ascolto...');
+          var rispostaUtente = await divaAiAscoltaDomanda();
+          if(rispostaUtente){
+            domanda = rispostaUtente;
+            continuaCiclo = true;
+          }
+          // Se non ha detto nulla in tempo, il ciclo si ferma qui — la
+          // bozza sul server scade comunque da sola dopo 2 minuti.
+        }
       }
-      await saraVocale(data.risposta);
-      // Mostra lista PDF se presente
-      if(data.pdf_list && data.pdf_list.length > 0){
-        divaPdfMostra(data.pdf_list);
-      }
+    }catch(e){
+      console.warn('DIVA AI errore:', e);
+      divaAiStato('negato', '🔴 Errore connessione');
     }
-  }catch(e){
-    console.warn('DIVA AI errore:', e);
-    divaAiStato('negato', '🔴 Errore connessione');
   }
 
   // Torna in ascolto
@@ -5013,7 +5040,7 @@ function divaAiAscoltaDomanda(){
     rec.continuous = false;
     rec.interimResults = false;
     rec.maxAlternatives = 1;
-    var timeout = setTimeout(function(){ try{rec.abort();}catch(e){} resolve(''); }, 8000);
+    var timeout = setTimeout(function(){ try{rec.abort();}catch(e){} resolve(''); }, 12000);
     rec.onresult = function(e){
       clearTimeout(timeout);
       resolve(e.results[0][0].transcript.trim());
