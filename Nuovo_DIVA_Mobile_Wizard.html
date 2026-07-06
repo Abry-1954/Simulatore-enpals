@@ -2199,7 +2199,7 @@ async function aggiornaBadgeChat(){
       else badge.style.display = 'none';
     }
     if(sottotitolo){
-      sottotitolo.textContent = nonLetti > 0 ? '🔴 Nuovo messaggio dall\'admin' : 'Domande o richieste dirette';
+      sottotitolo.textContent = nonLetti > 0 ? '🔴 Nuovo messaggio dall\'admin' : _sottotitoloChatNormale;
     }
   }catch(e){
     console.warn('Badge chat non aggiornato:', e.message);
@@ -2601,6 +2601,7 @@ async function doLogin(){
     sessionStorage.setItem('enpals_ruolo', loginData.ruolo||'utente');
     var btnAssistente = document.getElementById('home-btn-assistente');
     if(btnAssistente) btnAssistente.style.display = (loginData.ruolo==='admin') ? 'flex' : 'none';
+    adattaPulsanteChatPerRuolo(loginData.ruolo);
     serverOk = true;
   }catch(e){
     ovHide();
@@ -2725,6 +2726,47 @@ function goRubrica(){
   if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
   const _cb = Date.now();
   window.open('https://abry-1954.github.io/Simulatore-enpals/rubrica_diva.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&_='+_cb, '_blank');
+}
+
+// Testo "a riposo" del sottotitolo pulsante chat — diverso per admin
+// (che sceglie CON CHI parlare) rispetto a un utente normale (che scrive
+// sempre e solo all'admin). Il badge lo aggiorna in emergenza per mostrare
+// i non letti, poi deve saper tornare al testo giusto per quel ruolo.
+let _sottotitoloChatNormale = 'Domande o richieste dirette';
+
+function adattaPulsanteChatPerRuolo(ruolo){
+  const btn = document.getElementById('home-btn-chat');
+  if(!btn) return;
+  const titolo = btn.querySelector('div > div:first-child') || btn.querySelector('span > div');
+  const sottotitolo = document.getElementById('sottotitolo-chat');
+  const icona = btn.querySelector('span[style*="font-size:28px"]');
+  if(ruolo === 'admin'){
+    if(icona) icona.textContent = '➕';
+    if(titolo) titolo.textContent = 'Avvia nuova conversazione';
+    _sottotitoloChatNormale = 'Scegli un utente con cui parlare';
+    if(sottotitolo) sottotitolo.textContent = _sottotitoloChatNormale;
+    btn.onclick = goChatUtenti; // sovrascrive il goChat() impostato inline nell'HTML
+  } else {
+    if(icona) icona.textContent = '💬';
+    if(titolo) titolo.textContent = "Chatta con l'Admin";
+    _sottotitoloChatNormale = 'Domande o richieste dirette';
+    if(sottotitolo) sottotitolo.textContent = _sottotitoloChatNormale;
+    btn.onclick = goChat;
+  }
+}
+
+// Solo admin: apre direttamente il picker "nuova conversazione" (elenco
+// completo di tutti gli utenti registrati, ordine alfabetico) dentro
+// Assistente Admin — non più solo la lista delle conversazioni esistenti.
+function goChatUtenti(){
+  const nome = encodeURIComponent(S.lav.nominativo || S.user || '');
+  const tokRaw = sessionStorage.getItem('enpals_auth') || '';
+  const tok = tokRaw.startsWith('tok:') ? tokRaw.slice(4) : '';
+  const ruolo = encodeURIComponent(sessionStorage.getItem('enpals_ruolo') || 'utente');
+  if(!tok){ alert('Sessione non valida, effettua di nuovo il login'); return; }
+  const _cb = Date.now();
+  window.open('https://abry-1954.github.io/Simulatore-enpals/assistente_admin.html?token='+encodeURIComponent(tok)+'&nominativo='+nome+'&ruolo='+ruolo+'&focus=nuova&_='+_cb, '_blank');
+  setTimeout(aggiornaBadgeAssistente, 4000);
 }
 
 function goChat(){

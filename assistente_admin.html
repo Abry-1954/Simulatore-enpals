@@ -299,9 +299,10 @@
         <button class="ad-refresh-btn" onclick="caricaRichiesteUtenti()">🔄 Aggiorna</button>
       </div>
 
-      <div class="ad-section">
+      <div class="ad-section" id="sezione-chat-utenti">
         <div class="ad-section-title">💬 Chat con gli utenti <span class="ad-badge-count" id="badge-chat" style="display:none;"></span></div>
         <div class="ad-section-sub">Conversazioni iniziate dal wizard. Tocca per aprire e rispondere.</div>
+        <button class="ad-refresh-btn" onclick="apriPickerNuovaConversazione()" style="margin-bottom:10px;background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">➕ Nuova conversazione</button>
         <div id="lista-conversazioni"><div class="ad-empty">Caricamento...</div></div>
         <button class="ad-refresh-btn" onclick="caricaConversazioni()">🔄 Aggiorna</button>
       </div>
@@ -330,6 +331,15 @@
     <textarea id="chat-thread-testo" placeholder="Scrivi una risposta…" rows="1" onkeydown="onKeyDownRisposta(event)" oninput="autoresizeRisposta(this)"></textarea>
     <button class="chat-thread-send-btn" id="chat-thread-send-btn" onclick="inviaRispostaAdmin()">➤</button>
   </div>
+</div>
+
+<!-- PICKER NUOVA CONVERSAZIONE — elenco di tutti gli utenti registrati -->
+<div class="chat-thread-overlay" id="picker-utenti-overlay">
+  <div class="chat-thread-header">
+    <button class="ad-back" aria-label="Chiudi" onclick="chiudiPickerUtenti()">←</button>
+    <span class="chat-thread-title" style="flex:1;">➕ Nuova conversazione</span>
+  </div>
+  <div class="chat-thread-body" id="picker-utenti-body" style="padding-bottom:24px;"></div>
 </div>
 
 <script>
@@ -694,6 +704,35 @@ async function inviaRispostaAdmin(){
   }
 }
 
+async function apriPickerNuovaConversazione(){
+  document.getElementById('picker-utenti-overlay').classList.add('aperto');
+  const body = document.getElementById('picker-utenti-body');
+  body.innerHTML = '<div class="ad-empty">Caricamento...</div>';
+  try{
+    const lista = await apiFetch('/users');
+    lista.sort(function(a,b){ return a.username.localeCompare(b.username, 'it', {sensitivity:'base'}); });
+    if(!lista.length){ body.innerHTML = '<div class="ad-empty">Nessun utente registrato.</div>'; return; }
+    body.innerHTML = lista.map(function(u){
+      const nome = u.username.toUpperCase();
+      const iniziali = nome.trim().slice(0,2);
+      const tagRuolo = u.ruolo==='admin' ? ' · admin' : '';
+      return '<div class="chat-conv-item" onclick="sceglUtenteNuovaConversazione(\''+nome.replace(/'/g,"\\'")+'\')">'
+        + '<div class="chat-conv-avatar">'+iniziali+'</div>'
+        + '<div class="chat-conv-info"><div class="chat-conv-nome">'+escapeHtml(nome)+tagRuolo+'</div></div>'
+        + '</div>';
+    }).join('');
+  }catch(e){
+    body.innerHTML = '<div class="ad-empty">Errore: '+e.message+'</div>';
+  }
+}
+function chiudiPickerUtenti(){
+  document.getElementById('picker-utenti-overlay').classList.remove('aperto');
+}
+function sceglUtenteNuovaConversazione(nome){
+  chiudiPickerUtenti();
+  apriConversazione(nome);
+}
+
 async function svuotaChatAperta(){
   if(!_nominativoAperto) return;
   const ok = confirm('Svuotare tutta la conversazione con "'+_nominativoAperto+'"?\n\nVerranno cancellati solo i messaggi di questa chat — le altre conversazioni non vengono toccate. Azione non annullabile.');
@@ -733,6 +772,15 @@ async function avviaApp(){
     AUTH.ruolo = ruoloUrl || 'utente';
     try{
       avviaSezione();
+      const focus = qs.get('focus');
+      if(focus === 'nuova'){
+        setTimeout(apriPickerNuovaConversazione, 500);
+      } else if(focus === 'chat'){
+        setTimeout(function(){
+          const sez = document.getElementById('sezione-chat-utenti');
+          if(sez) sez.scrollIntoView({behavior:'smooth', block:'start'});
+        }, 500);
+      }
     } catch(e){
       alert('Sessione non valida o scaduta. Torna al wizard DIVA e riapri "Assistente Admin".');
     }
