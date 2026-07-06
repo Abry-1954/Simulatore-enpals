@@ -41,7 +41,7 @@
   /* ===== CORPO CHAT ===== */
   .chat-body {
     flex: 1;
-    background: #f4f1fb;
+    background: #e7f7ec;
     border-radius: 22px 22px 0 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -51,19 +51,19 @@
     gap: 2px;
   }
   .msg-day-sep {
-    text-align: center; font-size: 11px; color: #9c94b8;
+    text-align: center; font-size: 11px; color: #6b9c7c;
     margin: 12px 0 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
   }
   .msg-row { display: flex; margin: 3px 0; }
   .msg-row.mine { justify-content: flex-end; }
   .msg-row.theirs { justify-content: flex-start; }
   .bubble {
-    max-width: 78%; padding: 9px 13px; border-radius: 16px; font-size: 14px; line-height: 1.4;
-    box-shadow: 0 1px 2px rgba(0,0,0,.08); word-wrap: break-word; white-space: pre-wrap;
+    max-width: 78%; padding: 10px 14px; border-radius: 16px; font-size: 15.5px; line-height: 1.45; font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12); word-wrap: break-word; white-space: pre-wrap;
   }
   .bubble.mine { background: linear-gradient(135deg,#fb923c,#ea580c); color: #fff; border-bottom-right-radius: 4px; }
-  .bubble.theirs { background: #fff; color: #2e2a3d; border-bottom-left-radius: 4px; }
-  .bubble-time { font-size: 10px; margin-top: 4px; opacity: .65; text-align: right; }
+  .bubble.theirs { background: linear-gradient(135deg,#1d4ed8,#3b82f6); color: #fff; border-bottom-left-radius: 4px; }
+  .bubble-time { font-size: 10.5px; margin-top: 4px; opacity: .85; text-align: right; }
   .bubble.theirs .bubble-time { text-align: left; }
 
   .chat-empty { text-align: center; color: #9c94b8; font-size: 13px; padding: 50px 24px; line-height: 1.6; }

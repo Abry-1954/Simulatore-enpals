@@ -105,7 +105,7 @@
 
   /* ===== CHAT: FINESTRA CONVERSAZIONE (overlay a tutto schermo) ===== */
   .chat-thread-overlay {
-    position: fixed; inset: 0; z-index: 600; background: #f5f7fb;
+    position: fixed; inset: 0; z-index: 600; background: #e7f7ec;
     display: none; flex-direction: column;
   }
   .chat-thread-overlay.aperto { display: flex; }
@@ -118,14 +118,14 @@
     flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
     padding: 16px 12px 100px; display: flex; flex-direction: column; gap: 2px;
   }
-  .msg-day-sep { text-align: center; font-size: 11px; color: #94a3b8; margin: 12px 0 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .msg-day-sep { text-align: center; font-size: 11px; color: #6b9c7c; margin: 12px 0 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
   .msg-row { display: flex; margin: 3px 0; }
   .msg-row.mine { justify-content: flex-end; }
   .msg-row.theirs { justify-content: flex-start; }
-  .bubble { max-width: 78%; padding: 9px 13px; border-radius: 16px; font-size: 14px; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,.08); word-wrap: break-word; white-space: pre-wrap; }
+  .bubble { max-width: 78%; padding: 10px 14px; border-radius: 16px; font-size: 15.5px; line-height: 1.45; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.12); word-wrap: break-word; white-space: pre-wrap; }
   .bubble.mine { background: linear-gradient(135deg,#1d4ed8,#3b82f6); color: #fff; border-bottom-right-radius: 4px; }
-  .bubble.theirs { background: #fff; color: #1e293b; border-bottom-left-radius: 4px; }
-  .bubble-time { font-size: 10px; margin-top: 4px; opacity: .65; text-align: right; }
+  .bubble.theirs { background: linear-gradient(135deg,#fb923c,#ea580c); color: #fff; border-bottom-left-radius: 4px; }
+  .bubble-time { font-size: 10.5px; margin-top: 4px; opacity: .85; text-align: right; }
   .bubble.theirs .bubble-time { text-align: left; }
   .chat-thread-input-bar {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
@@ -322,7 +322,8 @@
 <div class="chat-thread-overlay" id="chat-thread-overlay">
   <div class="chat-thread-header">
     <button class="ad-back" aria-label="Chiudi conversazione" onclick="chiudiConversazione()">←</button>
-    <span class="chat-thread-title" id="chat-thread-title"></span>
+    <span class="chat-thread-title" id="chat-thread-title" style="flex:1;"></span>
+    <button onclick="svuotaChatAperta()" title="Svuota questa conversazione" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0;">🗑</button>
   </div>
   <div class="chat-thread-body" id="chat-thread-body"></div>
   <div class="chat-thread-input-bar">
@@ -690,6 +691,18 @@ async function inviaRispostaAdmin(){
   }finally{
     btn.disabled = false;
     ta.focus();
+  }
+}
+
+async function svuotaChatAperta(){
+  if(!_nominativoAperto) return;
+  const ok = confirm('Svuotare tutta la conversazione con "'+_nominativoAperto+'"?\n\nVerranno cancellati solo i messaggi di questa chat — le altre conversazioni non vengono toccate. Azione non annullabile.');
+  if(!ok) return;
+  try{
+    await apiFetch('/messaggi?nominativo='+encodeURIComponent(_nominativoAperto), { method:'DELETE' });
+    chiudiConversazione();
+  }catch(e){
+    alert('Errore: '+e.message);
   }
 }
 
