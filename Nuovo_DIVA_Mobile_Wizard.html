@@ -776,12 +776,12 @@ function divaNotifica(evento, dettagli){
     </button>
     <button id="home-btn-chat" onclick="goChat()" style="width:100%;max-width:320px;background:linear-gradient(135deg,#be185d,#ec4899);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(190,24,93,0.4);position:relative;">
       <span style="font-size:28px;">💬</span>
-      <span style="text-align:left;"><div>Chatta con l'Admin</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Domande o richieste dirette</div></span>
+      <span style="text-align:left;"><div>Chatta con l'Admin</div><div id="sottotitolo-chat" style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Domande o richieste dirette</div></span>
       <span id="badge-chat-non-letti" style="display:none;position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;min-width:22px;height:22px;border-radius:11px;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 6px rgba(0,0,0,.3);">0</span>
     </button>
     <button id="home-btn-assistente" onclick="goAssistente()" style="display:none;width:100%;max-width:320px;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;border:none;border-radius:14px;padding:22px 20px;font-size:17px;font-weight:700;cursor:pointer;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(30,58,138,0.4);position:relative;">
       <span style="font-size:28px;">🛡️</span>
-      <span style="text-align:left;"><div>Assistente Admin</div><div style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Richieste, notifiche, gestione</div></span>
+      <span style="text-align:left;"><div>Assistente Admin</div><div id="sottotitolo-assistente" style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px;">Richieste, notifiche, gestione</div></span>
       <span id="badge-assistente-non-letti" style="display:none;position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;min-width:22px;height:22px;border-radius:11px;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 6px rgba(0,0,0,.3);">0</span>
     </button>
     <button id="home-btn-logout" onclick="doLogout()" style="margin-top:10px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:8px;padding:10px 24px;font-size:13px;cursor:pointer;">⏻ Esci</button>
@@ -2193,12 +2193,13 @@ async function aggiornaBadgeChat(){
     const lista = await res.json();
     const nonLetti = Array.isArray(lista) ? lista.filter(function(m){ return m.autore_ruolo==='admin' && !m.letto_utente; }).length : 0;
     const badge = document.getElementById('badge-chat-non-letti');
-    if(!badge) return;
-    if(nonLetti > 0){
-      badge.textContent = nonLetti > 9 ? '9+' : String(nonLetti);
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
+    const sottotitolo = document.getElementById('sottotitolo-chat');
+    if(badge){
+      if(nonLetti > 0){ badge.textContent = nonLetti > 9 ? '9+' : String(nonLetti); badge.style.display = 'flex'; }
+      else badge.style.display = 'none';
+    }
+    if(sottotitolo){
+      sottotitolo.textContent = nonLetti > 0 ? '🔴 Nuovo messaggio dall\'admin' : 'Domande o richieste dirette';
     }
   }catch(e){
     console.warn('Badge chat non aggiornato:', e.message);
@@ -2220,12 +2221,13 @@ async function aggiornaBadgeAssistente(){
     const conversazioni = await res.json();
     const totale = Array.isArray(conversazioni) ? conversazioni.reduce(function(tot,c){ return tot + (c.non_letti||0); }, 0) : 0;
     const badge = document.getElementById('badge-assistente-non-letti');
-    if(!badge) return;
-    if(totale > 0){
-      badge.textContent = totale > 9 ? '9+' : String(totale);
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
+    const sottotitolo = document.getElementById('sottotitolo-assistente');
+    if(badge){
+      if(totale > 0){ badge.textContent = totale > 9 ? '9+' : String(totale); badge.style.display = 'flex'; }
+      else badge.style.display = 'none';
+    }
+    if(sottotitolo){
+      sottotitolo.textContent = totale > 0 ? ('🔴 Richiesta chat in corso ('+totale+')') : 'Richieste, notifiche, gestione';
     }
   }catch(e){
     console.warn('Badge assistente non aggiornato:', e.message);
@@ -2651,6 +2653,13 @@ async function doLogin(){
       codfisc:'', piva:'', matricola_enpals:'', iban:''
     };
     console.warn('Utente autenticato ma non trovato in persone.db:', u);
+    // Caso tipico: un admin puro (come ABRAMELEK), senza scheda anagrafica
+    // persona/doppiatore collegata. Il ramo "match trovato" sopra chiama già
+    // queste due righe dentro popolaSLavDaPersona() — qui vanno ripetute,
+    // altrimenti per un account solo-admin il badge in home e le impostazioni
+    // non partono mai.
+    caricaImpostazioni();
+    avviaBadgeChatPolling();
   }
 
   // 5. Vai alla home
