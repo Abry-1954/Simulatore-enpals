@@ -951,6 +951,7 @@ function toggleMain(){
       <button onclick="backupCompleto();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#5eead4;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📦 Backup Completo (Fatture + PDF)</button>
       <button onclick="document.getElementById('input-ripristina-zip').click();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#5eead4;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📥 Ripristina da Backup (.zip)</button>
       <button onclick="pulisciPdfOrfani();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#fcd34d;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🧹 Pulisci PDF Orfani nel Bucket</button>
+      <button onclick="riparaCollegamentiAgenda();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#fcd34d;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🔗 Ripara Collegamenti Agenda↔Fattura</button>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
       <button onclick="resetFatture();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#f87171;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🗑 Delete & Reset DB Fatture</button>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
@@ -2842,6 +2843,21 @@ async function ripristinaBackup(input){
       alert('Errore: '+(data.error||'sconosciuto'));
     }
   }catch(e){ input.value=''; alert('Errore: '+e.message); }
+  finally{ nascondiCaricamento(); }
+}
+
+async function riparaCollegamentiAgenda(){
+  if(!confirm('🔗 Riparare i collegamenti Agenda↔Fattura?\n\nServe dopo un "Ripristina da Backup": gli appuntamenti già fatturati continuano a puntare al vecchio numero interno della fattura, che dopo un ripristino cambia sempre. Questa operazione ritrova il numero giusto usando il nome del PDF (che invece non cambia mai) e sistema il collegamento.\n\nNon tocca fatture o PDF, solo i riferimenti in agenda. Continuare?')) return;
+  mostraCaricamento('🔗 Riparazione collegamenti in corso...');
+  try{
+    const r = await authFetch('/agenda-ripara-collegamenti', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})});
+    const data = await r.json();
+    if(data.ok){
+      alert('✅ Riparazione completata!\n\nCollegamenti riparati: '+data.riparati+'\nGià corretti: '+data.gia_corretti+(data.non_trovati?('\nPDF non trovato (nessuna azione): '+data.non_trovati):''));
+    } else {
+      alert('Errore: '+(data.error||'sconosciuto'));
+    }
+  }catch(e){ alert('Errore: '+e.message); }
   finally{ nascondiCaricamento(); }
 }
 
