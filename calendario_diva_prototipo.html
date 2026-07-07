@@ -1080,7 +1080,8 @@ function fromApiRecord(r){
     righe: (r.righe===null || r.righe===undefined) ? '' : r.righe,
     ruolo: r.ruolo || null,
     fatturaUrl: r.fattura_pdf_url || null,
-    fatturaRecNbr: r.fattura_rec_nbr || null
+    fatturaRecNbr: r.fattura_rec_nbr || null,
+    fatturaRifNbr: r.fattura_rif_nbr || null
   };
 }
 
@@ -1131,13 +1132,13 @@ let RUOLO_DEFAULT = 'DOPPIATORE'; // fallback prudente se il recupero fallisce
 // esistono solo DOPO l'emissione — il calcolo fiscale completo vive nel
 // motore del wizard, non nel calendario. Quindi il totale mostrato copre
 // solo ciò che è già fatturato, non una proiezione su tutto il mese.
-let fattureByRecNbr = {};
+let fattureByRifNbr = {};
 
 async function caricaFatture(){
   try{
     const lista = await apiFetch('/fatture');
-    fattureByRecNbr = {};
-    (lista||[]).forEach(f=>{ fattureByRecNbr[f.rec_nbr] = f; });
+    fattureByRifNbr = {};
+    (lista||[]).forEach(f=>{ fattureByRifNbr[f.rif_nbr] = f; });
   } catch(e){
     // Non blocchiamo il calendario: il riepilogo mensile mostrerà solo
     // turni/giorni/ore/righe, senza il totale netto fatturato.
@@ -1361,14 +1362,14 @@ function renderRiepilogoAnno(anno){
 
   const perAzienda = {};
   const giorniImpegnati = new Set();
-  const recNbrGlobali = new Set();
+  const rifNbrGlobali = new Set();
   let oreTotali = 0;
   let righeTotali = 0;
   let turniTotali = 0;
 
   evsAnno.forEach(e=>{
     const nome = e.azienda || 'Senza azienda';
-    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, colore:e.colore, recNbrSet:new Set()};
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, colore:e.colore, rifNbrSet:new Set()};
     const ore = durataOre(e.inizio, e.fine);
     const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
     const turniEv = (typeof e.turni === 'number') ? e.turni : 0;
@@ -1377,7 +1378,7 @@ function renderRiepilogoAnno(anno){
     perAzienda[nome].righe += righeEv;
     if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
     if(typeof e.turni === 'number') perAzienda[nome].turniNote = true;
-    if(e.fatturaRecNbr){ perAzienda[nome].recNbrSet.add(e.fatturaRecNbr); recNbrGlobali.add(e.fatturaRecNbr); }
+    if(e.fatturaRifNbr){ perAzienda[nome].rifNbrSet.add(e.fatturaRifNbr); rifNbrGlobali.add(e.fatturaRifNbr); }
     oreTotali += ore;
     righeTotali += righeEv;
     turniTotali += turniEv;
@@ -1385,14 +1386,15 @@ function renderRiepilogoAnno(anno){
   });
 
   // Stessa funzione di netto usata nel riepilogo mensile — copre solo il
-  // già fatturato, un rec_nbr contato una volta sola anche a cavallo di
-  // più appuntamenti nello stesso anno.
-  function nettoDiRecNbrSet(set){
+  // già fatturato, un rif_nbr contato una volta sola anche a cavallo di
+  // più appuntamenti nello stesso anno. Indicizzata per rif_nbr (stabile
+  // anche dopo un ripristino del database), non più per rec_nbr.
+  function nettoDiRifNbrSet(set){
     let tot = 0;
-    set.forEach(rn=>{ const f = fattureByRecNbr[rn]; if(f && typeof f.tot_netto==='number') tot += f.tot_netto; });
+    set.forEach(rn=>{ const f = fattureByRifNbr[rn]; if(f && typeof f.tot_netto==='number') tot += f.tot_netto; });
     return tot;
   }
-  const nettoTotaleAnno = nettoDiRecNbrSet(recNbrGlobali);
+  const nettoTotaleAnno = nettoDiRifNbrSet(rifNbrGlobali);
 
   const aziendeOrdinate = Object.keys(perAzienda).sort((a,b)=> perAzienda[b].ore - perAzienda[a].ore);
 
@@ -1400,7 +1402,7 @@ function renderRiepilogoAnno(anno){
   aziendeOrdinate.forEach(nome=>{
     const v = perAzienda[nome];
     const c = colorOf(v.colore);
-    const nettoAzienda = nettoDiRecNbrSet(v.recNbrSet);
+    const nettoAzienda = nettoDiRifNbrSet(v.rifNbrSet);
     html += '<div class="riepilogo-row">';
     html += '<div class="riepilogo-row-top">';
     html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
@@ -1408,7 +1410,7 @@ function renderRiepilogoAnno(anno){
     html += '<div class="riepilogo-stat">'+(v.turniNote ? v.turni+' '+(v.turni===1?'turno':'turni') : '— turni')+'</div>';
     html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
     html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
-    html += '<div class="riepilogo-stat">'+(v.recNbrSet.size>0 ? '€ '+nettoAzienda.toFixed(2).replace('.',',')+' netto' : '— netto')+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.rifNbrSet.size>0 ? '€ '+nettoAzienda.toFixed(2).replace('.',',')+' netto' : '— netto')+'</div>';
     html += '</div></div>';
   });
   html += '</div>';
@@ -1484,14 +1486,14 @@ function renderRiepilogoMese(anno, mese){
 
   const perAzienda = {};
   const giorniImpegnati = new Set();
-  const recNbrGlobali = new Set();
+  const rifNbrGlobali = new Set();
   let oreTotali = 0;
   let righeTotali = 0;
   let turniTotali = 0;
 
   evsMese.forEach(e=>{
     const nome = e.azienda || 'Senza azienda';
-    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, tuttoFatturato:true, colore:e.colore, recNbrSet:new Set()};
+    if(!perAzienda[nome]) perAzienda[nome] = {turni:0, ore:0, righe:0, righeNote:false, turniNote:false, tuttoFatturato:true, colore:e.colore, rifNbrSet:new Set()};
     const ore = durataOre(e.inizio, e.fine);
     const righeEv = (typeof e.righe === 'number') ? e.righe : 0;
     const turniEv = (typeof e.turni === 'number') ? e.turni : 0;
@@ -1500,8 +1502,8 @@ function renderRiepilogoMese(anno, mese){
     perAzienda[nome].righe += righeEv;
     if(typeof e.righe === 'number') perAzienda[nome].righeNote = true;
     if(typeof e.turni === 'number') perAzienda[nome].turniNote = true;
-    if(!e.fatturaRecNbr) perAzienda[nome].tuttoFatturato = false;
-    else { perAzienda[nome].recNbrSet.add(e.fatturaRecNbr); recNbrGlobali.add(e.fatturaRecNbr); }
+    if(!e.fatturaRifNbr) perAzienda[nome].tuttoFatturato = false;
+    else { perAzienda[nome].rifNbrSet.add(e.fatturaRifNbr); rifNbrGlobali.add(e.fatturaRifNbr); }
     oreTotali += ore;
     righeTotali += righeEv;
     turniTotali += turniEv;
@@ -1509,17 +1511,18 @@ function renderRiepilogoMese(anno, mese){
   });
 
   // Netto fatturato: somma di tot_netto delle fatture VERE collegate agli
-  // appuntamenti del mese — un rec_nbr contato una sola volta anche se
+  // appuntamenti del mese — un rif_nbr contato una sola volta anche se
   // copre più appuntamenti (fattura multipla), niente doppi conteggi.
-  // A differenza di turni/righe/ore, copre solo ciò che è già fatturato:
-  // per un appuntamento non ancora fatturato il netto non è calcolabile
-  // qui (serve il motore fiscale completo, che vive solo nel wizard).
-  function nettoDiRecNbrSet(set){
+  // Indicizzato per rif_nbr (stabile anche dopo un ripristino), non più
+  // per rec_nbr. A differenza di turni/righe/ore, copre solo ciò che è
+  // già fatturato: per un appuntamento non ancora fatturato il netto non
+  // è calcolabile qui (serve il motore fiscale completo, nel wizard).
+  function nettoDiRifNbrSet(set){
     let tot = 0;
-    set.forEach(rn=>{ const f = fattureByRecNbr[rn]; if(f && typeof f.tot_netto==='number') tot += f.tot_netto; });
+    set.forEach(rn=>{ const f = fattureByRifNbr[rn]; if(f && typeof f.tot_netto==='number') tot += f.tot_netto; });
     return tot;
   }
-  const nettoTotaleMese = nettoDiRecNbrSet(recNbrGlobali);
+  const nettoTotaleMese = nettoDiRifNbrSet(rifNbrGlobali);
 
   const aziendeOrdinate = Object.keys(perAzienda).sort((a,b)=> perAzienda[b].ore - perAzienda[a].ore);
 
@@ -1527,7 +1530,7 @@ function renderRiepilogoMese(anno, mese){
   aziendeOrdinate.forEach(nome=>{
     const v = perAzienda[nome];
     const c = colorOf(v.colore);
-    const nettoAzienda = nettoDiRecNbrSet(v.recNbrSet);
+    const nettoAzienda = nettoDiRifNbrSet(v.rifNbrSet);
     html += '<div class="riepilogo-row">';
     html += '<div class="riepilogo-row-top">';
     html += '<div class="riepilogo-bar" style="background:'+c.bar+'"></div>';
@@ -1535,7 +1538,7 @@ function renderRiepilogoMese(anno, mese){
     html += '<div class="riepilogo-stat">'+(v.turniNote ? v.turni+' '+(v.turni===1?'turno':'turni') : '— turni')+'</div>';
     html += '<div class="riepilogo-stat">'+formattaOre(v.ore)+'</div>';
     html += '<div class="riepilogo-stat">'+(v.righeNote ? v.righe+' righe' : '— righe')+'</div>';
-    html += '<div class="riepilogo-stat">'+(v.recNbrSet.size>0 ? '€ '+nettoAzienda.toFixed(2).replace('.',',')+' netto' : '— netto')+'</div>';
+    html += '<div class="riepilogo-stat">'+(v.rifNbrSet.size>0 ? '€ '+nettoAzienda.toFixed(2).replace('.',',')+' netto' : '— netto')+'</div>';
     html += '</div>';
     if(nome!=='Senza azienda'){
       html += '<div class="riepilogo-row-actions">';
@@ -1876,10 +1879,11 @@ async function generaFattura(){
       titolo: e.titolo, data: e.data, tipoOpera: e.tipoOpera, turni: e.turni, righe: e.righe, note: e.note, ruolo: e.ruolo
     }]);
     await apiFetch('/agenda?id='+e.id, { method:'PATCH', body: JSON.stringify({
-      fattura_rec_nbr: risultato.rec_nbr, fattura_pdf_url: risultato.pdf_url
+      fattura_rec_nbr: risultato.rec_nbr, fattura_rif_nbr: risultato.rif_nbr, fattura_pdf_url: risultato.pdf_url
     }) });
     e.fatturaUrl = risultato.pdf_url;
     e.fatturaRecNbr = risultato.rec_nbr;
+    e.fatturaRifNbr = risultato.rif_nbr;
     alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+e.titolo+'" — azienda '+e.azienda+'.');
     document.getElementById('btn-visualizza').style.display = 'block';
     render();
@@ -1893,7 +1897,7 @@ async function generaFattura(){
 async function visualizzaFatturaSalvata(){
   if(!eventoInModifica) return;
   const e = eventi.find(x=>x.id===eventoInModifica);
-  if(!e || !e.fatturaRecNbr){ if(e && e.fatturaUrl) window.open(e.fatturaUrl, '_blank'); return; }
+  if(!e || !e.fatturaRifNbr){ if(e && e.fatturaUrl) window.open(e.fatturaUrl, '_blank'); return; }
 
   // Apriamo subito una scheda vuota, PRIMA di aspettare la rete: se
   // aspettassimo la risposta del server prima di chiamare window.open,
@@ -1901,7 +1905,10 @@ async function visualizzaFatturaSalvata(){
   // bloccherebbe. Aprendola subito e riempiendola dopo, resta legittima.
   const finestra = window.open('', '_blank');
   try{
-    const r = await apiFetch('/fatture_pdf_url?rec_nbr='+encodeURIComponent(e.fatturaRecNbr));
+    // rif_nbr, non rec_nbr: stabile anche dopo un ripristino del database
+    // (stesso principio già usato da gestione.html — mai un numero
+    // interno salvato prima, sempre ritrovato fresco al momento giusto).
+    const r = await apiFetch('/fatture_pdf_url?rif_nbr='+encodeURIComponent(e.fatturaRifNbr));
     if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
     if(finestra) finestra.location.href = r.signed_url;
     else window.open(r.signed_url, '_blank'); // popup bloccato al primo tentativo: riprova diretto
@@ -1960,7 +1967,7 @@ function apriSelezioneFattura(nome, anno, mese){
       html += '<div class="multi-item-dettaglio" style="color:#1d4ed8">Già fatturata — '+e.tipoOpera+' · '+e.turni+' '+(e.turni===1?'turno':'turni')+' · '+e.righe+' righe</div>';
       html += '<div class="multi-item-inline">';
       html += '<button type="button" class="multi-inline-save" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff" onclick="visualizzaFatturaRecord('+e.id+')">📄 Visualizza</button>';
-      html += '<button type="button" class="multi-inline-save" style="background:#fff;border:1.5px solid #fecaca;color:#dc2626" onclick="eliminaFatturaConCollegati('+e.fatturaRecNbr+').then(function(ok){ if(ok) apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese); })">🗑 Elimina fattura</button>';
+      html += '<button type="button" class="multi-inline-save" style="background:#fff;border:1.5px solid #fecaca;color:#dc2626" onclick="eliminaFatturaConCollegati(\''+e.fatturaRifNbr+'\').then(function(ok){ if(ok) apriSelezioneFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese); })">🗑 Elimina fattura</button>';
       html += '</div>';
     } else if(pronto){
       html += '<div class="multi-item-dettaglio">'+e.tipoOpera+' · '+e.turni+' '+(e.turni===1?'turno':'turni')+' · '+e.righe+' righe</div>';
@@ -1988,10 +1995,10 @@ function apriSelezioneFattura(nome, anno, mese){
    stessa logica di rigenerazione del link fresco già usata altrove. */
 async function visualizzaFatturaRecord(id){
   const e = eventi.find(x=>x.id===id);
-  if(!e || !e.fatturaRecNbr) return;
+  if(!e || !e.fatturaRifNbr) return;
   const finestra = window.open('', '_blank');
   try{
-    const r = await apiFetch('/fatture_pdf_url?rec_nbr='+encodeURIComponent(e.fatturaRecNbr));
+    const r = await apiFetch('/fatture_pdf_url?rif_nbr='+encodeURIComponent(e.fatturaRifNbr));
     if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
     if(finestra) finestra.location.href = r.signed_url;
     else window.open(r.signed_url, '_blank');
@@ -2116,15 +2123,15 @@ async function confermaGeneraFatturaMultipla(){
     // appena generata (stesso rec_nbr per tutti, sono record della STESSA
     // fattura) + eventuali tipo/turni/righe non ancora persistiti.
     await Promise.all(recordIds.map(({id, dati, cambiato})=>{
-      const payload = { fattura_rec_nbr: risultato.rec_nbr, fattura_pdf_url: risultato.pdf_url };
+      const payload = { fattura_rec_nbr: risultato.rec_nbr, fattura_rif_nbr: risultato.rif_nbr, fattura_pdf_url: risultato.pdf_url };
       if(cambiato){ payload.tipo_opera = dati.tipoOpera; payload.turni = dati.turni; payload.righe = dati.righe; }
       return apiFetch('/agenda?id='+id, { method:'PATCH', body: JSON.stringify(payload) });
     }));
 
-    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = { recNbr: risultato.rec_nbr, url: risultato.pdf_url };
+    fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)] = { recNbr: risultato.rec_nbr, rifNbr: risultato.rif_nbr, url: risultato.pdf_url };
     recordIds.forEach(({id, dati})=>{
       const e = eventi.find(x=>x.id===id);
-      if(e){ e.fatturaUrl = risultato.pdf_url; e.fatturaRecNbr = risultato.rec_nbr; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
+      if(e){ e.fatturaUrl = risultato.pdf_url; e.fatturaRecNbr = risultato.rec_nbr; e.fatturaRifNbr = risultato.rif_nbr; Object.assign(e, { tipoOpera: dati.tipoOpera, turni: dati.turni, righe: dati.righe }); }
     });
 
     alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n'));
@@ -2140,11 +2147,11 @@ async function confermaGeneraFatturaMultipla(){
 async function visualizzaFatturaSalvataMulti(){
   const salvata = fattureSalvate[chiaveFattura(selezioneMulti.azienda, selezioneMulti.anno, selezioneMulti.mese)];
   if(!salvata){ return; }
-  if(!salvata.recNbr){ if(salvata.url) window.open(salvata.url, '_blank'); return; }
+  if(!salvata.rifNbr){ if(salvata.url) window.open(salvata.url, '_blank'); return; }
 
   const finestra = window.open('', '_blank');
   try{
-    const r = await apiFetch('/fatture_pdf_url?rec_nbr='+encodeURIComponent(salvata.recNbr));
+    const r = await apiFetch('/fatture_pdf_url?rif_nbr='+encodeURIComponent(salvata.rifNbr));
     if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
     if(finestra) finestra.location.href = r.signed_url;
     else window.open(r.signed_url, '_blank');
@@ -2175,7 +2182,7 @@ async function eliminaEvento(){
   // Caso B — appuntamento collegato a una fattura già emessa: la cancellazione
   // porta via tutto insieme (fattura, PDF, tutti gli appuntamenti collegati,
   // anche se la fattura è multipla). Logica condivisa con il pannello mensile.
-  const ok = await eliminaFatturaConCollegati(e.fatturaRecNbr);
+  const ok = await eliminaFatturaConCollegati(e.fatturaRifNbr);
   if(ok) chiudiModale();
 }
 
@@ -2186,8 +2193,8 @@ async function eliminaEvento(){
    più di uno (da 2 a 31). Due avvisi distinti, non uno solo. Riusata sia
    dal dettaglio giorno/settimana sia dal pannello "Genera fattura" mensile.
    Ritorna true se l'eliminazione è andata a buon fine. */
-async function eliminaFatturaConCollegati(fatturaRecNbr){
-  const collegati = eventi.filter(x => x.fatturaRecNbr === fatturaRecNbr);
+async function eliminaFatturaConCollegati(fatturaRifNbr){
+  const collegati = eventi.filter(x => x.fatturaRifNbr === fatturaRifNbr);
   if(!collegati.length) return false;
   const elenco = collegati.map(x => '• '+x.data+' — '+x.titolo).join('\n');
 
@@ -2209,9 +2216,14 @@ async function eliminaFatturaConCollegati(fatturaRecNbr){
   if(!secondoAvviso) return false;
 
   try{
-    // Prima la fattura (il server cancella anche il PDF dal bucket in automatico),
-    // poi gli appuntamenti — così se la prima fallisce non tocchiamo nulla in agenda.
-    await apiFetch('/fatture?id='+fatturaRecNbr, { method:'DELETE' });
+    // Cancella via rif_nbr, non rec_nbr: il server ritrova da solo l'ID
+    // interno CORRETTO al momento della cancellazione, mai un numero che
+    // potremmo avere salvato prima e che — dopo un ripristino del database,
+    // dove gli ID interni ripartono sempre da 1 — potrebbe nel frattempo
+    // appartenere a un'ALTRA fattura. Prima la fattura (il server cancella
+    // anche il PDF dal bucket in automatico), poi gli appuntamenti — così
+    // se la prima fallisce non tocchiamo nulla in agenda.
+    await apiFetch('/fatture?rif_nbr='+encodeURIComponent(fatturaRifNbr), { method:'DELETE' });
     await Promise.all(collegati.map(x => apiFetch('/agenda?id='+x.id, { method:'DELETE' })));
     await caricaEventi();
     alert('Fattura e appuntament'+(collegati.length===1?'o':'i')+' collegat'+(collegati.length===1?'o':'i')+' eliminati.');
