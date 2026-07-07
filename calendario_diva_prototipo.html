@@ -756,6 +756,25 @@
     border: 1.5px solid #e7e4ee; font-size: 14px; font-family: inherit;
   }
   .login-field input:focus { outline: none; border-color: #fb923c; }
+
+  /* ===== OVERLAY DI CARICAMENTO — stesse richieste ad agenda/fatture,
+     a volte impiegano un po' a rispondere (Render gratuito che dorme) ===== */
+  .op-loading-overlay {
+    position: fixed; inset: 0; z-index: 600;
+    background: rgba(76, 29, 149, 0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .op-loading-overlay.show { display: flex; }
+  .op-loading-spinner {
+    width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: #fb923c; border-radius: 50%;
+    animation: op-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes op-spin { to { transform: rotate(360deg); } }
+  .op-loading-testo { color: #fff; font-size: 14px; font-weight: 700; }
+  .op-loading-sub { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 6px; }
   .login-btn {
     width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px;
     border: none; background: linear-gradient(135deg, #fb923c, #ea580c);
@@ -771,6 +790,12 @@
 </style>
 </head>
 <body>
+
+<div class="op-loading-overlay" id="op-loading-overlay">
+  <div class="op-loading-spinner"></div>
+  <div class="op-loading-testo" id="op-loading-testo">Attendere...</div>
+  <div class="op-loading-sub">Il server potrebbe metterci qualche secondo</div>
+</div>
 
 <div class="login-screen" id="login-screen">
   <div class="login-box">
@@ -1109,10 +1134,26 @@ async function eseguiLogin(){
   }
 }
 
+function mostraCaricamento(testo){
+  const ov = document.getElementById('op-loading-overlay');
+  const tx = document.getElementById('op-loading-testo');
+  if(tx) tx.textContent = testo || 'Attendere...';
+  if(ov) ov.classList.add('show');
+}
+function nascondiCaricamento(){
+  const ov = document.getElementById('op-loading-overlay');
+  if(ov) ov.classList.remove('show');
+}
+
 async function caricaEventi(){
-  const rows = await apiFetch('/agenda');
-  eventi = rows.map(fromApiRecord);
-  render();
+  mostraCaricamento('📅 Caricamento agenda...');
+  try{
+    const rows = await apiFetch('/agenda');
+    eventi = rows.map(fromApiRecord);
+    render();
+  } finally {
+    nascondiCaricamento();
+  }
 }
 
 let aziendeList = [];
@@ -1873,6 +1914,7 @@ async function generaFattura(){
   const btn = document.getElementById('btn-genera');
   const testoOriginale = btn ? btn.textContent : '';
   if(btn){ btn.disabled = true; btn.textContent = 'Generazione in corso…'; }
+  mostraCaricamento('🧾 Generazione fattura in corso...');
 
   try{
     const risultato = await generaFatturaViaMotore(e.azienda, [{
@@ -1891,6 +1933,7 @@ async function generaFattura(){
     alert('Errore nella generazione della fattura: '+err.message);
   } finally {
     if(btn){ btn.disabled = false; btn.textContent = testoOriginale; }
+    nascondiCaricamento();
   }
 }
 
@@ -1904,6 +1947,7 @@ async function visualizzaFatturaSalvata(){
   // il browser la tratterebbe come popup non richiesto dall'utente e la
   // bloccherebbe. Aprendola subito e riempiendola dopo, resta legittima.
   const finestra = window.open('', '_blank');
+  mostraCaricamento('📄 Recupero PDF in corso...');
   try{
     // rif_nbr, non rec_nbr: stabile anche dopo un ripristino del database
     // (stesso principio già usato da gestione.html — mai un numero
@@ -1915,6 +1959,8 @@ async function visualizzaFatturaSalvata(){
   } catch(err){
     if(finestra) finestra.close();
     alert('Errore nel recupero del PDF: '+err.message);
+  } finally {
+    nascondiCaricamento();
   }
 }
 
@@ -1997,6 +2043,7 @@ async function visualizzaFatturaRecord(id){
   const e = eventi.find(x=>x.id===id);
   if(!e || !e.fatturaRifNbr) return;
   const finestra = window.open('', '_blank');
+  mostraCaricamento('📄 Recupero PDF in corso...');
   try{
     const r = await apiFetch('/fatture_pdf_url?rif_nbr='+encodeURIComponent(e.fatturaRifNbr));
     if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
@@ -2005,6 +2052,8 @@ async function visualizzaFatturaRecord(id){
   } catch(err){
     if(finestra) finestra.close();
     alert('Errore nel recupero del PDF: '+err.message);
+  } finally {
+    nascondiCaricamento();
   }
 }
 
@@ -2112,6 +2161,7 @@ async function confermaGeneraFatturaMultipla(){
 
   const btnGenera = document.getElementById('btn-genera-multi');
   if(btnGenera){ btnGenera.disabled = true; btnGenera.textContent = 'Generazione in corso…'; }
+  mostraCaricamento('🧾 Generazione fattura in corso...');
 
   try{
     // Un'unica fattura reale, con un record r01/r02/... per ogni
@@ -2141,6 +2191,7 @@ async function confermaGeneraFatturaMultipla(){
     alert('Errore nella generazione della fattura: '+err.message);
   } finally {
     if(btnGenera){ btnGenera.disabled = false; btnGenera.textContent = 'Genera fattura'; }
+    nascondiCaricamento();
   }
 }
 
@@ -2150,6 +2201,7 @@ async function visualizzaFatturaSalvataMulti(){
   if(!salvata.rifNbr){ if(salvata.url) window.open(salvata.url, '_blank'); return; }
 
   const finestra = window.open('', '_blank');
+  mostraCaricamento('📄 Recupero PDF in corso...');
   try{
     const r = await apiFetch('/fatture_pdf_url?rif_nbr='+encodeURIComponent(salvata.rifNbr));
     if(!r.ok || !r.signed_url) throw new Error(r.error || 'Link al PDF non disponibile.');
@@ -2158,6 +2210,8 @@ async function visualizzaFatturaSalvataMulti(){
   } catch(err){
     if(finestra) finestra.close();
     alert('Errore nel recupero del PDF: '+err.message);
+  } finally {
+    nascondiCaricamento();
   }
 }
 
@@ -2169,12 +2223,15 @@ async function eliminaEvento(){
   // Caso A — nessuna fattura collegata: comportamento invariato, elimina solo l'appuntamento.
   if(!e.fatturaRecNbr){
     if(!confirm('Eliminare questo appuntamento? L\'operazione non è recuperabile.')) return;
+    mostraCaricamento('🗑 Eliminazione in corso...');
     try{
       await apiFetch('/agenda?id='+eventoInModifica, { method:'DELETE' });
       chiudiModale();
       await caricaEventi();
     } catch(err){
       alert('Errore nella eliminazione: '+err.message);
+    } finally {
+      nascondiCaricamento();
     }
     return;
   }
@@ -2215,6 +2272,7 @@ async function eliminaFatturaConCollegati(fatturaRifNbr){
   );
   if(!secondoAvviso) return false;
 
+  mostraCaricamento('🗑 Eliminazione in corso...');
   try{
     // Cancella via rif_nbr, non rec_nbr: il server ritrova da solo l'ID
     // interno CORRETTO al momento della cancellazione, mai un numero che
@@ -2231,6 +2289,8 @@ async function eliminaFatturaConCollegati(fatturaRifNbr){
   } catch(err){
     alert('Errore durante l\'eliminazione: '+err.message+'\n\nVerifica manualmente su Supabase: alcune parti potrebbero essere state cancellate e altre no.');
     return false;
+  } finally {
+    nascondiCaricamento();
   }
 }
 
