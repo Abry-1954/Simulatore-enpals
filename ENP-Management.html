@@ -793,6 +793,11 @@ function toggleMain(){
 </script>
 </head>
 <body>
+<div id="op-loading-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,15,30,0.85);align-items:center;justify-content:center;flex-direction:column;">
+  <span class="login-spinner" style="width:40px;height:40px;border-width:4px;margin-right:0;margin-bottom:16px;"></span>
+  <div id="op-loading-testo" style="color:#e2e8f0;font-size:14px;font-weight:600;">Attendere...</div>
+  <div style="color:#94a3b8;font-size:12px;margin-top:6px;">Non chiudere questa pagina</div>
+</div>
 <div id="login-overlay">
   <div class="login-box">
     <div style="margin-bottom:0.5rem;">
@@ -2774,23 +2779,45 @@ async function resetFatture(){
   } catch(e){ alert('Errore: '+e.message); }
 }
 
+function mostraCaricamento(testo){
+  var ov = document.getElementById('op-loading-overlay');
+  var tx = document.getElementById('op-loading-testo');
+  if(tx) tx.textContent = testo || 'Attendere...';
+  if(ov) ov.style.display = 'flex';
+}
+function nascondiCaricamento(){
+  var ov = document.getElementById('op-loading-overlay');
+  if(ov) ov.style.display = 'none';
+}
+
 async function backupCompleto(){
-  if(!confirm('📦 Scaricare un backup completo?\n\nConterrà TUTTI i campi di ogni fattura (compresi dati fiscali) più i PDF veri, in un unico file ZIP scaricabile — utile per archiviare o ripristinare in caso di bisogno.')) return;
+  if(!confirm('📦 Scaricare un backup completo?\n\nConterrà TUTTI i campi di ogni fattura (compresi dati fiscali) più i PDF veri, in un unico file ZIP scaricabile — utile per archiviare o ripristinare in caso di bisogno.\n\nCon molte fatture può volerci qualche decina di secondi: attendi senza chiudere la pagina.')) return;
+  mostraCaricamento('📦 Preparazione backup in corso...');
   try{
     const r = await authFetch('/backup-completo');
-    if(!r.ok){
-      const err = await r.json().catch(()=>({error:'Errore sconosciuto'}));
-      alert('Errore: '+(err.error||'sconosciuto'));
+    const contentType = r.headers.get('Content-Type') || '';
+    if(!r.ok || !contentType.includes('application/zip')){
+      // Copre anche il caso in cui il service worker, non vedendo risposta
+      // in tempo, restituisce un finto "offline" marcato come riuscito —
+      // controllando il tipo di contenuto lo becchiamo comunque.
+      let msg = 'sconosciuto';
+      try{ const err = await r.json(); msg = err.error || msg; }catch(e){}
+      alert('❌ Backup non riuscito: '+msg+'\n\nSe il problema persiste, il server potrebbe metterci più tempo del previsto (molti PDF da scaricare) — riprova, o segnalalo.');
       return;
     }
     const blob = await r.blob();
+    if(blob.size < 100){
+      alert('❌ Il file ricevuto è sospettosamente piccolo ('+blob.size+' byte) — probabilmente un errore di rete a metà scaricamento. Riprova.');
+      return;
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const oggi = new Date().toISOString().slice(0,10);
     a.href = url; a.download = 'diva_backup_completo_'+oggi+'.zip'; a.click();
     URL.revokeObjectURL(url);
-    alert('✅ Backup completo scaricato.\n\nConserva questo file in un posto sicuro (es. Google Drive) prima di procedere con eventuali reset.');
+    alert('✅ Backup completo scaricato ('+(blob.size/1024/1024).toFixed(2)+' MB).\n\nConserva questo file in un posto sicuro (es. Google Drive) prima di procedere con eventuali reset.');
   }catch(e){ alert('Errore: '+e.message); }
+  finally{ nascondiCaricamento(); }
 }
 
 async function ripristinaBackup(input){
@@ -2799,6 +2826,7 @@ async function ripristinaBackup(input){
   if(!confirm('📥 Ripristinare da "'+file.name+'"?\n\nVerranno reinserite le fatture (i duplicati su stesso numero fattura saranno saltati) e ricaricati i PDF collegati.\n\nContinuare?')){
     input.value=''; return;
   }
+  mostraCaricamento('📥 Ripristino in corso...');
   try{
     const arrayBuffer = await file.arrayBuffer();
     const r = await authFetch('/ripristina-backup', {
@@ -2814,22 +2842,27 @@ async function ripristinaBackup(input){
       alert('Errore: '+(data.error||'sconosciuto'));
     }
   }catch(e){ input.value=''; alert('Errore: '+e.message); }
+  finally{ nascondiCaricamento(); }
 }
 
 async function pulisciPdfOrfani(){
+  mostraCaricamento('🧹 Controllo bucket in corso...');
   try{
     const r = await authFetch('/pdf-list');
     const data = await r.json();
+    nascondiCaricamento();
     if(!data.ok){ alert('Errore: '+(data.error||'sconosciuto')); return; }
     if(data.orfani === 0){ alert('✅ Nessun PDF orfano nel bucket — tutto in ordine, niente da pulire.'); return; }
     const nomiOrfani = data.file.filter(f=>!f.collegato).map(f=>f.nome).join('\n');
     const ok = confirm('🧹 Trovati '+data.orfani+' PDF orfani su '+data.totale+' totali nel bucket\n\n(file senza più una fattura collegata — probabilmente da vecchi reset)\n\n'+nomiOrfani+'\n\nCancellarli definitivamente?');
     if(!ok) return;
+    mostraCaricamento('🧹 Cancellazione in corso...');
     const r2 = await authFetch('/pdf-reset', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({modo:'orfani'})});
     const data2 = await r2.json();
     if(data2.ok){ alert('✅ Cancellati '+data2.cancellati+' PDF orfani.'); }
     else { alert('Errore: '+(data2.error||'sconosciuto')); }
   }catch(e){ alert('Errore: '+e.message); }
+  finally{ nascondiCaricamento(); }
 }
 
 
