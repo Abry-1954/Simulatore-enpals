@@ -932,6 +932,7 @@ function toggleMain(){
   <button onclick="avviaWalkthrough()" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Guida rapida">❓ Guida</button>
   <button id="btn-fullscreen" onclick="toggleFullscreen()" style="background:rgba(30,58,138,0.3);color:#93c5fd;border:1px solid rgba(37,99,235,0.4);border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;" title="Schermo intero (ESC per uscire)">⛶ Schermo intero</button>
   <input type="file" id="input-import-fatt" accept=".json" multiple style="display:none;" onchange="importaFatture(this)">
+  <input type="file" id="input-ripristina-zip" accept=".zip" style="display:none;" onchange="ripristinaBackup(this)">
   <div id="btn-admin-wrap" style="display:none;position:relative;">
     <span id="badge-richieste" style="display:none;">0</span>
     <span id="badge-aziende" style="display:none;">0</span>
@@ -941,6 +942,10 @@ function toggleMain(){
       <button onclick="apriPannelloRichiesteAziende();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#34d399;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🏢 Richieste Nuove Aziende</button>
       <button onclick="esportaFatture();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#34d399;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📤 Esporta Fatture su Json</button>
       <button onclick="document.getElementById('input-import-fatt').click();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#93c5fd;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📥 Importa Fatture da Json</button>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
+      <button onclick="backupCompleto();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#5eead4;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📦 Backup Completo (Fatture + PDF)</button>
+      <button onclick="document.getElementById('input-ripristina-zip').click();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#5eead4;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">📥 Ripristina da Backup (.zip)</button>
+      <button onclick="pulisciPdfOrfani();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#fcd34d;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🧹 Pulisci PDF Orfani nel Bucket</button>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
       <button onclick="resetFatture();toggleAdminMenu()" style="display:block;width:100%;text-align:left;background:none;color:#f87171;border:none;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;border-radius:4px;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">🗑 Delete & Reset DB Fatture</button>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;">
@@ -2767,6 +2772,64 @@ async function resetFatture(){
     if(data.ok){ alert('✅ Reset completato!\n\nTabella fatture svuotata e sequenza azzerata.'); }
     else { alert('Errore: '+(data.error||'sconosciuto')); }
   } catch(e){ alert('Errore: '+e.message); }
+}
+
+async function backupCompleto(){
+  if(!confirm('📦 Scaricare un backup completo?\n\nConterrà TUTTI i campi di ogni fattura (compresi dati fiscali) più i PDF veri, in un unico file ZIP scaricabile — utile per archiviare o ripristinare in caso di bisogno.')) return;
+  try{
+    const r = await authFetch('/backup-completo');
+    if(!r.ok){
+      const err = await r.json().catch(()=>({error:'Errore sconosciuto'}));
+      alert('Errore: '+(err.error||'sconosciuto'));
+      return;
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const oggi = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = 'diva_backup_completo_'+oggi+'.zip'; a.click();
+    URL.revokeObjectURL(url);
+    alert('✅ Backup completo scaricato.\n\nConserva questo file in un posto sicuro (es. Google Drive) prima di procedere con eventuali reset.');
+  }catch(e){ alert('Errore: '+e.message); }
+}
+
+async function ripristinaBackup(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(!confirm('📥 Ripristinare da "'+file.name+'"?\n\nVerranno reinserite le fatture (i duplicati su stesso numero fattura saranno saltati) e ricaricati i PDF collegati.\n\nContinuare?')){
+    input.value=''; return;
+  }
+  try{
+    const arrayBuffer = await file.arrayBuffer();
+    const r = await authFetch('/ripristina-backup', {
+      method:'POST',
+      headers:{'Content-Type':'application/zip'},
+      body: arrayBuffer
+    });
+    const data = await r.json();
+    input.value='';
+    if(data.ok){
+      alert('✅ Ripristino completato!\n\nFatture importate: '+data.importati+'\nSaltate (duplicati): '+data.saltati+'\nPDF ripristinati: '+data.pdf_ripristinati+(data.pdf_falliti?('\nPDF falliti: '+data.pdf_falliti):''));
+    } else {
+      alert('Errore: '+(data.error||'sconosciuto'));
+    }
+  }catch(e){ input.value=''; alert('Errore: '+e.message); }
+}
+
+async function pulisciPdfOrfani(){
+  try{
+    const r = await authFetch('/pdf-list');
+    const data = await r.json();
+    if(!data.ok){ alert('Errore: '+(data.error||'sconosciuto')); return; }
+    if(data.orfani === 0){ alert('✅ Nessun PDF orfano nel bucket — tutto in ordine, niente da pulire.'); return; }
+    const nomiOrfani = data.file.filter(f=>!f.collegato).map(f=>f.nome).join('\n');
+    const ok = confirm('🧹 Trovati '+data.orfani+' PDF orfani su '+data.totale+' totali nel bucket\n\n(file senza più una fattura collegata — probabilmente da vecchi reset)\n\n'+nomiOrfani+'\n\nCancellarli definitivamente?');
+    if(!ok) return;
+    const r2 = await authFetch('/pdf-reset', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({modo:'orfani'})});
+    const data2 = await r2.json();
+    if(data2.ok){ alert('✅ Cancellati '+data2.cancellati+' PDF orfani.'); }
+    else { alert('Errore: '+(data2.error||'sconosciuto')); }
+  }catch(e){ alert('Errore: '+e.message); }
 }
 
 
