@@ -247,7 +247,7 @@
     border-left: 1px solid #8fae93;
   }
   .month-day {
-    min-height: 68px;
+    min-height: 82px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -276,7 +276,9 @@
     margin-top: 4px;
     width: 100%;
     padding: 0 3px;
-    overflow: hidden;
+    max-height: 58px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .month-day-label {
     font-size: 8px;
@@ -284,21 +286,17 @@
     line-height: 1.25;
     padding: 1.5px 4px;
     border-radius: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
     text-align: center;
+    flex-shrink: 0;
   }
   .month-day-label-fatturato {
     background: #059669;
     color: #fff;
   }
-  .month-day-more {
-    font-size: 7.5px;
-    font-weight: 700;
-    color: #6b6678;
-    text-align: center;
-  }
+  .month-day-labels::-webkit-scrollbar { width: 3px; }
+  .month-day-labels::-webkit-scrollbar-thumb { background: #8fae93; border-radius: 2px; }
 
   /* ===== VISTA SETTIMANA / GIORNO — griglia oraria ===== */
   .time-view { display: flex; }
@@ -1442,13 +1440,11 @@ function renderMese(){
     const isOther = d.getMonth()!==mese;
     const isToday = iso===OGGI_ISO;
     const evsGiorno = eventiDelGiorno(iso);
-    const evs = evsGiorno.slice(0,2);
-    const altre = evsGiorno.length - evs.length;
     html += '<div class="month-day '+(isOther?'other-month ':'')+(isToday?'today':'')+'" onclick="apriSettimanaDaMese(\''+iso+'\')">';
     html += '<span class="month-day-num">'+d.getDate()+'</span>';
-    if(evs.length){
+    if(evsGiorno.length){
       html += '<div class="month-day-labels">';
-      evs.forEach(e=>{
+      evsGiorno.forEach(e=>{
         const nome = e.azienda || e.titolo;
         if(e.fatturaUrl){
           html += '<span class="month-day-label month-day-label-fatturato">✓ '+nome+'</span>';
@@ -1457,7 +1453,6 @@ function renderMese(){
           html += '<span class="month-day-label" style="background:'+c.bg+';color:'+c.text+'">'+nome+'</span>';
         }
       });
-      if(altre>0) html += '<span class="month-day-more">+'+altre+' altr'+(altre===1?'o':'i')+'</span>';
       html += '</div>';
     }
     html += '</div>';
