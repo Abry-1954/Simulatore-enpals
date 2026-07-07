@@ -303,7 +303,6 @@
   .time-col {
     width: 34px;
     flex-shrink: 0;
-    padding-top: 14px;
     border-right: 1px solid #8fae93;
   }
   .time-slot-label {
@@ -1641,6 +1640,14 @@ function renderTimeView(modo){
   html += '<button class="rotate-hint-btn" onclick="cambiaVista(\'day\')">Vai alla vista Giorno</button></div>';
 
   html += '<div class="time-view"><div class="time-col">';
+  // Spacer invisibile, stessa identica struttura dell'intestazione giorno
+  // (.day-head) che sta sopra la griglia — garantisce che le due colonne
+  // partano dalla stessa altezza esatta, senza dover indovinare un
+  // padding-top a mano (fragile: basta un cambio di font o testo
+  // nell'intestazione per farle scivolare fuori allineamento, come
+  // successo qui: 14px di padding-top non bastavano ai ~58px veri
+  // dell'intestazione, sfalsando le etichette di quasi un'ora intera).
+  html += '<div class="day-head" style="visibility:hidden;" aria-hidden="true"><div class="day-head-dow">LUN</div><div class="day-head-num">1</div></div>';
   for(let h=ORA_INIZIO; h<ORA_FINE; h++) html += '<div class="time-slot-label">'+String(h).padStart(2,'0')+':00</div>';
   html += '</div><div class="days-scroll"><div class="days-row">';
   giorni.forEach(d=>{
