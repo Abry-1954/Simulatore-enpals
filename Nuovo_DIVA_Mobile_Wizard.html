@@ -11,6 +11,11 @@
 <title>DIVA Mobile — Dubbing Invoice Wizard v1.3</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Firebase Cloud Messaging — notifiche push (promemoria mattutino appuntamenti).
+     Versione allineata a quella usata in service-worker.js: se si aggiorna qui,
+     aggiornare anche lì, altrimenti rischia di non funzionare in background. -->
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
 <style>
 /* ══════════════════════════════════════════
    VARIABILI & RESET
@@ -2604,6 +2609,9 @@ async function doLogin(){
     if(btnAssistente) btnAssistente.style.display = (loginData.ruolo==='admin') ? 'flex' : 'none';
     adattaPulsanteChatPerRuolo(loginData.ruolo);
     serverOk = true;
+    // Non blocca il login: parte in background, eventuali errori restano
+    // solo in console (vedi commento dentro la funzione).
+    registraNotifichePush();
   }catch(e){
     ovHide();
     if(errEl){ errEl.textContent='Errore: '+e.message; errEl.style.display='block'; }
@@ -3736,7 +3744,7 @@ if('serviceWorker' in navigator){
     })
     .then(function(){
       // 2) Re-registra il SW fresco (updateViaCache:none = non casha mai il file SW)
-      return navigator.serviceWorker.register('service-worker.js?v=4', {
+      return navigator.serviceWorker.register('service-worker.js?v=5', {
         updateViaCache: 'none'
       });
     })
@@ -3770,6 +3778,70 @@ if('serviceWorker' in navigator){
 
   });
 }
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// FIREBASE CLOUD MESSAGING — notifiche push (promemoria mattutino
+// appuntamenti di domani). Aggiunto il 10 luglio 2026.
+// I valori sotto NON sono segreti: Firebase li rende pubblici di
+// proposito, la sicurezza vera sta in altre regole lato Firebase.
+// ══════════════════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey: "AIzaSyCssZVGQk2EZup__CppWWKhQSv7ozOuwq8",
+  authDomain: "diva-ac68a.firebaseapp.com",
+  projectId: "diva-ac68a",
+  storageBucket: "diva-ac68a.firebasestorage.app",
+  messagingSenderId: "179797098713",
+  appId: "1:179797098713:web:61e4411e29c24700b6fec8"
+});
+const DIVA_VAPID_KEY = "BNcmHW0OVUFK0tv2ljO1iVM3VKo1D8ClfKKWZSKX3MI8Pe4jMCeJSn1hNU1EUyRctCmBUFl0MlutzvEKVTzeM7o";
+
+// Chiamata dopo il login (vedi eseguiLogin): chiede il permesso di
+// notifica SOLO se non è già stato negato in precedenza (per non
+// tornare a chiederlo ad ogni accesso se l'utente ha già detto no),
+// ottiene il token del dispositivo da Firebase e lo manda al server.
+// Non blocca mai il login: qualunque errore qui resta silenzioso
+// (solo un log in console), il resto dell'app funziona comunque.
+async function registraNotifichePush(){
+  try{
+    if(!('serviceWorker' in navigator) || !('Notification' in window)) return;
+    if(Notification.permission === 'denied') return;
+    let permesso = Notification.permission;
+    if(permesso !== 'granted'){
+      permesso = await Notification.requestPermission();
+    }
+    if(permesso !== 'granted') return;
+
+    const reg = await navigator.serviceWorker.ready;
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({
+      vapidKey: DIVA_VAPID_KEY,
+      serviceWorkerRegistration: reg
+    });
+    if(!token) return;
+
+    const SERVER = 'https://enpals-server.onrender.com';
+    await fetch(SERVER+'/push-token', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+window._authToken },
+      body: JSON.stringify({ token: token })
+    });
+    console.log('Notifiche push attivate.');
+  }catch(e){
+    console.log('Notifiche push non attivate:', e.message);
+  }
+}
+
+// Notifica ricevuta mentre l'app è già aperta in primo piano (quando è
+// chiusa/in background ci pensa invece service-worker.js). Per ora solo
+// un log — se in futuro si vuole un banner visibile anche ad app aperta,
+// il punto da modificare è questo.
+try{
+  firebase.messaging().onMessage(function(payload){
+    console.log('Notifica ricevuta ad app aperta:', payload);
+  });
+}catch(e){ /* browser senza supporto notifiche: nessun problema, si ignora */ }
 </script>
 
 <!-- ═══════════════════════════════════════════════════════ -->
