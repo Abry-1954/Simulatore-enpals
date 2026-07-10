@@ -1125,6 +1125,7 @@ async function eseguiLogin(){
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-root').style.display = '';
     await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault(), caricaFatture()]);
+    render(); // caricaEventi() ha già ridisegnato per conto suo, ma prima che caricaFatture() finisse: senza questo il Netto resta a zero finché non si genera una fattura
   } catch(e){
     err.textContent = e.message || 'Errore di accesso.';
     err.style.display = 'block';
@@ -2338,6 +2339,7 @@ async function avviaApp(){
     document.getElementById('app-root').style.display = '';
     try{
       await Promise.all([caricaEventi(), caricaAziende(), caricaRuoloDefault(), caricaFatture()]);
+      render(); // stesso motivo del flusso di login manuale: garantisce che il Netto sia corretto già al primo disegno
     } catch(e){
       // Token scaduto o non valido: non riproviamo un login qui dentro,
       // rimandiamo l'utente al wizard dove il login (con i suoi retry)
