@@ -1935,6 +1935,7 @@ async function generaFattura(){
     e.fatturaRifNbr = risultato.rif_nbr;
     alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+e.titolo+'" — azienda '+e.azienda+'.');
     document.getElementById('btn-visualizza').style.display = 'block';
+    await caricaFatture(); // rif_nbr appena creato: senza questo il Netto resta quello vecchio finché non si ricarica la pagina a mano
     render();
   } catch(err){
     alert('Errore nella generazione della fattura: '+err.message);
@@ -2193,6 +2194,7 @@ async function confermaGeneraFatturaMultipla(){
 
     alert('Fattura '+risultato.rif_nbr+' generata e salvata per "'+selezioneMulti.azienda+'" con '+records.length+' record:\n\n'+records.join('\n'));
     document.getElementById('btn-visualizza-multi').style.display = 'block';
+    await caricaFatture(); // stesso motivo del caso singolo: serve il rif_nbr fresco per il Netto
     render();
   } catch(err){
     alert('Errore nella generazione della fattura: '+err.message);
