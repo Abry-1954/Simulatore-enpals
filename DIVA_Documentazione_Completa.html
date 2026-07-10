@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIVA — Documentazione Completa del Sistema</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #1a1d27;
+  --bg3: #22263a;
+  --bg4: #2d3350;
+  --border: #2e3352;
+  --text: #e8eaf6;
+  --text2: #9ca3af;
+  --text3: #6b7280;
+  --blue: #3b82f6;
+  --blue2: #1d4ed8;
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+  --gold: #fcd34d;
+  --orange: #f97316;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+nav { position: sticky; top: 0; z-index: 100; background: rgba(15,17,23,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; gap: 2rem; height: 52px; overflow-x: auto; }
+.nav-logo { font-family: "DM Mono", monospace; font-size: 12px; color: var(--cyan); letter-spacing: .12em; font-weight: 600; white-space: nowrap; }
+.nav-links { display: flex; gap: 4px; overflow-x: auto; }
+.nav-link { font-size: 12px; color: var(--text2); padding: 4px 12px; border-radius: 4px; cursor: pointer; white-space: nowrap; text-decoration: none; transition: all .15s; }
+.nav-link:hover, .nav-link.active { background: var(--bg3); color: var(--text); }
+
+.hero { background: linear-gradient(135deg, #0f1117 0%, #1a1d27 50%, #0f1a2e 100%); padding: 3.5rem 2rem 2.5rem; text-align: center; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(59,130,246,0.08) 0%, transparent 70%); }
+.hero-tag { font-family: "DM Mono", monospace; font-size: 11px; color: var(--cyan); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1rem; }
+.hero-title { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 700; background: linear-gradient(135deg, #e8eaf6, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: .6rem; }
+.hero-sub { font-size: 15px; color: var(--text2); max-width: 640px; margin: 0 auto 1.5rem; }
+.hero-badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.badge { font-family: "DM Mono", monospace; font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid; }
+.badge-blue { color: var(--blue); border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.08); }
+.badge-green { color: var(--green); border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.08); }
+.badge-cyan { color: var(--cyan); border-color: rgba(6,182,212,.3); background: rgba(6,182,212,.08); }
+.badge-amber { color: var(--amber); border-color: rgba(245,158,11,.3); background: rgba(245,158,11,.08); }
+.badge-orange { color: var(--orange); border-color: rgba(249,115,22,.3); background: rgba(249,115,22,.08); }
+.badge-red { color: var(--red); border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.08); }
+
+.tabs-bar { display: flex; gap: 0; border-bottom: 2px solid var(--border); padding: 0 2rem; background: var(--bg); position: sticky; top: 52px; z-index: 99; overflow-x: auto; }
+.tab-btn { font-size: 13px; font-weight: 500; padding: 14px 18px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; background: none; border-top: none; border-left: none; border-right: none; white-space: nowrap; }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+.tab-btn:hover { color: var(--text); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.section { max-width: 980px; margin: 0 auto; padding: 3rem 2rem; }
+.section + .section { border-top: 1px solid var(--border); }
+.sec-label { font-family: "DM Mono", monospace; font-size: 10px; color: var(--cyan); letter-spacing: .15em; text-transform: uppercase; margin-bottom: .5rem; }
+.sec-title { font-size: 1.4rem; font-weight: 700; color: var(--text); margin-bottom: .5rem; }
+.sec-desc { color: var(--text2); margin-bottom: 2rem; max-width: 700px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; transition: border-color .2s; }
+.card:hover { border-color: var(--bg4); }
+.card-icon { font-size: 1.4rem; margin-bottom: .5rem; }
+.card-title { font-weight: 600; font-size: 14px; margin-bottom: .5rem; }
+.card-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.card-desc code { background: var(--bg3); color: var(--cyan); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+.card-tag { display: inline-block; margin-top: .75rem; font-family: "DM Mono", monospace; font-size: 10px; color: var(--cyan); background: rgba(6,182,212,.08); border: 1px solid rgba(6,182,212,.2); border-radius: 4px; padding: 2px 8px; }
+
+.tbl-wrap { overflow-x: auto; margin-bottom: 2rem; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--bg3); color: var(--text2); font-family: "DM Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; padding: 8px 12px; text-align: left; border-bottom: 2px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+td code { background: var(--bg3); color: var(--cyan); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+tr:hover td { background: rgba(255,255,255,.02); }
+.tag { font-family: "DM Mono", monospace; font-size: 10px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+.tag-green { color: var(--green); background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2); }
+.tag-red { color: var(--red); background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); }
+.tag-amber { color: var(--amber); background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2); }
+
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+.tl-item { position: relative; padding-bottom: 2.2rem; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-dot { position: absolute; left: -2rem; top: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--blue); background: var(--bg); }
+.tl-dot.now { border-color: var(--green); box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
+.tl-date { font-family: "DM Mono", monospace; font-size: 10px; color: var(--text3); letter-spacing: .08em; margin-bottom: 4px; }
+.tl-title { font-weight: 600; font-size: 14.5px; margin-bottom: 6px; color: var(--text); }
+.tl-desc { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+.tl-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.tl-list li { font-size: 13px; color: var(--text2); padding-left: 1rem; position: relative; }
+.tl-list li::before { content: '▸'; position: absolute; left: 0; color: var(--blue); font-size: 10px; top: 2px; }
+
+.arch { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.arch-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; min-width: 140px; flex: 1; }
+.arch-icon { font-size: 1.4rem; margin-bottom: .4rem; }
+.arch-name { font-weight: 600; font-size: 13px; }
+.arch-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.arch-arrow { color: var(--blue); font-size: 1.2rem; flex-shrink: 0; }
+
+.hbox { background: rgba(59,130,246,.06); border: 1px solid rgba(59,130,246,.2); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+.hbox-amber { background: rgba(245,158,11,.06); border-color: rgba(245,158,11,.2); }
+.hbox-green { background: rgba(16,185,129,.06); border-color: rgba(16,185,129,.2); }
+.hbox-red { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.2); }
+.hbox-orange { background: rgba(249,115,22,.06); border-color: rgba(249,115,22,.2); }
+.hbox-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.hbox p { font-size: 13px; color: var(--text2); }
+.hbox code { background: var(--bg3); color: var(--cyan); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+.priority-list { list-style: none; }
+.priority-list li { display: flex; align-items: flex-start; gap: .75rem; padding: .9rem 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text2); }
+.priority-list li:last-child { border-bottom: none; }
+.priority-icon { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+.priority-list b { color: var(--text); }
+
+.cost-row { display: flex; justify-content: space-between; align-items: center; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.cost-row:last-child { border-bottom: none; }
+.cost-label { color: var(--text2); }
+.cost-value { font-family: "DM Mono", monospace; font-weight: 700; color: var(--text); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+@media(max-width:640px){
+  .tabs-bar { overflow-x: auto; }
+  .arch { flex-direction: column; }
+  .arch-arrow { transform: rotate(90deg); }
+  .grid2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">DIVA / DOCS</div>
+  <div class="nav-links">
+    <a class="nav-link active" onclick="showTab('panoramica')">🎙 Panoramica</a>
+    <a class="nav-link" onclick="showTab('arch')">🏗 Architettura</a>
+    <a class="nav-link" onclick="showTab('sicurezza')">🔐 Sicurezza & Performance</a>
+    <a class="nav-link" onclick="showTab('storia')">📋 Storico Completo</a>
+    <a class="nav-link" onclick="showTab('dafare')">🚧 Da Fare</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">Sistema DIVA · Fatturazione + Calendario Doppiaggio</div>
+  <h1 class="hero-title">Documentazione Completa</h1>
+  <p class="hero-sub">Stato dell'arte consolidato: fatturazione ENPALS, assistente vocale, calendario appuntamenti — cosa esiste, come funziona, cosa manca</p>
+  <div class="hero-badges">
+    <span class="badge badge-blue">DIVA Mobile Wizard</span>
+    <span class="badge badge-cyan">gestione.html</span>
+    <span class="badge badge-green">server.py · Render</span>
+    <span class="badge badge-amber">Supabase · GitHub Pages</span>
+    <span class="badge badge-green">Calendario · Integrato</span>
+  </div>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="showTab('panoramica')">🎙 Panoramica</button>
+  <button class="tab-btn" onclick="showTab('arch')">🏗 Architettura</button>
+  <button class="tab-btn" onclick="showTab('sicurezza')">🔐 Sicurezza & Performance</button>
+  <button class="tab-btn" onclick="showTab('storia')">📋 Storico Completo</button>
+  <button class="tab-btn" onclick="showTab('dafare')">🚧 Da Fare</button>
+</div>
+
+<!-- ══════════════════════════ TAB PANORAMICA ══════════════════════════ -->
+<div id="tab-panoramica" class="tab-content active">
+
+  <div class="section">
+    <div class="sec-label">Cos'è il sistema</div>
+    <h2 class="sec-title">DIVA — Dubbing Invoice Verification Agenda</h2>
+    <p class="sec-desc">Sistema web per la gestione, emissione e archiviazione delle fatture nel mondo del doppiaggio italiano, con calcolo automatico dei contributi ENPALS. Nato come simulatore desktop, oggi è un'app mobile-first con assistente vocale integrato e un calendario appuntamenti collegato ai dati reali.</p>
+
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">🎯 Perché esiste</div>
+      <div class="card-desc">I professionisti del doppiaggio (doppiatori, direttori di doppiaggio, assistenti, dialoghisti/adattatori) devono emettere fatture con calcoli complessi: tariffe ENPALS diverse per ruolo e tipo di opera, contributi previdenziali, ritenute d'acconto, anzianità contributiva (SY/SC/SA). DIVA automatizza completamente questi calcoli, guida l'utente passo passo, archivia tutto su cloud e permette la consultazione storica da qualsiasi dispositivo.</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">👤 Utenti target</div>
+        <div class="card-desc">
+          <b>Doppiatori</b> — imponibile per righe e turni<br>
+          <b>Direttori di doppiaggio</b> — tariffa fissa per turno, nessuna riga<br>
+          <b>Assistenti al doppiaggio</b> — tariffa fissa per turno<br>
+          <b>Dialoghisti/Adattatori</b> — tariffa per tipo opera<br>
+          <b>Amministratori</b> — gestione completa del sistema
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ I due macro-moduli</div>
+        <div class="card-desc">
+          <b>1. Motore di fatturazione</b> — completo e in produzione: wizard mobile, calcolo automatico, PDF su cloud, assistente vocale per consultazione.<br><br>
+          <b>2. Calendario appuntamenti</b> — <span style="color:var(--green)">integrato e in produzione</span>, quattro viste (Giorno/Settimana/Mese/Anno), dati reali su Supabase, genera fatture vere riusando lo stesso motore di calcolo del wizard direttamente dagli appuntamenti pianificati.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Funzionalità</div>
+    <h2 class="sec-title">Cosa fa oggi, in sintesi</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">🧮</div>
+        <div class="card-title">Calcolo automatico ENPALS</div>
+        <div class="card-desc">Dal 2018 ad oggi, per tutti i ruoli e tipi opera, con aggiornamento automatico delle aliquote per anno dal database Variabili.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎙</div>
+        <div class="card-title">Assistente vocale (Sara)</div>
+        <div class="card-desc">Comandi a voce per contare, elencare e visualizzare le proprie fatture, con risposte parlate naturali via tts.ai + Claude Haiku.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📄</div>
+        <div class="card-title">Archiviazione PDF cloud</div>
+        <div class="card-desc">Ogni fattura genera un PDF salvato su Supabase Storage, accessibile via link temporaneo firmato (1 ora).</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎓</div>
+        <div class="card-title">Tour guidati con audio</div>
+        <div class="card-desc">32 step nel wizard principale, 10 step in gestione.html, ciascuno con MP3 pre-registrato che spiega la funzione.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <div class="card-title">Calendario integrato</div>
+        <div class="card-desc">Viste Giorno/Settimana/Mese/Anno (quest'ultima un cruscotto di sola lettura, 12 mesi con i totali, click su un mese per aprirlo — le azioni di fatturazione restano solo nella vista Mese, unico contesto con significato fiscale corretto), dati reali su Supabase, genera fatture vere da uno o più appuntamenti riusando lo stesso motore di calcolo del wizard, cancellazione a cascata, banner promemoria.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔀</div>
+        <div class="card-title">Multi-dispositivo, multi-ruolo</div>
+        <div class="card-desc">Accesso da PC, tablet, mobile. Ruoli admin/utente con visibilità e permessi differenziati su ogni funzione.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ TAB ARCHITETTURA ══════════════════════════ -->
+<div id="tab-arch" class="tab-content">
+
+  <div class="section">
+    <div class="sec-label">Sistema</div>
+    <h2 class="sec-title">Architettura a livelli</h2>
+    <p class="sec-desc">Tre livelli principali, più i servizi esterni. Il frontend non parla mai direttamente col database: tutto passa dal server Render, tranne due eccezioni documentate qui sotto.</p>
+
+    <div class="arch">
+      <div class="arch-box">
+        <div class="arch-icon">🌐</div>
+        <div class="arch-name">GitHub Pages</div>
+        <div class="arch-sub">Frontend statico<br>€0/mese</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box">
+        <div class="arch-icon">⚙</div>
+        <div class="arch-name">Render.com</div>
+        <div class="arch-sub">server.py Python<br>Piano gratuito</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box">
+        <div class="arch-icon">🗄</div>
+        <div class="arch-name">Supabase</div>
+        <div class="arch-sub">PostgreSQL + Storage<br>Piano gratuito</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box">
+        <div class="arch-icon">🔌</div>
+        <div class="arch-name">Servizi esterni</div>
+        <div class="arch-sub">tts.ai · Claude API<br>html2pdf.js · EmailJS</div>
+      </div>
+    </div>
+
+    <div class="hbox hbox-green" style="margin-top:1.5rem;">
+      <div class="hbox-title">🔧 Cosa sa fare oggi il server — aggiornato al 7 luglio</div>
+      <p style="margin-bottom:.75rem;"><b>Fatture</b>: emissione, calcolo automatico contributi ENPALS, generazione PDF, consultazione filtrata per nominativo/anno/mese/azienda/pagamento, eliminazione con pulizia PDF collegato.</p>
+      <p style="margin-bottom:.75rem;"><b>📦 Backup e ripristino — costruito e testato con un giro reale il 7 luglio</b>: <code>GET /backup-completo</code> scarica uno ZIP con <i>tutti</i> i campi di ogni fattura (dati fiscali compresi: codice fiscale, IBAN, P.IVA, l'intero dettaglio contributivo — prima ne mancavano 25 su 40, corretto oggi) più i PDF veri; <code>POST /ripristina-backup</code> rimette tutto a posto in un solo passaggio, PDF ricollegati automaticamente senza alcuno step manuale; <code>GET /pdf-list</code> e <code>POST /pdf-reset</code> individuano e ripuliscono i PDF orfani rimasti nel bucket da vecchi reset. Verificato con 82 fatture vere: backup → cancellazione → ripristino, zero perdite, tutto ricontrollato a campione.</p>
+      <p style="margin-bottom:.75rem;"><b>Agenda/calendario</b>: appuntamenti CRUD completi, generazione fattura direttamente da uno o più appuntamenti selezionati, e Sara può prendere un appuntamento anche a voce (data/ora, con controllo automatico delle sovrapposizioni e conferma vocale a due livelli). <b>Collegamento agenda↔fattura reso stabile il 7 luglio</b>: basato su <code>rif_nbr</code> (mai cambia), non più sul numero interno del database (che cambia a ogni ripristino) — chiude anche un rischio reale scoperto nello stesso giorno: con il vecchio sistema, cancellare una fattura da un appuntamento con il collegamento non aggiornato avrebbe potuto cancellare per sbaglio quella di un'altra persona.</p>
+      <p style="margin-bottom:.75rem;"><b>Chat interna</b>: conversazioni dirette admin↔utenti, l'admin può anche avviarne una nuova con qualunque utente registrato, non solo rispondere a chi scrive per primo.</p>
+      <p style="margin:0;"><b>Amministrazione</b>: gestione utenti/permessi, richieste nuovi utenti/aziende con approvazione, log completo di ogni azione, doppia modalità Locale/Online, ping automatico che mantiene sveglio Supabase anche in settimane di totale inattività.</p>
+    </div>
+
+    <div class="hbox hbox-green" style="margin-top:1.5rem;">
+      <div class="hbox-title">✅ Nessuna eccezione residua al passaggio da Render (corretto il 3-5 luglio)</div>
+      <p>Fino al 3 luglio esistevano due eccezioni: <b>ENP-Management</b> e <b>modulo_iscrizione.html</b> parlavano direttamente con Supabase usando la chiave anon, bypassando il server. Entrambe sono state chiuse (vedi Fase 17 nello storico): <code>modulo_iscrizione.html</code> è risultato orfano ed è stato eliminato, <code>ENP-Management.html</code> ora passa dal server tramite endpoint dedicati per ogni operazione, chiave anon compresa quella per <code>/log-reset</code> (verificato di nuovo il 5 luglio, vedi Fase 19). <b>Tutto il sistema — dati sensibili delle fatture inclusi — passa oggi sempre dal server con la chiave service_role, mai esposta al frontend.</b></p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">File del sistema</div>
+    <h2 class="sec-title">Cosa fa ciascun file</h2>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">📱 DIVA_Mobile_Wizard.html</div>
+        <div class="card-desc">GitHub Pages · v1.3 · Il cuore del sistema. Wizard mobile-first: login, compilazione fattura a step (fino a 31 record), calcoli ENPALS automatici, generazione PDF + upload Storage, tour guidato 32 step, assistente vocale, modulo iscrizione embedded. Il database persone <b>non è più embedded</b> — legge da Supabase, alimentato tramite upload manuale del supervisor da ENP-Management (vedi tab "Storico").</div>
+        <span class="card-tag">Frontend principale</span>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 gestione.html</div>
+        <div class="card-desc">GitHub Pages · Consultazione fatture per l'utente. Filtri (anno, azienda, pagamento), espansione dettaglio r01-r31, apertura/download PDF via signed URL, campo data pagamento, eliminazione con conferma, tour guidato 10 step. Supporta modalità <code>?modo=fatture&utente=XXX</code> per accesso limitato "Le mie fatture".</div>
+        <span class="card-tag">Consultazione</span>
+      </div>
+      <div class="card">
+        <div class="card-title">🛠 ENP-Management.html</div>
+        <div class="card-desc">GitHub Pages · Solo admin. Gestione completa Persone (810+ nominativi), Aziende, Variabili tariffarie, tutte le fatture di tutti gli utenti, log di sistema, richieste nuovi utenti/aziende, toggle Locale/Online. Backup completo (fatture + PDF veri in uno ZIP) con ripristino integrale, pulizia PDF orfani nel bucket — testato con un giro reale il 7 luglio.</div>
+        <span class="card-tag">Admin</span>
+      </div>
+      <div class="card">
+        <div class="card-title">📝 modulo_iscrizione.html</div>
+        <div class="card-desc">GitHub Pages · Pubblico. Form di richiesta accesso: dati anagrafici, professionali, IBAN, P.IVA, privacy/GDPR. Scrive direttamente su Supabase (tabella <code>richieste_utenti</code>), in attesa di approvazione admin.</div>
+        <span class="card-tag">Pubblico</span>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ server.py</div>
+        <div class="card-desc">Render.com · Server HTTP Python (no framework, <code>ThreadingHTTPServer</code>). Autenticazione, CRUD su tutte le tabelle, salvataggio fatture, upload/cancellazione PDF, generazione signed URL, log operazioni, endpoint <code>/tts</code> e <code>/ai</code> per l'assistente vocale.</div>
+        <span class="card-tag">Backend</span>
+      </div>
+      <div class="card">
+        <div class="card-title">👥 users.json</div>
+        <div class="card-desc">Render.com · privato. Credenziali utenti (username, password hashata, ruolo). Sincronizzato automaticamente su GitHub. Unico file di autenticazione che non passa per Supabase.</div>
+        <span class="card-tag">Config</span>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 calendario_diva_prototipo.html</div>
+        <div class="card-desc">GitHub Pages · Raggiungibile dal pulsante home "Il mio calendario" (token già valido, nessun secondo login). Quattro viste (Giorno/Settimana/Mese/Anno), dati reali su Supabase — nessuna chiamata diretta, passa sempre dal server come tutto il resto. Genera fatture vere riusando il motore di calcolo del wizard via iframe nascosto.</div>
+        <span class="card-tag">Integrato</span>
+      </div>
+      <div class="card">
+        <div class="card-title">🛡️ assistente_admin.html</div>
+        <div class="card-desc">GitHub Pages · Solo admin, pensata per l'uso da telefono (a differenza di ENP-Management, che resta lo strumento da scrivania). Interruttori "Funzionalità visibili agli utenti" e notifiche email, richieste aziende/utenti in sola consultazione, sezione chat con gli utenti (5 luglio), accesso rapido a ENP-Management senza doppio login.</div>
+        <span class="card-tag">Admin</span>
+      </div>
+      <div class="card">
+        <div class="card-title">💬 chat_diva.html</div>
+        <div class="card-desc">GitHub Pages · Lato utente normale. Conversazione diretta con l'admin, stesso stile/login-da-URL del calendario, aggiornamento automatico ogni 8 secondi. Aggiunta il 5 luglio.</div>
+        <span class="card-tag">Frontend secondario</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Database</div>
+    <h2 class="sec-title">Tabelle Supabase</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Tabella</th><th>Contenuto</th><th>Colonne / note chiave</th></tr></thead>
+        <tbody>
+          <tr><td><b>fatture</b></td><td>Testata + fino a 31 record di dettaglio (r01→r31)</td><td><code>rec_nbr</code> (PK), <code>rif_nbr</code>, nominativo, dati fiscali, per record: titolo/attività/tipo_lav/data_lav/giorni/turni/righe/imponibile/iva/ritenuta/netto/enpals, <code>pdf_url</code>, <code>data_pagamento</code>, <code>tot_giorni/tot_turni/tot_righe</code></td></tr>
+          <tr><td><b>persone</b></td><td>Anagrafica lavoratori (810+ nominativi)</td><td>codfisc, via, comune, iban, matricola_enpals — alimentata da persone.db locale tramite upload manuale del supervisor, non più embedded nel wizard</td></tr>
+          <tr><td><b>aziende</b></td><td>Anagrafica committenti</td><td>ragione sociale, indirizzo, codice fiscale, codice destinatario SDI</td></tr>
+          <tr><td><b>variabili</b></td><td>Tariffe e parametri per anno</td><td>tariffe, INPS, fasce, massimali, tasse</td></tr>
+          <tr><td><b>sessioni</b></td><td>Token di autenticazione persistenti</td><td>token (PK), user, ruolo, expires — sopravvivono ai riavvii di Render</td></tr>
+          <tr><td><b>log</b></td><td>Log azioni utenti</td><td>id, ts, utente, ruolo, azione, dettaglio, ip — sync automatico su GitHub ogni 30s</td></tr>
+          <tr><td><b>richieste_utenti / richieste_aziende</b></td><td>Richieste in attesa di approvazione admin</td><td>compilate da modulo_iscrizione.html</td></tr>
+          <tr><td><b>rubrica</b></td><td>Contatti personali, un utente vede solo i propri</td><td>nominativo (proprietario), cognome, nome, pseudonimo, telefono1/2, email, note</td></tr>
+          <tr><td><b>messaggi</b></td><td>Chat 1-a-1 tra ogni utente e l'admin (5 luglio)</td><td>nominativo (proprietario conversazione), autore_ruolo, autore_nome, testo, ts, letto_admin, letto_utente</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 Supabase Storage — bucket fatture-pdf</div>
+      <div class="card-desc">
+        Visibilità: <b>privato</b>, nessun accesso pubblico diretto · Solo <code>application/pdf</code> · Accesso solo tramite server Render con service key · URL: signed URL temporanei (scadenza 1 ora) · Naming: <code>rif_nbr</code> sanitizzato (es. <code>ROSSI_MARIO_Film_2026_ID-053.pdf</code>) · Capacità: 1 GB gratuito ≈ 7.000-20.000 fatture.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Processi</div>
+    <h2 class="sec-title">Flussi principali</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Processo</th><th>Passi</th></tr></thead>
+        <tbody>
+          <tr><td><b>Login</b></td><td>Credenziali → POST /login su Render → verifica users.json → token in sessionStorage → accesso home</td></tr>
+          <tr><td><b>Emissione fattura</b></td><td>Login → azienda → compilazione record → calcolo automatico → preview → salva su DB → genera PDF (html2pdf.js) → upload Supabase → stampa opzionale</td></tr>
+          <tr><td><b>Consultazione</b></td><td>Apri gestione.html → login automatico via token URL → GET /fatture filtrato → tabella → click riga per dettaglio → apri/scarica PDF</td></tr>
+          <tr><td><b>Apertura PDF</b></td><td>Click 📄/⬇ → GET /fatture_pdf_url → server legge pdf_url dal DB → genera signed URL (1h) → apertura/download</td></tr>
+          <tr><td><b>Eliminazione fattura</b></td><td>Click 🗑 → conferma → DELETE /fatture → server cancella PDF da Storage → cancella record dal DB</td></tr>
+          <tr><td><b>Registrazione utente</b></td><td>Compila modulo (pubblico, senza login) → POST /richieste_utenti → admin vede la lista in ENP-Management → approva o rifiuta → se approvato, credenziali create in users.json</td></tr>
+          <tr><td><b>Richiesta nuova azienda</b></td><td>Utente compila dal wizard (autenticato) → POST /richieste_aziende → admin vede la lista → approva (operazione atomica lato server) o rifiuta → se approvata, azienda comparsa in anagrafica</td></tr>
+          <tr><td><b>Fattura da calendario/agenda</b></td><td>Calendario → seleziona uno o più appuntamenti → scegli azienda → genera → un iframe nascosto avvia il wizard con lo stesso token (nessun secondo login) → <code>generaFatturaAutomaticaDaAgenda()</code> riusa il motore di calcolo/PDF/salvataggio del wizard → nota di pagamento scritta su <code>fatture.note_pagamento</code></td></tr>
+          <tr><td><b>Invio messaggio in chat</b></td><td>Utente scrive da <code>chat_diva.html</code> (o admin da <code>assistente_admin.html</code>) → POST /messaggi → l'altra parte lo vede al polling successivo (max 8s) → segnato come letto quando la pagina è aperta davvero</td></tr>
+          <tr><td><b>Nuova conversazione (solo admin)</b></td><td>"Avvia nuova conversazione" → GET /users → elenco alfabetico di tutti gli utenti registrati → scelta di uno → thread vuoto pronto per il primo messaggio → da quel momento visibile anche nell'elenco conversazioni normale</td></tr>
+          <tr><td><b>Svuota conversazione</b></td><td>Apri conversazione → 🗑 nell'header → conferma esplicita col nome della persona → DELETE /messaggi?nominativo=… → cancellati solo i messaggi di quella conversazione, mai le altre</td></tr>
+          <tr><td><b>Salto-login ENP-Management</b></td><td>Da Assistente Admin, "Apri ENP-Management" → token/nominativo/ruolo passati nella URL → ENP-Management li legge → salta la schermata di login → avvia subito <code>fetchDB()</code></td></tr>
+          <tr><td><b>Azzeramento log</b></td><td>Da ENP-Management → conferma → POST /log-reset (autenticato, solo admin) → svuota la tabella <code>log</code> su Supabase con chiave service_role → svuota anche la copia in RAM e il backup su GitHub</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Formule</div>
+    <h2 class="sec-title">Calcolo ENPALS 2026</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Ruolo</th><th>Formula imponibile</th></tr></thead>
+        <tbody>
+          <tr><td>Doppiatore</td><td>turni × 84€ + righe × tariffa_opera (bonus progressivi per volume righe)</td></tr>
+          <tr><td>Direttore</td><td>turni × 230€ — nessuna riga, uguale per tutti i tipi opera (Doc No Sync: 230€ dal 2026, era 165€)</td></tr>
+          <tr><td>Assistente</td><td>turni × 130€ — nessuna riga</td></tr>
+          <tr><td>Adattatore/Dialoghista</td><td>turni × tariffa_opera — nessuna riga</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Voce contributiva</th><th>Lavoratore</th><th>Datore</th></tr></thead>
+        <tbody>
+          <tr><td>ENPALS base</td><td>9.19%</td><td>23.81%</td></tr>
+          <tr><td>Indennità malattia (art.128)</td><td>—</td><td>2.50%</td></tr>
+          <tr><td>Contributo aggiuntivo</td><td>1.00%</td><td>—</td></tr>
+          <tr><td>Fondo previdenza complementare</td><td>0.50%</td><td>0.50%</td></tr>
+          <tr><td>IVA</td><td colspan="2">4% (forfettari) / 22% (ordinari)</td></tr>
+          <tr><td>Ritenuta d'acconto</td><td colspan="2">20%, varia per anzianità e regime</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sec-desc" style="margin-top:.5rem;">Le aliquote variano per anno (dal 2018), anzianità (SY = versamenti prima del 31/12/1995, SC = dopo), tipo contratto e fasce di reddito. Caricate dinamicamente dal database Variabili ad ogni utilizzo.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ TAB SICUREZZA & PERFORMANCE ══════════════════════════ -->
+<div id="tab-sicurezza" class="tab-content">
+
+  <div class="section">
+    <div class="sec-label">Sicurezza</div>
+    <h2 class="sec-title">Come sono protetti i dati</h2>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">🔑 Chiavi API — mai nel frontend</div>
+        <div class="card-desc">La <b>service key Supabase</b>, la <b>API key tts.ai</b> e la <b>API key Claude/Anthropic</b> vivono esclusivamente nelle variabili d'ambiente di Render. Il server fa da intermediario per ogni chiamata — mai una chiave sensibile nell'HTML pubblico su GitHub.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔐 Autenticazione</div>
+        <div class="card-desc">Login → token Bearer, salvato in sessionStorage, passato in ogni chiamata successiva. Dal Giugno 2026 i token sopravvivono ai riavvii di Render grazie alla tabella <code>sessioni</code> su Supabase (prima si perdevano ad ogni riavvio del server gratuito).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📄 PDF privati con URL firmati</div>
+        <div class="card-desc">Bucket Storage <b>privato</b>. Ogni apertura/download genera un signed URL univoco valido <b>1 ora</b>. Dopo la scadenza il link non funziona più — i PDF non sono mai accessibili liberamente su internet.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">👥 Isolamento per utente</div>
+        <div class="card-desc">Ogni chiamata alle fatture è filtrata per nominativo dell'utente loggato — un utente normale vede solo le proprie fatture, mai quelle di altri. Solo l'admin vede tutto.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔒 Campo nominativo bloccato</div>
+        <div class="card-desc">Gli utenti normali non possono modificare il proprio nominativo nel wizard — previene la possibilità di compilare fatture a nome di qualcun altro.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Log completo e verificabile</div>
+        <div class="card-desc">Ogni azione (login, CRUD, stampe, salvataggi) è loggata con utente, ruolo, dettaglio, IP. Sincronizzato automaticamente su GitHub ogni 30 secondi come backup indipendente da Supabase.</div>
+      </div>
+    </div>
+
+    <div class="hbox hbox-amber">
+      <div class="hbox-title">⚠ Punto debole noto — RLS non ancora attivate formalmente (ma la strada è sgombra)</div>
+      <p>Le tabelle Supabase non hanno ancora <b>Row Level Security</b> attivata a livello di database: l'accesso con anon key non è bloccato lì, solo a livello applicativo (dal server). <b>Il lavoro preparatorio è però concluso</b>: nessun file parla più direttamente con Supabase usando la chiave anon (chiuso il 3 luglio, verificato di nuovo il 5, vedi Fase 17 e 19 nello storico) — tutto passa dal server con la chiave service_role, che l'attivazione delle RLS non toccherebbe in alcun modo. L'attivazione vera e propria (comandi SQL su ogni tabella) resta da fare — vedi tab "Da fare" — ma è oggi un'operazione sicura e senza rischio di rompere nulla.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Affidabilità</div>
+    <h2 class="sec-title">Robustezza del sistema</h2>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">🧵 ThreadingHTTPServer</div>
+        <div class="card-desc">Il server Python era single-threaded: una chiamata lunga (es. polling tts.ai di 25 secondi) bloccava tutte le altre richieste, login incluso, causando errori 502. Risolto passando a <code>ThreadingHTTPServer</code> con <code>daemon_threads=True</code>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💾 Doppia modalità DB</div>
+        <div class="card-desc">Online (Supabase, default) / Locale (SQLite fallback) tramite variabile <code>USE_SUPABASE</code>. Garantisce continuità anche in caso di problemi con Supabase, per uso admin offline.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔄 Sessioni persistenti</div>
+        <div class="card-desc">Prima di Giugno 2026, un riavvio di Render (piano gratuito, sonno dopo inattività) disconnetteva tutti gli utenti. Ora il token viene recuperato automaticamente dalla tabella <code>sessioni</code> su Supabase.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🛡 Filtro colonne salvataggio</div>
+        <div class="card-desc">Fix di Giugno 2026: <code>_COLS_SB</code> filtra le colonne effettivamente esistenti su Supabase prima dell'invio, evitando errori di scrittura quando lo schema locale e remoto divergono temporaneamente.</div>
+      </div>
+    </div>
+
+    <div class="hbox hbox-amber">
+      <div class="hbox-title">⚠ Rischi noti da monitorare</div>
+      <p><b>Render free tier</b> — si addormenta dopo 15 min di inattività, cold start ~30 secondi al primo accesso; 750 ore/mese totali, 500 minuti di build al mese (esauriti una volta il 30 giugno 2026 per troppi push di test ravvicinati, sbloccati automaticamente il 1° luglio col reset mensile).<br><br>
+      <b>Supabase free tier</b> — il progetto va in pausa dopo 7 giorni di inattività. <b>Risolto il 6 luglio</b>: ping immediato all'avvio del server (non più affidato solo a un timer interno, che non arrivava mai in fondo se il server si riaddormentava prima) + GitHub Action schedulato due volte a settimana che sveglia il server anche in caso di totale inattività — vedi Fase 20 nello storico.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Performance</div>
+    <h2 class="sec-title">Ottimizzazioni fatte</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Intervento</th><th>Effetto misurato</th></tr></thead>
+        <tbody>
+          <tr><td>Audio aziende da Base64 embedded a file MP3 su GitHub</td><td>File HTML da 1.688 KB a 236 KB (<b>-86%</b>)</td></tr>
+          <tr><td>ThreadingHTTPServer al posto di HTTPServer</td><td>Eliminati i timeout/502 durante chiamate lunghe concorrenti</td></tr>
+          <tr><td>Voce Kokoro (tts.ai) invece di voce clonata</td><td>0 crediti consumati per generazione vs 4x costo di alternative con cloning</td></tr>
+          <tr><td>Claude Haiku invece di modelli più grandi per l'assistente</td><td>~$0.01-0.02 a domanda dopo ottimizzazione prompt</td></tr>
+          <tr><td>Comando "Elenca" vocale: dati essenziali soltanto</td><td>Evita timeout di sintesi vocale su risposte lunghe</td></tr>
+          <tr><td>Signed URL generati solo per fatture nel pannello, non per tutte</td><td>Evita timeout su ricerche con molti risultati</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Costi</div>
+    <h2 class="sec-title">Infrastruttura e limiti</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">💰 Costi attuali</div>
+        <div class="card-desc">
+          <div class="cost-row"><span class="cost-label">GitHub Pages</span><span class="cost-value">€0/mese</span></div>
+          <div class="cost-row"><span class="cost-label">Render.com</span><span class="cost-value">€0/mese</span></div>
+          <div class="cost-row"><span class="cost-label">Supabase</span><span class="cost-value">€0/mese</span></div>
+          <div class="cost-row"><span class="cost-label">CDN (html2pdf, Font Awesome)</span><span class="cost-value">€0/mese</span></div>
+          <div class="cost-row" style="border-top:2px solid var(--border);margin-top:.4rem;padding-top:.6rem;"><span class="cost-label"><b>Totale</b></span><span class="cost-value" style="color:var(--green);">€0/mese</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">💰 Costo variabile — assistente AI</div>
+        <div class="card-desc">
+          <div class="cost-row"><span class="cost-label">10 utenti × 10 fatture/mese</span><span class="cost-value">~$0.60/mese</span></div>
+          <div class="cost-row"><span class="cost-label">50 utenti × 10 fatture/mese</span><span class="cost-value">~$3.00/mese</span></div>
+          <div class="cost-row"><span class="cost-label">100 utenti × 10 fatture/mese</span><span class="cost-value">~$6.00/mese</span></div>
+          <div class="cost-row"><span class="cost-label">500 utenti × 10 fatture/mese</span><span class="cost-value">~$30.00/mese</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:1rem;">
+      <table>
+        <thead><tr><th>Servizio</th><th>Limite gratuito</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Render.com</td><td>750 ore/mese · sonno dopo 15 min · 500 min build/mese</td><td>Cold start ~30s al primo accesso</td></tr>
+          <tr><td>Supabase DB</td><td>500 MB, ~2 GB banda</td><td>Sufficiente per migliaia di fatture</td></tr>
+          <tr><td>Supabase Storage</td><td>1 GB spazio, ~2 GB banda</td><td>≈7.000-20.000 PDF prima del limite</td></tr>
+          <tr><td>GitHub Pages</td><td>1 GB repo, 100 GB banda/mese</td><td>Attenzione a file HTML con audio embedded</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ TAB STORICO ══════════════════════════ -->
+<div id="tab-storia" class="tab-content">
+
+  <div class="section">
+    <div class="sec-label">Evoluzione del sistema</div>
+    <h2 class="sec-title">Storico completo delle implementazioni</h2>
+    <p class="sec-desc">In ordine cronologico, dalla nascita del progetto (Maggio 2026) ad oggi (10 Luglio 2026). Include il motore di fatturazione, l'assistente vocale e il calendario appuntamenti.</p>
+
+    <div class="timeline">
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 1 · Maggio 2026 — Nascita del progetto</div>
+        <div class="tl-title">Simulatore base ENPALS</div>
+        <ul class="tl-list">
+          <li>Simulatore fatturazione con 31 righe di lavoro, calcolo automatico imponibile per tipo lavoro</li>
+          <li>Calcolo contributi ENPALS per anzianità (SY/SC/SA), IVA, ritenuta d'acconto, netto</li>
+          <li>Calcolo versamenti INPS (IVS 9.19%, Addizionale 1%, Consolidamento 0.25%, Indennità dis. 0.5%)</li>
+          <li>Checkbox per attivare/disattivare righe, ricalcolo in tempo reale, modalità PROFORMA</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 2 · Maggio 2026 — Stampa fattura</div>
+        <div class="tl-title">Generazione PDF e template</div>
+        <ul class="tl-list">
+          <li>Fattura HTML dinamica con solo le righe attive, intestazione precompilata</li>
+          <li>Tabella lavorazioni, riepilogo importi, note legali automatiche (5 varianti)</li>
+          <li>Stampa/salva PDF nativo del browser (poi sostituito, vedi Fase 6 fatturazione)</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 3 · Maggio 2026 — Server e database locale</div>
+        <div class="tl-title">server.py e SQLite</div>
+        <ul class="tl-list">
+          <li>Server Python (HTTPServer) porta 8765, database SQLite (persone.db 810+ nominativi, aziende.db, variabili.db, fatture.db, log.db)</li>
+          <li>API REST (/persone, /aziende, /variabili, /fatture, /login, /log), autenticazione token 10h</li>
+          <li>Fetch e precompilazione automatica dati lavoratore</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 4 · Maggio 2026 — Autenticazione e ruoli</div>
+        <div class="tl-title">Sistema utenti multi-ruolo</div>
+        <ul class="tl-list">
+          <li>Ruoli admin/utente, login token Bearer + fallback header</li>
+          <li>Pannello gestione utenti (admin), blocco campo nominativo per utenti normali</li>
+          <li>Visibilità pulsanti differenziata per ruolo, lista admin master</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 5 · Maggio 2026 — Log e sync GitHub</div>
+        <div class="tl-title">Sistema di logging persistente</div>
+        <ul class="tl-list">
+          <li>Log completo azioni, sincronizzazione automatica su GitHub ogni 30 secondi</li>
+          <li><code>log_online.json</code> e <code>users.json</code> nel repository enpals-server</li>
+          <li>Pannello log per admin con filtri e ordinamento</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 6 · Maggio 2026 — Deploy cloud</div>
+        <div class="tl-title">Migrazione su Render + Supabase</div>
+        <ul class="tl-list">
+          <li>Deploy server.py su Render, doppia modalità SQLite/Supabase via <code>USE_SUPABASE</code></li>
+          <li>Migrazione database (script migra.py), tabelle Supabase create, helper sb_get/sb_post/sb_patch/sb_delete</li>
+          <li>CORS per GitHub Pages, deploy Spettacolo.html e gestione.html su GitHub Pages, toggle Locale/Online</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 7 · Maggio-Giugno 2026 — ENP-Management</div>
+        <div class="tl-title">gestione.html evoluzione completa</div>
+        <ul class="tl-list">
+          <li>Interfaccia tabellare CRUD per Persone, Aziende, Variabili, Fatture</li>
+          <li>Esporta su Supabase (☁) per singole persone, filtro anno fatture, modifica data pagamento inline</li>
+          <li>Ricerca nominativo, gestione variabili per anno</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 8 · Giugno 2026 — Fix critici</div>
+        <div class="tl-title">Sessioni persistenti + Vista espansa fatture</div>
+        <ul class="tl-list">
+          <li>Sessioni persistenti su Supabase: i token sopravvivono ai riavvii di Render</li>
+          <li>Fix filtro colonne <code>_COLS_SB</code> in salva_fattura, colonne tot_giorni/tot_turni/tot_righe</li>
+          <li>Vista espansa fatture in gestione.html: click riga → dettaglio r01-r31, colonne GG/Turni/Righe</li>
+          <li>Accesso utenti a "Le mie fatture" via <code>?modo=fatture&utente=XXX</code>, funzione eliminaFattura con warning</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 9 · Giugno 2026 — Mobile first</div>
+        <div class="tl-title">Nascita DIVA Mobile Wizard</div>
+        <ul class="tl-list">
+          <li>Completa riscrittura frontend per mobile: wizard a step, logo SVG animato, design DM Sans/DM Mono</li>
+          <li>Abbandono layout a tabella desktop, palette blu/oro</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 10 · Giugno 2026 — UX guidata</div>
+        <div class="tl-title">Tour guidato 32 step con audio</div>
+        <ul class="tl-list">
+          <li>Tour spotlight 32 passi su tutte le schermate del wizard, 32 MP3 pre-registrati (inizialmente in Base64)</li>
+          <li>Amplificazione audio 3x via Web Audio API GainNode, lettura automatica continua</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 11 · Giugno 2026 — Archiviazione PDF cloud</div>
+        <div class="tl-title">PDF su Supabase Storage</div>
+        <ul class="tl-list">
+          <li>Sostituzione window.print() con html2pdf.js, upload su bucket privato Supabase Storage</li>
+          <li>Salvataggio pdf_url nel record, pulsanti Apri/Scarica con signed URL, cancellazione automatica alla eliminazione fattura</li>
+          <li>Versioning wizard (v1.0→v1.3), tour "Le Mie Fatture" 10 step con 10 MP3</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 12 · Giugno 2026 — Ottimizzazione audio</div>
+        <div class="tl-title">Audio aziende da Base64 a file MP3</div>
+        <ul class="tl-list">
+          <li>Rimosso blocco Base64 inline (1.446 KB), sostituito con caricamento da file <code>audio/az_XX.mp3</code></li>
+          <li>File HTML da 1.688 KB a 236 KB (-86%), ZIP con 30 MP3 estratti e rinominati</li>
+          <li>EmailJS per notifica email automatica su login e salvataggio fattura</li>
+          <li>MP3 pre-registrati sostituiscono la sintesi vocale del browser per i messaggi fissi</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 13 · Giugno 2026 — Assistente vocale</div>
+        <div class="tl-title">Sara (tts.ai) e comandi vocali</div>
+        <ul class="tl-list">
+          <li>Voce italiana <code>if_sara</code>, modello Kokoro (gratuito, 0 crediti), chiamata API spostata dal client al server (endpoint <code>/tts</code>) per nascondere la chiave</li>
+          <li>Microfono fisso, attivazione a click (abbandonata la wake word vocale continua per problemi di affidabilità)</li>
+          <li>Endpoint <code>/ai</code> su Claude Haiku: pre-elabora ogni fattura in oggetto pulito, riepilogo per azienda</li>
+          <li>Comandi CONTA / ELENCA / VISUALIZZA con ricerca aziende robusta (prima parola del nome, gestione numeri separati da spazio)</li>
+          <li>Filtro mese/anno su tutta la frase (niente break prematuro), regole di lettura naturale per Sara (euro per esteso, date italiane, markdown rimosso)</li>
+          <li>API key tts.ai e Claude spostate su variabili d'ambiente Render</li>
+          <li>Fix <code>ThreadingHTTPServer</code>: il server single-threaded causava errori 502 durante il polling tts.ai</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 14 · 30 Giugno 2026 — Calendario, primo prototipo</div>
+        <div class="tl-title">calendario_diva_prototipo.html — nascita</div>
+        <ul class="tl-list">
+          <li>Prototipo standalone, dati in memoria (array <code>eventi</code>), nessuna dipendenza da Supabase</li>
+          <li>Tre viste (Giorno/Settimana/Mese) con navigazione e pulsante "Oggi"</li>
+          <li>Creazione/modifica appuntamenti via popup: titolo, azienda, data, orario, colore, note</li>
+          <li>Eventi posizionati proporzionalmente alla durata, 5 colori disponibili</li>
+          <li>Layout responsive telefono/tablet, griglia oraria e mensile visibili, navigazione drill-down (mese→settimana→giorno)</li>
+          <li>Riepilogo mensile per azienda: turni, ore totali, più tre card di totale generale</li>
+          <li>Design: arancione come colore distintivo, sfondo verde <code>#b9d9bd</code> per il corpo calendario</li>
+          <li><b>Idea definita ma non ancora implementata:</b> generazione fattura da appuntamento, riusando dati già noti (ruolo/anzianità da Persone, azienda/data/turni dall'appuntamento) e il motore di calcolo fatture esistente</li>
+          <li>Discrepanza scoperta: il dizionario vocale <code>TIPO_OPERA_WORDS</code> non distingue "Doc No Sync" da "Doc" (6 valori riconosciuti contro i 7 reali) — bug noto, non ancora corretto</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--green);"></div>
+        <div class="tl-date">Data esatta non specificata · Comunicato il 1° Luglio 2026</div>
+        <div class="tl-title">Persone — eliminato l'array embedded nel wizard</div>
+        <ul class="tl-list">
+          <li>L'array JS con l'anagrafica persone, prima incorporato direttamente nell'HTML del wizard, è stato rimosso</li>
+          <li><b>Meccanismo attuale:</b> persone.db (locale) viene caricato su Supabase tramite una funzione di upload dedicata, azionata manualmente dal supervisor/admin da ENP-Management — non è un <code>GET /persone</code> automatico ad ogni login come originariamente ipotizzato, ma un trasferimento locale→cloud su comando</li>
+          <li><b>Differenza rispetto all'obiettivo iniziale:</b> le modifiche fatte in ENP-Management non sono "immediatamente" visibili in automatico — lo diventano dopo che il supervisor esegue l'upload. Resta comunque un netto miglioramento: non serve più toccare e ripubblicare il file HTML del wizard su GitHub per ogni variazione anagrafica</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 15 · 1° Luglio 2026 — Calendario evoluto per la fatturazione</div>
+        <div class="tl-title">Dal prototipo statico al flusso completo genera→salva→consulta</div>
+        <div class="tl-desc">Sessione di sviluppo intensiva sul prototipo calendario, in preparazione al collegamento reale con Supabase.</div>
+        <ul class="tl-list">
+          <li><b>Campi Tipo opera, Turni, Righe</b> aggiunti al singolo appuntamento — tutti facoltativi alla pianificazione, ma diventati campi obbligatori espliciti al momento della fatturazione (turni non ha più un default automatico a 1, per evitare di sottostimare doppie sessioni/gettoni nello stesso giorno)</li>
+          <li><b>Vista mensile</b>: nomi azienda al posto dei pallini colorati nei giorni, riepilogo per azienda con turni/ore/righe, card di totale generale (turni, giorni impegnati, ore, righe)</li>
+          <li><b>Generazione fattura da singolo appuntamento</b>: pulsante nel dettaglio, attivo solo a dati completi</li>
+          <li><b>Generazione fattura da più appuntamenti</b> della stessa azienda/mese: pannello di selezione con checkbox, record incompleti completabili e <b>salvabili sul posto</b> con un pulsante "Salva" dedicato (indipendente dalla generazione), record pronti pre-selezionati, riepilogo con totali (record, turni, righe)</li>
+          <li><b>Pulsante "Visualizza fattura salvata"</b>: compare dopo la generazione, apre il PDF in una nuova scheda (nel prototipo un PDF placeholder pubblico, in attesa del collegamento reale a Supabase Storage)</li>
+          <li><b>Evidenziazione verde</b>: il nome azienda nella vista mensile diventa verde con spunta ✓ per ogni giorno effettivamente incluso in una fattura già generata</li>
+          <li><b>Dettaglio tipo opera/turni/righe</b> visibile anche nei blocchi evento delle viste Giorno/Settimana (quando c'è spazio), con avviso "dati fattura incompleti" per i record non ancora pronti</li>
+          <li><b>Banner promemoria settimanale</b>, sempre visibile sopra il calendario: segue la settimana attualmente visualizzata (non sempre quella di oggi), mostra un'unica frase con totale appuntamenti e quanti incompleti per la fatturazione, cliccabile per saltare alla settimana</li>
+          <li>Discusse e non ancora implementate: notifica email settimanale automatica (richiede cron su Render) e notifiche push native (richiede service worker + tabella sottoscrizioni + job schedulato) — vedi tab "Da fare"</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 16 · 2 Luglio 2026 — Emissione fattura reale dall'agenda, end-to-end</div>
+        <div class="tl-title">Il calendario emette fatture vere, non più placeholder — motore riusato, non duplicato</div>
+        <div class="tl-desc">Giornata di sviluppo lunga e molto testata: dalla tabella <code>agenda</code> su Supabase fino a un ciclo completo genera→calcola→PDF→salva→consulta→elimina, verificato passo per passo con dati reali prima di ogni avanzamento.</div>
+        <ul class="tl-list">
+          <li><b>Tabella <code>agenda</code> su Supabase</b> e quattro endpoint CRUD sul server Python (<code>GET/POST/PATCH/DELETE /agenda</code>), con ownership per ruolo utente — completa il "Da fare" di ieri</li>
+          <li><b>Quarto pulsante home nel wizard</b> ("Il mio calendario"), apre il calendario con token già valido, nessun secondo login</li>
+          <li><b>Motore fattura automatico — architettura chiave:</b> il calendario carica il wizard in un <b>iframe nascosto</b> (bootstrap silenzioso, riusa il token già ottenuto dal login vero — non un secondo login) e chiama direttamente <code>generaFatturaAutomaticaDaAgenda(payload)</code>, una nuova funzione che orchestra l'intero motore di calcolo/PDF/salvataggio <b>già esistente e testato</b> del wizard. Zero duplicazione della logica fiscale ENPALS</li>
+          <li><b>Bug scoperto e corretto — PDF vuoto:</b> l'iframe nascosto con <code>display:none</code> impediva al browser di disegnare il contenuto, e html2canvas (dentro html2pdf.js) cattura uno "screenshot" del DOM — su elementi mai renderizzati cattura solo bianco. Fix: iframe spostato fuori schermo (<code>position:fixed; left:-10000px</code>) invece che nascosto, così viene disegnato per davvero</li>
+          <li><b>Bug scoperto e corretto — regime fiscale non riconosciuto:</b> il mapping tra <code>persone.tipo_fatt</code> e i 5 regimi (FO/FA/RS/RA/RGA) copriva solo la forma abbreviata del modulo di iscrizione, non quella estesa (es. "FATTURA REGIME AGEVOLATO") realmente presente nei dati — riscritto per leggere direttamente da <code>TIPI_FATT</code> (label + labelLong), stesso principio applicato all'attività professionale</li>
+          <li><b>Link PDF che non scade:</b> il link salvato su <code>agenda.fattura_pdf_url</code> è un signed URL Supabase con scadenza 1 ora — "Visualizza fattura salvata" ora rigenera un link fresco ad ogni apertura tramite <code>fattura_rec_nbr</code> (permanente), invece di riaprire quello salvato al momento della generazione. Popup aperto <i>prima</i> di attendere la rete, per evitare il blocco popup del browser</li>
+          <li><b>Stato "già fatturato" riconosciuto ovunque</b> (prima mancava nel pannello mensile e nel dettaglio singolo, che continuavano a proporre "Genera fattura" anche su record già emessi): riquadro blu dedicato, azioni Visualizza/Elimina, pulsante di generazione che sparisce</li>
+          <li><b>Blocco modifica su appuntamento già fatturato:</b> tutti i campi disabilitati con messaggio esplicito, più controllo di sicurezza lato codice in <code>salvaEvento()</code> indipendente dall'interfaccia — evita che una fattura già salvata su Supabase possa divergere dai dati dell'appuntamento</li>
+          <li><b>Cancellazione a cascata</b> (<code>eliminaFatturaConCollegati</code>, funzione condivisa tra dettaglio singolo e pannello mensile): elimina fattura + PDF dal bucket + <i>tutti</i> gli appuntamenti collegati allo stesso <code>fattura_rec_nbr</code> (non solo quello da cui si parte, importante per le fatture multi-record), con doppio avviso esplicito prima di procedere</li>
+          <li><b>Pulsante mensile per azienda</b>, contestuale allo stato: verde "Genera fattura" se resta lavoro da fare, blu "Visualizza/Elimina" quando tutti gli appuntamenti di quell'azienda/mese sono già fatturati — titolo del pannello coerente</li>
+          <li><b>Banner promemoria riformulato:</b> da "N incompleti" a "✓ X Emessa Fattura, ⚠ Y Fattura non Emessa" — più utile perché i dati incompleti vengono comunque bloccati al momento di fatturare, non serve segnalarli in anticipo</li>
+          <li><b>Bug corretto — totale turni nel riepilogo mensile:</b> contava il numero di appuntamenti invece di sommare il valore vero del campo turni (2 appuntamenti da 1+2 turni mostravano "2" invece di "3")</li>
+          <li><b>Nota di pagamento dall'agenda:</b> la nota del primo record (in ordine di data) di ogni fattura generata dal calendario viene scritta su <code>fatture.note_pagamento</code> — campo dedicato al testo libero, distinto da <code>data_pagamento</code> (vera data), reso finalmente visibile e modificabile separatamente in tutte e tre le interfacce (wizard/agenda, gestione.html, ENP-Management, quest'ultima prima priva di qualsiasi UI su questo fronte)</li>
+          <li><b>Episodio di verifica importante:</b> a metà sessione, controllo esplicito di allineamento tra le versioni caricate dall'utente e quelle su cui si stava lavorando — nessuna divergenza reale trovata, solo file non ancora ripubblicati; buona pratica confermata utile prima di modifiche delicate</li>
+          <li>Rimandati con calma a domani/dopo: pulsante "Esci" esplicito nell'header calendario, file duplicato da rimuovere su GitHub, eventuale percorso di "modifica ad hoc" per appuntamenti già fatturati, RLS su tutte le tabelle</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 17 · 3 Luglio 2026 — RLS Fase 1, privacy, automazione totale dell'emissione manuale</div>
+        <div class="tl-title">Giornata su tre fronti diversi: sicurezza, conformità, esperienza d'uso</div>
+        <div class="tl-desc">Sessione lunga e con più imprevisti gestiti in corsa (privacy da correggere due volte, file orfano scoperto ed eliminato, ripetuti fallimenti di pubblicazione di GitHub Pages) — ma tutti e tre i fronti chiusi con successo, verificati passo per passo prima di considerarli conclusi.</div>
+        <ul class="tl-list">
+          <li><b>RLS — Fase 1 completata:</b> individuato l'unico vero rischio prima di poter attivare le Row Level Security — tre file (<code>modulo_iscrizione.html</code>, il wizard, <code>ENP-Management.html</code>) scrivevano/leggevano <b>direttamente</b> Supabase con la chiave anon, bypassando il server. Costruiti 5 nuovi endpoint su <code>server.py</code> (<code>POST /richieste_utenti</code> pubblico, <code>POST /richieste_aziende</code> autenticato, <code>GET/POST approva/POST rifiuta /richieste_aziende</code> solo admin — l'approvazione è <b>atomica</b> lato server, non più due chiamate separate dal browser) e aggiornati i tre file per usarli. Testato l'intero ciclo end-to-end: registrazione pubblica → richiesta azienda → lista/approvazione/rifiuto in ENP-Management → azienda comparsa davvero in anagrafica</li>
+          <li><b>Retry calibrati per caso, non un pattern unico copiato ovunque:</b> registrazione pubblica e "il mio profilo" — 5 tentativi come il login (rischio reale di Render addormentato dopo minuti di inattività, nonostante la sessione duri 10 ore); richiesta azienda — reso <i>davvero</i> non bloccante (prima "diceva" di non bloccare il flusso ma lo faceva comunque) con un solo retry leggero, per non far aspettare fino a un minuto solo per cambiare schermata</li>
+          <li><b>Privacy — informativa GDPR riscritta</b> secondo l'art. 13 (base giuridica corretta per finalità, diritto di opposizione e di reclamo al Garante prima assenti, obbligatorietà del conferimento, disclosure sui fornitori cloud) con segnaposto <code>[YYYY]</code> per i dati reali del titolare, ancora mancanti. <b>Scoperta importante:</b> esistevano <i>due copie</i> del modulo di iscrizione — una esterna mai linkata da nessuna parte (corretta per prima, poi eliminata perché orfana) e una interna al wizard (quella davvero raggiunta dagli utenti, scoperta solo dopo un test reale e corretta a sua volta)</li>
+          <li><b>Emissione manuale — bug scoperto e corretto:</b> il messaggio "PDF salvato ✅" compariva <i>sempre</i>, indipendentemente dal reale esito dell'upload su Supabase — un upload fallito passava inosservato. Ora il messaggio riflette l'esito vero</li>
+          <li><b>Emissione manuale — resa automatica come agenda/vocale:</b> tolta la finestra di stampa del browser, e poi (su richiesta esplicita, dopo un primo giro di test) tolto anche il dialog di scelta "Stampa / Salva PDF" — ora si salva, si genera il PDF e si carica su Supabase in un unico passaggio automatico di circa un secondo, senza nessuna conferma intermedia</li>
+          <li><b>Eliminata la schermata "Quanti Records ha questa fattura?"</b> dal flusso manuale (non toccata la modalità vocale, che determina già il numero dal parlato): si parte diretti dal tipo fattura, un record alla volta, "vuoi aggiungerne un altro?" dopo ognuno, fino al limite tecnico di 31 senza tetto dichiarato in anticipo. Rinumerati e corretti i passi successivi (era già incoerente prima: "di 5" e "di 6" mescolati)</li>
+          <li><b>Calendario — "Netto fatturato"</b> aggiunto al riepilogo mensile, sia per azienda che nel totale generale — con un limite spiegato chiaramente: a differenza di turni/giorni/ore/righe (sommabili sempre, dati semplici dell'appuntamento), il netto esiste solo <i>dopo</i> l'emissione (richiede il motore fiscale completo, che vive solo nel wizard) — quindi copre solo ciò che è già fatturato, non una proiezione. Ogni fattura contata una sola volta anche se copre più appuntamenti, per non falsare la somma</li>
+          <li><b>Gestione.html — riga di totali</b> (Giorni, Turni, Righe, Imponibile, Netto) sotto i filtri di "Le mie fatture", ricalcolata automaticamente ad ogni cambio filtro con lo stesso meccanismo già usato dal contatore "N / M fatture"</li>
+          <li><b>Nota giornata GitHub Pages:</b> ripetuti fallimenti di pubblicazione nel pomeriggio, verificato che non dipendesse dal nostro codice (build sempre riuscita, solo il passaggio finale di distribuzione falliva) né da un incidente ufficiale in corso — probabile coda residua da un incidente reale avvenuto il giorno prima. Risolto con pazienza (attese più lunghe tra un tentativo e l'altro, invece di ripetere subito) — il sito non è mai stato irraggiungibile nel frattempo, ha sempre servito l'ultima versione pubblicata con successo</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 18 · 4 Luglio 2026 — Nuova sezione: Rubrica contatti</div>
+        <div class="tl-title">Prima funzionalità completamente nuova (non fatture/agenda) integrata nel wizard</div>
+        <div class="tl-desc">Richiesta e realizzata in un'unica sessione, stessa struttura già rodata di <code>agenda</code> — dimostra che il pattern ormai consolidato (tabella Supabase + endpoint CRUD + pagina dedicata in stile DIVA + pulsante home nel wizard) si riusa velocemente per funzionalità nuove, non solo per quelle fiscali.</div>
+        <ul class="tl-list">
+          <li><b>Nuova tabella <code>rubrica</code></b> su Supabase e 4 endpoint CRUD su <code>server.py</code>, ricalcati esattamente sulla struttura di <code>agenda</code> — con una differenza di design intenzionale: qui il filtro per proprietario si applica <b>sempre, anche per l'admin</b> (è una rubrica personale, non uno strumento gestionale come l'agenda, dove invece l'admin può vedere tutto)</li>
+          <li><b>Campi:</b> cognome (obbligatorio), nome, pseudonimo, due numeri di telefono, email, note</li>
+          <li><b>Nuova pagina <code>rubrica_diva.html</code></b>, stesso stile identico al calendario (login, header, colori viola/arancione) — elenco raggruppato per lettera iniziale, ricerca in tempo reale, tocco su un numero di telefono o sull'email apre direttamente l'app di chiamata/posta del telefono (limite tecnico onesto: nessuna pagina web può inviare un'email in autonomia, il tasto "Invia" resta sempre dell'utente)</li>
+          <li><b>Nuovo pulsante "La mia rubrica"</b> in home del wizard, colore verde acqua per distinguerlo dagli altri quattro</li>
+          <li>Verifica di completezza cumulativa eseguita su tutti e tre i file coinvolti prima della consegna, come ormai prassi consolidata dopo l'episodio dei giorni scorsi sui file disallineati</li>
+          <li><b>Ritocchi dopo i primi test:</b> icona persona generica 👤 al posto delle iniziali colorate; indirizzo email mostrato per esteso nel pulsante invece della scritta generica "Email"; <b>importazione da vCard (.vcf)</b> — formato universale esportabile da Gmail, Outlook/Hotmail, Thunderbird e dalla rubrica di qualsiasi telefono, scelta apposta al posto di un'integrazione diretta con le API di quei servizi (avrebbe richiesto chiavi sviluppatore e schermate di autorizzazione, un progetto a sé) — con anteprima selezionabile contatto per contatto prima di importare, non tutto-o-niente; layout dei contatti (telefono/telefono/email) corretto da un flex che si "stirava" in modo incoerente a una griglia a tre colonne fisse, ognuna sempre nella stessa posizione indipendentemente da quanti campi sono compilati</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 19 · 5 Luglio 2026 — Salto-login ENP-Management, blocco RLS chiuso, prima chat admin↔utenti</div>
+        <div class="tl-title">Tre fronti diversi, il più grande dei quali (la chat) costruito e testato end-to-end in giornata</div>
+        <div class="tl-desc">Giornata iniziata da una richiesta piccola (evitare un secondo login) e finita con una funzionalità nuova completa a tre livelli — server, admin, utente — verificata con account reali prima di chiudere.</div>
+        <ul class="tl-list">
+          <li><b>ENP-Management — salto del login quando si arriva già autenticati:</b> da <code>assistente_admin.html</code>, il pulsante "Apri ENP-Management" ora passa token/nominativo/ruolo nell'URL (stesso meccanismo già usato da calendario/rubrica/assistente); <code>ENP-Management.html</code> li legge, salta la schermata di login e avvia subito <code>fetchDB()</code> — prima richiedeva sempre username e password anche a sessione già valida. Il token viene ripulito dalla barra indirizzi subito dopo l'uso.</li>
+          <li><b>Blocco RLS Fase 2 — verificato già risolto, non serviva nuovo lavoro:</b> il punto scoperto il 3 luglio (<code>azzeraLog()</code> in ENP-Management che chiamava Supabase direttamente con la chiave anon) risultava già sistemato in una sessione precedente non documentata qui — oggi passa dal server (<code>POST /log-reset</code>, autenticato, chiave service_role). <b>Resta un piccolo debito tecnico, non urgente:</b> esiste ancora un secondo endpoint <code>/log-reset</code> duplicato e mai usato dentro <code>do_GET</code> (invece che <code>do_POST</code>) in <code>server.py</code> — stessa chiave sicura, solo codice morto da ripulire quando capita. <b>La Fase 2 delle RLS può ora considerarsi sbloccata.</b></li>
+          <li><b>Nuova funzionalità: chat diretta admin ↔ utenti</b> — architettura decisa il 4 luglio, costruita e testata oggi: <ul class="tl-list">
+              <li>Nuova tabella <code>messaggi</code> su Supabase: una riga per messaggio, tutti quelli con lo stesso <code>nominativo</code> formano la conversazione di quell'utente (chi scrive, utente o admin, è indicato da <code>autore_ruolo</code>); due colonne booleane separate <code>letto_admin</code>/<code>letto_utente</code> per i badge non letti su entrambi i lati senza tabelle aggiuntive</li>
+              <li>Tre nuovi endpoint su <code>server.py</code>: <code>GET /messaggi</code> (un utente vede sempre e solo la propria conversazione; l'admin vede l'elenco aggregato di tutte, o una specifica passando <code>?nominativo=</code>), <code>POST /messaggi</code>, <code>PATCH /messaggi/segna_letti</code> — nessun WebSocket, stesso principio già scelto per agenda/rubrica: la pagina controlla ogni pochi secondi (polling) se ci sono novità, per non scontrarsi con Render che si addormenta</li>
+              <li>Nuova pagina <code>chat_diva.html</code> lato utente, stesso stile/login-da-URL del calendario: bolle di conversazione, invio con invio o tasto dedicato, aggiornamento automatico ogni 8 secondi</li>
+              <li>Nuovo pulsante home nel wizard "Chatta con l'Admin" (colore rosa, primo non ancora usato) con badge rosso dei messaggi non letti, aggiornato ogni 30 secondi; controllabile dall'admin come gli altri pulsanti tramite l'interruttore "Funzionalità visibili"</li>
+              <li>Sezione "Chat con gli utenti" dentro <code>assistente_admin.html</code>, prima solo un placeholder "in arrivo": ora lista vera delle conversazioni con badge non letti, tocco per aprire un thread a schermo intero e rispondere da lì</li>
+              <li><b>Bug scoperto e corretto durante i test:</b> se l'account admin apriva la pagina "Chatta con l'Admin" (per provarla) senza specificare esplicitamente il proprio nominativo, il server — riconoscendolo come admin — restituiva l'elenco aggregato di tutte le conversazioni invece del proprio thread, mostrato a schermo come un messaggio con data e testo non validi. Corretto facendo sì che <code>chat_diva.html</code> dichiari sempre esplicitamente il nominativo della conversazione che vuole, indipendentemente dal ruolo reale di chi è loggato</li>
+              <li><b>Verificato con dati reali</b>: messaggio inviato da un utente normale, ricevuto e risposto dall'admin dal pannello, risposta arrivata all'utente entro il tempo di polling — ciclo completo confermato funzionante</li>
+            </ul>
+          </li>
+          <li><b>Scoperto in corsa, non richiedeva lavoro:</b> la PWA di base (manifest + service worker) risultava già presente nel wizard, e la gestione delle notifiche email di login/fattura era già stata spostata su due interruttori diretti nel pannello Assistente Admin invece che dentro ENP-Management come inizialmente ipotizzato il 4 luglio — entrambe le voci vengono quindi tolte dal "Da fare" (vedi tab dedicata)</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 20 · 6 Luglio 2026 — Chat rifinita, ping Supabase reso davvero affidabile, precisato il quadro sicurezza</div>
+        <div class="tl-title">Giornata di rifinitura: nessuna nuova architettura, ma diversi dettagli che rendevano la chat meno usabile e il "tieni sveglio il server" meno affidabile di quanto sembrasse sulla carta</div>
+        <ul class="tl-list">
+          <li><b>Chat — leggibilità e riconoscibilità:</b> sfondo della conversazione portato da quasi-bianco a verde chiaro; bolle ora colorate <b>su entrambi i lati</b> (prima solo un lato aveva lo sfondo colorato, l'altro era bianco) — arancione per l'utente, azzurro per l'admin, stessa coppia di colori riusata identica in <code>chat_diva.html</code> e <code>assistente_admin.html</code>; testo nelle bolle ingrandito e appesantito per leggibilità.</li>
+          <li><b>Svuota chat — una conversazione alla volta, mai tutte insieme:</b> nuovo endpoint <code>DELETE /messaggi</code> su <code>server.py</code>, richiede sempre un nominativo esplicito (nessun modo di svuotarle tutte in un colpo, per scelta) — solo admin, con conferma esplicita lato interfaccia prima di cancellare.</li>
+          <li><b>Badge doppio in home per l'admin</b> — non solo il badge dentro la sezione chat di Assistente Admin, ma anche uno sul pulsante "Assistente Admin" stesso in home, con il totale di non letti su tutte le conversazioni insieme. <b>Bug reale trovato e corretto</b>: per un account solo-admin (come ABRAMELEK, senza scheda anagrafica persona/doppiatore collegata), il codice di login finiva in un ramo che saltava del tutto l'avvio del controllo badge — non un problema di conteggio, il badge semplicemente non partiva mai. Aggiunta anche una versione testuale più visibile del badge (il sottotitolo del pulsante cambia in rosso, es. "🔴 Richiesta chat in corso (2)"), oltre al pallino numerico.</li>
+          <li><b>Solo per l'admin — "Avvia nuova conversazione" al posto di "Chatta con l'Admin":</b> il pulsante rosa in home diventa, solo per l'admin, un modo per scegliere <i>qualunque</i> utente registrato (elenco alfabetico da <code>GET /users</code>, endpoint già esistente, nessuna modifica al server servita) e iniziare a scrivergli per primo — prima la chat esisteva solo se l'utente scriveva per primo. Confermato non fattibile (e non richiesto) l'invio a più utenti insieme: ogni conversazione resta legata a una sola persona, per scelta dell'architettura a tabella.</li>
+          <li><b>Ping Supabase — reso davvero affidabile, non solo "in teoria":</b> il thread che pingava Supabase ogni 5 giorni esisteva già in <code>server.py</code>, ma il suo `time.sleep()` ripartiva da zero ogni volta che Render riavviava il processo (cosa che succede a ogni risveglio, non essendo una vera pausa/ripresa) — in un uso non quotidiano il server si riaddormenta sempre ben prima che il timer arrivi in fondo, quindi di fatto non scattava mai. Corretto aggiungendo un <b>ping immediato all'avvio del processo</b>, indipendente dal timer. Aggiunto anche un <b>GitHub Action schedulato</b> (<code>.github/workflows/keep-alive.yml</code> nel repo <code>enpals-server</code>, lunedì e giovedì alle 06:00 UTC, chiama <code>/ping</code>) che garantisce un risveglio regolare anche in settimane di totale inattività — testato manualmente con successo.</li>
+          <li><b>Corrette due imprecisioni trovate nel documento stesso</b> (segnalate dall'utente, verificate nel codice prima di correggere): la sezione "Le due eccezioni al passaggio da Render" e la sezione "RLS non ancora attive" descrivevano ancora lo stato precedente al 3 luglio — verificato oggi nel codice che nessun file tocca più Supabase con la chiave anon, corrette entrambe le sezioni.</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 21 · 6 Luglio 2026 — Sara prende appuntamenti a voce, corrette altre imprecisioni sul calendario</div>
+        <div class="tl-title">La giornata più lunga finora: dal controllo di alcune frasi del documento fino a un pezzo nuovo di assistente vocale, scritto e testato passo per passo prima di essere collegato</div>
+        <ul class="tl-list">
+          <li><b>Altre due imprecisioni sul calendario, stessa causa delle precedenti</b> (segnalate dall'utente, verificate nel codice): il badge in cima al documento, la descrizione generale del sistema, la card "due macro-moduli" e la scheda del file <code>calendario_diva_prototipo.html</code> descrivevano ancora un "prototipo non collegato a Supabase" — verificato che è integrato da tempo (genera fatture vere, riusa il motore di calcolo del wizard, passa sempre dal server). Corrette tutte le occorrenze. Scoperta anche una <b>quarta vista mancante dalla documentazione</b>: oltre a Giorno/Settimana/Mese esiste già una vista <b>Anno</b> (cruscotto di sola lettura, 12 mesi con i totali, click su un mese per aprirlo) — aggiunta dov'era descritta la mancanza.</li>
+          <li><b>Tabella "Flussi principali" aggiornata</b> con 9 processi introdotti da fine giugno in poi e mai documentati lì: registrazione utente, richiesta azienda, fattura da calendario/agenda, invio messaggio chat, nuova conversazione, svuota conversazione, salto-login ENP-Management, azzeramento log.</li>
+          <li><b>Progettato (non ancora costruito) il potenziamento analitico di Sara</b>: oggi l'assistente vocale sa solo filtrare e mostrare fatture (conta/elenca/visualizza), non confrontare periodi o aziende. Disegno concordato, riusabile subito quando si deciderà di costruirlo: nuovo dizionario di parole-chiave per riconoscere domande di confronto ("rispetto a", "differenza", "di più/di meno", "andamento"), un piccolo motore di calcolo in Python che fa i conti (mai Claude a sommare a mente), un blocco di istruzioni dedicato che passa a Claude solo i numeri già calcolati. Punto aperto segnalato: oggi ogni domanda vocale è isolata (nessuna memoria tra un turno e l'altro) — se si vorranno domande di follow-up ("e rispetto all'anno prima?") servirà una piccola memoria a breve termine in più.</li>
+          <li><b>Costruito e collegato: Sara può prendere un appuntamento in agenda a voce</b> — deliberatamente limitato a data/ora inizio/fine, tutto il resto (azienda, tipo opera, turni, righe) va completato a mano nel calendario, per non far dipendere un dato fiscale da un riconoscimento vocale di parole corte (nomi azienda, "due" vs "tre"). Costruito in pezzi isolati e testati singolarmente <b>prima</b> di collegarli a <code>server.py</code> (vedi <code>test_parser_data.py</code>, non incluso nei file di produzione):
+            <ul class="tl-list">
+              <li><b>Interpretazione data in italiano naturale</b>: "domani"/"dopodomani"/"oggi", solo giorno della settimana (sempre il <i>prossimo</i>, mai oggi stesso anche se oggi coincide), numero esplicito con o senza mese/anno (priorità sul giorno della settimana, che diventa solo una conferma parlata), anno assunto quello corrente ma spostato all'anno prossimo se la data è già passata. Stesso formato "23 luglio 2026" sempre usato in azienda, riconosciuto senza assunzioni.</li>
+              <li><b>Bug reale trovato e corretto durante i test:</b> il parser leggeva anche l'orario nella stessa frase e scambiava un numero come il "9" di "dalle 9 alle 13" per un giorno del mese. Corretto togliendo la parte di orario dalla frase prima di cercare la data.</li>
+              <li><b>Controllo sovrapposizione</b> con gli appuntamenti già in agenda — solo quelli della persona che sta parlando, mai di altri (garantito due volte: dal filtro <code>nominativo</code> nella query, e dal fatto che <code>POST /agenda</code> forza comunque il nominativo al proprio nome per un utente non-admin, indipendentemente da cosa arriva dal client).</li>
+              <li><b>Doppia conferma vocale, su richiesta esplicita dell'utente:</b> una bozza proposta ("Confermi?") richiede un "sì" per procedere; se emerge un conflitto, serve una parola più forte ed esplicita ("SOVRAPPONI", dichiarata a voce dall'assistente stessa) per forzare comunque il salvataggio — un semplice "sì" ripetuto in quel momento NON basta, viene trattato come annullamento. Il messaggio finale dopo una forzatura ripete l'orario esatto del conflitto, per ricordare che va sistemato appena possibile.</li>
+              <li><b>Bug corretto prima ancora di essere pubblicato:</b> il controllo di sovrapposizione, se eseguito dopo aver già salvato il nuovo appuntamento, lo avrebbe confrontato anche con se stesso (stessa ora identica) risultando sempre "in conflitto" anche quando non c'era nient'altro. Spostato il controllo prima del salvataggio.</li>
+              <li><b>Appuntamento creato con titolo "Nuovo appuntamento (da completare)" e colore nero</b> — colore già esistente in palette, mai usato per le aziende, scelto apposta per risaltare tra gli altri finché non viene completato a mano.</li>
+              <li><b>Bug di architettura scoperto durante i test reali, non nella logica ma nell'interfaccia:</b> dopo che Sara poneva una domanda di conferma, il wizard non riascoltava da solo — ogni scambio vocale richiedeva un nuovo tocco manuale sul pallino, rendendo impraticabile rispondere "sì" o "sovrapponi" in tempo. Corretto con un nuovo segnale dal server (<code>attesa_risposta:true</code>) che dice al wizard di riascoltare subito da solo quando ci si aspetta una risposta, con un limite di sicurezza di 4 scambi consecutivi per non restare mai in ascolto all'infinito. Aumentato anche il tempo massimo di ascolto da 8 a 12 secondi.</li>
+              <li><b>Verificato con un test reale completo</b>: creazione senza conflitto, conflitto annullato, conflitto forzato con messaggio corretto, riascolto automatico — tutti confermati funzionanti.</li>
+            </ul>
+          </li>
+          <li><b>Valutato e scartato deliberatamente: eliminare un appuntamento a voce.</b> A differenza della creazione, cancellare richiede prima trovare l'appuntamento giusto (ambiguità se ce n'è più di uno lo stesso giorno) ed è un'azione irreversibile su un dato che potrebbe già essere stato completato a mano. Deciso di lasciare l'eliminazione dove è oggi — dal calendario, a vista, con conferma visiva diretta.</li>
+          <li><b>Discusso (non ancora costruito): spostare un appuntamento nel calendario con trascinamento del mouse</b> (drag and drop), limitato alle viste Giorno e Settimana (nella vista Mese le celle sono troppo piccole). Verificato che la struttura del codice lo rende fattibile senza stravolgimenti: ogni appuntamento è già posizionato con coordinate pixel esatte legate all'orario. Limite onesto da tenere presente: il trascinamento nativo del browser funziona bene col mouse ma male al tocco — prima versione pensata solo per desktop, il click-e-modifica di oggi resterebbe comunque disponibile per tutti su mobile.</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 22 · 7 Luglio 2026 — Sara parla in modo naturale, calendario Mese senza tagli, backup e ripristino completo costruiti e testati con un giro vero</div>
+        <div class="tl-title">Tre rifiniture rapide su Sara e il calendario, poi la giornata più delicata finora: un sistema di backup/ripristino vero, con due bug reali scoperti solo grazie al test end-to-end, non prevedibili guardando solo il codice</div>
+        <ul class="tl-list">
+          <li><b>Sara legge orari e date in modo naturale</b>: prima diceva "dalle 12:00:00 alle 15:00:00" e "07.07.2026" leggendo i caratteri così com'erano salvati (compresi i secondi, che arrivano dal formato TIME del database) — ora dice "dalle 12 alle 15" (o "dalle 12 e 5 minuti alle 15 e 15 minuti" se ci sono minuti) e "il 7 luglio 2026". Due funzioni dedicate (<code>leggi_ora_naturale</code>, <code>leggi_data_naturale</code>), collegate a tutti e tre i punti dove Sara pronuncia un orario/data di appuntamento.</li>
+          <li><b>Calendario, vista Mese: niente più contenuto tagliato</b>: prima mostrava solo 2 appuntamenti per giorno più un "+N altri" fisso, con i nomi azienda troncati dai puntini di sospensione. Tolto il limite: ora mostra <i>tutti</i> gli appuntamenti del giorno, scorrevoli internamente dentro la singola cella se non ci stanno (stesso principio già usato dalla vista Settimana), nomi completi senza troncamento.</li>
+          <li><b>Backup e ripristino completo — il lavoro principale della giornata:</b>
+            <ul class="tl-list">
+              <li><b>Analisi richiesta dall'utente, portata a fondo prima di scrivere codice:</b> confronto sistematico tra i campi scritti davvero da <code>salva_fattura()</code> e quelli letti dal vecchio export (<code>get_fatture()</code>). Risultato: <b>25 campi su 40</b> a livello di fattura mancavano dall'export — codice fiscale, IBAN, partita IVA, indirizzo azienda completo, tutti i subtotali IVA/ritenuta, l'intero dettaglio contributivo ENPALS sia lato lavoratore che datore. Per ogni riga di lavoro (fino a 31 per fattura), <b>6 campi su 15</b> mancavano ripetuti su ognuna. Un vecchio backup, se usato per un vero ripristino, avrebbe fatto perdere per sempre questi dati senza che nessuno se ne accorgesse.</li>
+              <li><b>Corretto alla radice, non solo per oggi:</b> invece di riscrivere a mano l'elenco campi (la causa stessa del disallineamento), creata <code>_tutti_i_campi_fattura()</code> — un'unica lista usata sia da chi scrive (<code>salva_fattura</code>) sia da chi esporta (<code>get_fatture</code>), così le due non potranno più disallinearsi in futuro. Verificato che il comportamento di scrittura precedente restasse identico (confronto automatico dei due insiemi di campi, coincidenti al 100%).</li>
+              <li><b>Deciso con l'utente: backup vero (ZIP con dati + PDF reali), non solo un JSON leggero</b> — pensato per l'uso in produzione futura (archiviazione, disaster recovery), non solo per pulire dati di test. Il collegamento fattura↔PDF si preserva senza bisogno di alcuna corrispondenza da ricostruire a mano, perché il nome del file nel bucket è sempre basato su <code>rif_nbr</code> (stabile), mai su <code>rec_nbr</code> (che cambia a ogni reimport) — verificato nel codice prima di dare questa garanzia.</li>
+              <li>Costruiti 4 endpoint nuovi: <code>GET /backup-completo</code> (scarica lo ZIP), <code>GET /pdf-list</code> (elenca il bucket, distingue i PDF ancora collegati a una fattura da quelli orfani), <code>POST /pdf-reset</code> (cancella dal bucket, tutti o solo orfani), <code>POST /ripristina-backup</code> (carica lo ZIP, rimette tutto a posto in un solo passaggio). Tre nuovi pulsanti nel menu Admin di <code>ENP-Management.html</code>.</li>
+              <li><b>Bug reale #1, trovato solo grazie al test vero (non visibile guardando il codice da solo):</b> i tre endpoint nuovi rispondevano sempre "Not found" nonostante il deploy risultasse riuscito. Causa: erano stati agganciati subito dopo <code>/fatture-export</code> assumendo fosse dentro <code>do_GET</code> — invece era dentro <code>do_POST</code> (bug preesistente, mai notato prima: il vecchio "Esporta Fatture su Json" probabilmente non aveva mai funzionato per davvero). Spostati tutti e tre i nuovi endpoint più il vecchio <code>/fatture-export</code> dentro <code>do_GET</code>, dove appartengono.</li>
+              <li><b>Bug reale #2, trovato solo dopo aver corretto il primo:</b> con 69-82 fatture, il download dei PDF dal bucket <i>uno alla volta in sequenza</i> impiegava troppo tempo — il service worker della PWA, non vedendo risposta, restituiva una finta risposta "offline" marcata comunque come riuscita (bug diverso, in un file diverso, scoperto solo perché il primo era già stato risolto). Il sintomo era un file scaricato di 19 byte che sembrava uno ZIP ma non lo era — capito solo controllando la Console del browser (l'errore mostrato, "bloccato da CORS", si è rivelato fuorviante: nessuna vera risposta era mai arrivata). Corretto scaricando i PDF <b>8 alla volta in parallelo</b> invece che in sequenza; aggiunto anche un controllo lato browser che verifica il tipo di contenuto ricevuto prima di dichiarare il backup riuscito, per non poter più ripresentarsi inosservato.</li>
+              <li>Aggiunta una clessidra a schermo intero ("Non chiudere questa pagina") per le tre operazioni più lente, riusando lo stile già esistente del pulsante di login.</li>
+              <li><b>Verificato con un giro reale e completo, non solo con dati finti:</b> Backup Completo (82 fatture, 23 MB di PDF + 2 MB di JSON) → Delete & Reset DB Fatture (verificato vuoto anche direttamente su Supabase) → Pulisci PDF Orfani (86 trovati — 4 in più delle 82 attese, risultati residui di vecchi reset precedenti a questo sistema, mai stati nello ZIP e quindi persi ma già "spazzatura" da prima) → Ripristina da Backup (82 fatture importate, 0 saltate, 82 PDF ripristinati). Controllo finale a campione: PDF aperti e verificati corretti, dati fiscali (codice fiscale, IBAN) confermati presenti dopo il ripristino — prima del fix di oggi sarebbero stati persi.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-date">FASE 23 · 7 Luglio 2026 — Il collegamento agenda↔fattura reso stabile per sempre, scoperto un rischio reale di sicurezza sui dati, clessidre ovunque, un bug visivo vero risolto solo grazie all'insistenza dell'utente</div>
+        <div class="tl-title">La seconda metà della stessa giornata: quello che sembrava un problema "minore" (il PDF di una vecchia fattura che non si apriva più dopo il ripristino) ha portato a un ripensamento dell'intero collegamento agenda↔fattura — e a una scoperta di sicurezza che vale la pena raccontare per intero</div>
+        <ul class="tl-list">
+          <li><b>Il sintomo iniziale</b>: dal calendario, "Visualizza" su una fattura già emessa PRIMA del ripristino di oggi dava "PDF non disponibile" — e il totale "Netto" nel riepilogo mensile/annuale mostrava €0,00 per aziende che invece avevano fatture vere.</li>
+          <li><b>Causa radice, trovata confrontando con <code>gestione.html</code></b> (su suggerimento diretto dell'utente, rivelatosi decisivo): quella pagina non ha mai questo problema perché non salva mai il numero interno di una fattura da nessuna parte — lo richiede sempre fresco al momento. Il calendario invece salva in agenda <code>fattura_rec_nbr</code> come una "fotografia" al momento della fatturazione — fotografia che sbiadisce ogni volta che il database viene azzerato e ripristinato, perché gli ID interni ripartono sempre da 1.</li>
+          <li><b>Un tentativo di riparazione iniziale sbagliato, corretto subito dopo essere stato scoperto</b>: la prima versione dello strumento di riparazione confrontava il link PDF firmato temporaneo salvato in agenda (che scade dopo un'ora e cambia sempre, indipendentemente da qualsiasi ripristino) con il nome del file nella tabella fatture — non potevano mai combaciare. Bug distinto da quello di partenza, trovato e corretto nello stesso pomeriggio.</li>
+          <li><b>Scoperto un problema di sicurezza reale, non solo di comodità</b>, discutendo con l'utente come rendere la riparazione più robusta: la funzione "Elimina fattura" dal calendario usa lo stesso <code>rec_nbr</code> stantio per decidere cosa cancellare — dopo un ripristino, quel numero potrebbe ora appartenere a una fattura completamente diversa (gli ID ripartono sempre da 1), quindi cliccare "Elimina" su un appuntamento con il link rotto avrebbe potuto <b>cancellare la fattura sbagliata</b>, non quella prevista. Trovato prima che causasse danni, grazie all'insistenza dell'utente nel chiedere "come possiamo fidarci davvero?".</li>
+          <li><b>Decisione presa insieme</b>: <code>rif_nbr</code> (il riferimento fattura vero, tipo "2026-046", incorporato anche nel nome del file PDF) diventa il collegamento primario e stabile — <code>rec_nbr</code> resta salvato solo per riferimento, ma non è più l'unico modo per cancellare o visualizzare: il server lo ritrova sempre fresco al momento dell'azione, mai da un valore fidato in anticipo.
+            <ul class="tl-list">
+              <li>Nuova colonna <code>agenda.fattura_rif_nbr</code> (richiede una singola istruzione SQL su Supabase, nessun rischio per i dati esistenti).</li>
+              <li><code>DELETE /fatture</code> e <code>GET /fatture_pdf_url</code> accettano ora anche <code>rif_nbr</code> — il server risolve l'ID interno corretto <b>al momento esatto dell'azione</b>, mai da un valore salvato prima.</li>
+              <li><code>calendario_diva_prototipo.html</code> riscritto in tutti i punti di contatto con le fatture: visualizza PDF (tre punti), elimina fattura con collegati, calcolo del Netto nel riepilogo mensile/annuale — tutti ora basati su <code>rif_nbr</code>.</li>
+              <li>Strumento di riparazione (<code>/agenda-ripara-collegamenti</code>) riscritto per usare lo ZIP di backup come dizionario esatto (vecchio ID → <code>rif_nbr</code>), testato prima con dati simulati (inclusi i casi limite: collegamento già corretto, collegamento non trovato) e poi verificato con i dati reali: <b>21 collegamenti riparati, 0 persi</b>.</li>
+            </ul>
+          </li>
+          <li><b>Aggiunta la clessidra</b> (overlay a schermo intero, stessa idea già usata in <code>ENP-Management.html</code> per il backup) a tutte le operazioni del calendario che parlano col server: caricamento agenda, generazione fattura, recupero PDF, cancellazioni — richiesta dall'utente dopo aver notato che alcune di queste a volte impiegano qualche secondo senza nessun segnale visivo che qualcosa stia succedendo.</li>
+          <li><b>Un ultimo bug, vero, trovato solo grazie a chi non si è accontentato di una spiegazione plausibile</b>: la riga rossa dell'orario corrente nella vista Giorno/Settimana sembrava indicare un'ora sbagliata (un'ora avanti). Le prime ipotesi (fuso orario, cache del browser, deformazione da contenuto lungo) sono state controllate e scartate una per una — inclusa la verifica diretta nel browser (<code>new Date()</code> in console, confermata corretta) e la misura esatta in pixel dell'elemento nella pagina (che matematicamente corrispondeva all'ora giusta). Nonostante i numeri sembrassero tornare, l'utente ha insistito che visivamente non tornava — e aveva ragione: <b>le etichette orarie e la griglia partivano da altezze diverse</b>, perché la colonna delle ore aveva un <code>padding-top: 14px</code> mentre l'intestazione del giorno sopra la griglia vera è alta circa 58-59px — le due colonne erano sfalsate di quasi un'ora intera. Corretto non indovinando un altro numero a mano (fragile, si sarebbe potuto rompere di nuovo), ma aggiungendo alla colonna delle ore uno spacer invisibile con la stessa identica struttura dell'intestazione giorno — le due colonne ora condividono sempre la stessa altezza di partenza, qualsiasi cosa cambi in futuro nel testo o nel font dell'intestazione.</li>
+          <li><b>Verificato tutto con un giro reale</b>, non solo sulla carta: riparazione collegamenti (21/21 riusciti), PDF di fatture vecchie riaperti correttamente, Netto tornato a mostrare i numeri giusti, riga oraria confermata allineata dall'utente stesso dopo la correzione.</li>
+        </ul>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot now"></div>
+        <div class="tl-date">FASE 24 · 10 Luglio 2026 (oggi) — Fattura Proforma sempre in filigrana, due bug reali sul Netto del calendario, e le notifiche push mattutine costruite e verificate con un telefono vero, dal progetto Firebase fino al messaggio arrivato sul tablet</div>
+        <div class="tl-title">Giornata lunga e su più fronti: prima la fattura emessa da DIVA diventa esplicitamente una Proforma (in attesa del pagamento), poi due bug concreti sul Netto del calendario, e infine l'intera catena delle notifiche push mattutine — dalla creazione del progetto Firebase, passo per passo, fino alla prima notifica vera arrivata su un tablet Android</div>
+        <ul class="tl-list">
+          <li><b>Chiarito il quadro legale di riferimento, prima di scrivere codice</b>: verificati i termini reali per l'invio allo SDI (12 giorni di calendario dalla data di effettuazione dell'operazione, non dalla data del lavoro), e soprattutto — per le prestazioni di servizi — che l'operazione si considera effettuata al momento del <b>pagamento</b> (art. 6 comma 3, DPR 633/1972), non al momento del lavoro svolto, salvo emissione anticipata della fattura. Da qui la decisione di disegno concordata con l'utente: <b>l'emissione attuale di DIVA è sempre una Fattura Proforma</b> — non ha valore fiscale, serve solo a sollecitare il pagamento. Solo quando arriverà il pagamento (campo <code>pagata</code> da aggiungere in futuro) scatterà la generazione della fattura elettronica XML vera, verso lo SDI, entro i 12 giorni da quella data.</li>
+          <li><b>Watermark "PROFORMA" reso sempre attivo</b>, non più opzionale via checkbox, sia in <code>ENP-Management.html</code> (dove esisteva già ma era spuntabile a mano — ora <code>isProforma</code> è sempre <code>true</code>, checkbox rimossa) sia in <code>Nuovo_DIVA_Mobile_Wizard.html</code> (dove non esisteva affatto, aggiunto da zero — il calendario lo eredita gratis, riusando lo stesso motore). Diciture esistenti lasciate invariate su richiesta esplicita: cambia solo la filigrana visiva, non il testo del documento.
+            <ul class="tl-list">
+              <li>Prima versione tagliata male: il watermark ruotato usciva dal rettangolo catturato da <code>html2canvas</code> (a differenza di <code>window.print()</code> usato in ENP-Management, che non ha questo limite) — ridimensionato (100px→60px, rotazione 40°→38°) perché il suo ingombro rientri sempre nei bordi della pagina.</li>
+              <li>Seconda correzione: opacità troppo bassa (0.16, quasi invisibile) portata a 0.38 su segnalazione diretta dell'utente.</li>
+            </ul>
+          </li>
+          <li><b>Due bug reali sul "Netto" del calendario, entrambi trovati testando con dati veri, non in astratto</b>:
+            <ul class="tl-list">
+              <li>Dopo aver generato una fattura da un appuntamento, il Netto restava a zero finché non si ricaricava la pagina a mano — mancava un <code>caricaFatture()</code> (che rilegge le fatture vere da Supabase) prima del <code>render()</code> finale, sia nel percorso di generazione singola che multipla.</li>
+              <li>Più subdolo: anche al primo avvio dell'agenda, il Netto partiva sempre a zero per tutti — <b>race condition</b> tra <code>caricaEventi()</code> (che si auto-ridisegna appena finisce) e <code>caricaFatture()</code> (che gira in parallelo nello stesso <code>Promise.all</code>, senza mai ridisegnare da sola): se la seconda finiva dopo la prima, il primo disegno usava dati fatture ancora vuoti. Corretto aggiungendo un <code>render()</code> esplicito dopo che <b>entrambe</b> le chiamate di avvio sono davvero concluse, in entrambi i punti di ingresso dell'app (login manuale e apertura con token da URL).</li>
+            </ul>
+          </li>
+          <li><b>Notifica push mattutina — costruita per intero, dal progetto Firebase alla notifica vera sul telefono.</b> Decisione di disegno: invio ogni giorno alle 9:00 (ora italiana), col riepilogo degli appuntamenti di <b>domani</b> (non di oggi — un giorno di preavviso, non poche ore), testo concordato riga per riga con l'utente, incluso il saluto personalizzato col nome di chi riceve. Nessun messaggio per chi non ha appuntamenti — non un "hai 0 appuntamenti", proprio nessun invio.
+            <ul class="tl-list">
+              <li><b>Lato Firebase</b> (fatto insieme all'utente, guidandolo passo passo sulla console): creato il progetto "DIVA", registrata l'app web, generata la VAPID key (certificato push web) e scaricata la chiave del service account (credenziale amministrativa, quella sì segreta — mai messa nel codice, solo su Render come variabile d'ambiente).</li>
+              <li><b>Lato server</b> (<code>server.py</code>): nuove tabelle <code>push_tokens</code> (un token dispositivo per nominativo) e <code>promemoria_stato</code> (ultima data di invio, per evitare doppioni); funzioni per costruire il testo, autenticarsi presso Firebase (JWT firmato RS256, libreria <code>PyJWT[crypto]</code>, con cache del token OAuth2 per un'ora) e mandare davvero la notifica (API HTTP v1 di Firebase Cloud Messaging); endpoint <code>POST /push-token</code> per registrare il token di ogni utente al login; endpoint di test manuale <code>/agenda/promemoria-domani-invia</code>, protetto da token dedicato, per verificare l'intera catena senza dover aspettare le 9:00 del giorno dopo.</li>
+              <li><b>Bug reale trovato e corretto prima di andare in produzione, non dopo</b>: il controllo "l'ho già mandato oggi?" viveva solo in memoria del processo — ma il piano gratuito Render riavvia il server molto spesso durante il giorno (si addormenta e si risveglia ad ogni uso), azzerando quella memoria. Senza correzione, un qualunque riavvio dopo le 9:00 avrebbe rimandato lo stesso promemoria una seconda, terza, quarta volta nello stesso giorno. Corretto spostando quel controllo su una tabella persistente (Supabase), verificato con un test che simula più riavvii consecutivi nello stesso giorno.</li>
+              <li><b>Lato client</b> (<code>Nuovo_DIVA_Mobile_Wizard.html</code> e <code>service-worker.js</code>): SDK Firebase aggiunto a entrambi (stessa versione, allineata apposta), richiesta del permesso di notifica subito dopo il login (solo se non già negato in passato), token del dispositivo ottenuto e mandato al server; il service worker riceve e mostra le notifiche anche ad app chiusa. Versione cache del service worker incrementata (v4→v5) perché il browser scarichi davvero il file nuovo.</li>
+              <li><code>keep-alive.yml</code> (GitHub Action) portato da due volte a settimana a <b>tutti i giorni</b>, poco dopo le 9:00 italiane — con due orari diversi in UTC per compensare il cambio tra ora legale e ora solare, dato che GitHub Actions lavora sempre in UTC fisso.</li>
+              <li><b>Un allarme di sicurezza automatico di GitHub sulla chiave Firebase, chiarito con la documentazione ufficiale alla mano</b>: la chiave <code>apiKey</code> dentro la configurazione Firebase è pubblica per progetto — la sicurezza vera sta nelle regole di Firebase, non nel nasconderla — a differenza della chiave del service account, quella sì mai esposta. Aggiunta comunque, per prudenza extra, una restrizione "solo questo dominio" sulla chiave lato Google Cloud.</li>
+              <li><b>Una falsa pista sui tempi di deploy</b>, corretta grazie all'insistenza dell'utente nel farla ricontrollare invece di accettarla subito: un deploy andato in timeout dopo 19 minuti sembrava colpa della nuova libreria <code>cryptography</code> (pesante da installare) — ma un redeploy manuale identico è filato liscio in 30 secondi, confermando che era solo un rallentamento temporaneo dei server Render, non un problema del codice.</li>
+              <li><b>Verificato tutto con un test reale</b>, non solo con dati finti: due appuntamenti di prova per "domani" e due per "dopodomani" nello stesso nominativo, l'endpoint di test ha correttamente preso solo i due di domani, il testo è arrivato per intero sul tablet con watermark del saluto personalizzato, e — separatamente — verificato che il campo <code>nominativo</code> nella tabella <code>push_tokens</code> corrispondesse esattamente a quanto atteso dall'ultimo login.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ TAB DA FARE ══════════════════════════ -->
+<div id="tab-dafare" class="tab-content">
+
+  <div class="section">
+    <div class="sec-label">Priorità alta</div>
+    <h2 class="sec-title">Sviluppi da completare per il go-live</h2>
+
+    <ul class="priority-list">
+      <li>
+        <span class="priority-icon">🔒</span>
+        <div>
+          <span class="badge badge-green">SBLOCCATO — 5 luglio</span> <b>RLS su Supabase — Fase 2: attivazione vera e propria</b><br>
+          <b>Fase 1 completata il 3 luglio</b> (vedi Fase 17 nello storico): i tre file che parlavano direttamente con Supabase con la chiave anon (<code>modulo_iscrizione.html</code> — poi risultato orfano ed eliminato, <code>Nuovo_DIVA_Mobile_Wizard.html</code>, <code>ENP-Management.html</code>) ora passano tutti dal server, tramite 5 nuovi endpoint dedicati. Testato l'intero ciclo end-to-end con successo.<br><br>
+          <b>Il punto scoperto durante la verifica è stato controllato il 5 luglio e risulta già risolto</b> in una sessione precedente non documentata qui: <code>azzeraLog()</code> in <code>ENP-Management.html</code> oggi passa dal server (<code>POST /log-reset</code>, autenticato, chiave service_role) — non tocca più Supabase direttamente con la chiave anon. Resta solo un piccolo debito tecnico non urgente: un secondo endpoint <code>/log-reset</code> duplicato e mai usato, dentro <code>do_GET</code> invece che <code>do_POST</code> in <code>server.py</code> — stessa chiave sicura, solo codice morto da ripulire quando capita.<br><br>
+          <b>Nessun altro ostacolo noto:</b> l'attivazione delle RLS può procedere — blocco totale su tutte le tabelle (<code>agenda</code>, <code>fatture</code>, <code>persone</code>, <code>aziende</code>, <code>richieste_utenti</code>, <code>richieste_aziende</code>, <code>rubrica</code>, <code>messaggi</code>, <code>log</code>), zero eccezioni, zero policy delicate da azzeccare. Segnalato da Supabase come critico.
+        </div>
+      </li>
+      <li>
+        <span class="priority-icon">🔔</span>
+        <div>
+          <span class="badge badge-green">COMPLETATA E VERIFICATA — 10 luglio</span> <b>Notifiche push native (Firebase Cloud Messaging) — promemoria mattutino appuntamenti</b><br>
+          Costruita per intero (vedi Fase 24 nello storico): progetto Firebase creato, service worker esteso, token dispositivo salvato per utente (tabella <code>push_tokens</code>), invio vero via API HTTP v1 gestito da <code>server.py</code> con un thread che gira ogni giorno alle 9:00 ora italiana (stato persistente su Supabase, non solo in memoria — evita invii doppi sui riavvii frequenti di Render). Testata con dati reali: notifica arrivata su un tablet Android col testo personalizzato e il filtro data corretto (solo gli appuntamenti di domani).<br><br>
+          <b>Resta da fare, non urgente:</b> oggi un dispositivo condiviso da più nominativi (es. un tablet usato a turno da più doppiatori) riceve le notifiche solo dell'ultimo utente che ha fatto login — accettabile per ora, da rivedere (un token per dispositivo invece che per nominativo) solo se e quando diventa un caso d'uso reale.
+        </div>
+      </li>
+      <li>
+        <span class="priority-icon">💬</span>
+        <div>
+          <span class="badge badge-green">COMPLETATA E RIFINITA — 5-6 luglio</span> <b>Assistente Admin — chat con gli utenti</b><br>
+          Discusso il 4 luglio, costruito il 5, rifinito il 6 (dettagli completi in Fase 19-20 nello storico): tabella <code>messaggi</code> su Supabase, 4 endpoint su <code>server.py</code> (invio, lettura, segna-letti, svuota conversazione), pagina <code>chat_diva.html</code> lato utente, sezione vera dentro <code>assistente_admin.html</code> al posto del placeholder. Bolle colorate su entrambi i lati, sfondo verde chiaro, svuota-chat per singola conversazione, badge doppio in home (sul pulsante chat e su quello Assistente Admin, quest'ultimo col totale di tutte le conversazioni), e — solo per l'admin — la possibilità di avviare per primo una conversazione con qualunque utente registrato, non solo rispondere a chi scrive per primo. Verificato un ciclo completo con dati reali: messaggio utente → visibile all'admin con badge → risposta admin → arrivata all'utente.<br><br>
+          <b>Resta da fare:</b> l'avviso "un utente ha bisogno di te" quando l'admin non ha la pagina aperta — oggi funziona solo se l'admin apre di tanto in tanto il pannello e vede il badge. L'infrastruttura Firebase (voce sopra) ora esiste davvero e funziona, verificata con un caso reale il 10 luglio — restano da collegare qui solo il salvataggio del token dell'admin e il punto di invio, riuso diretto di quanto già costruito.
+        </div>
+      </li>
+      <li>
+        <span class="priority-icon">🧹</span>
+        <div>
+          <span class="badge badge-green">STRUMENTO PRONTO E TESTATO — 7 luglio</span> <b>Reset completo dati di test</b><br>
+          Tutti i dati oggi in <code>fatture</code> e nel bucket PDF sono ancora di test, accumulati durante lo sviluppo. <b>Il modo sicuro per farlo ora esiste davvero</b>, non solo sulla carta: Backup Completo (fatture con tutti i campi + PDF veri in uno ZIP) → Delete & Reset DB Fatture → Pulisci PDF Orfani → Ripristina da Backup, tutto verificato con un giro vero e completo il 7 luglio (82 fatture, azzerate e rimesse a posto senza perdite — vedi Fase 22 nello storico). <b>Resta da fare solo la decisione finale</b>: quando l'admin deciderà che i dati di test non servono più, ripetere lo stesso ciclo un'ultima volta senza il passo "Ripristina" in fondo. <code>agenda</code> non fa parte del backup stesso, ma dal 7 luglio (vedi Fase 23) il suo collegamento alle fatture usa <code>rif_nbr</code> (stabile, sopravvive a qualunque reset/ripristino) invece del vecchio ID interno — uno strumento di riparazione (<code>/agenda-ripara-collegamenti</code>) resta comunque disponibile per gli appuntamenti fatturati prima di questa correzione. Necessario anche perché il progressivo delle future fatture elettroniche XML (voce sotto) dipende da un conteggio pulito.
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Priorità media</div>
+    <h2 class="sec-title">Miglioramenti pianificati</h2>
+
+    <ul class="priority-list">
+      <li>
+        <span class="priority-icon">👤</span>
+        <div><b>Permessi per singolo utente (eccezioni su visibilità pulsanti)</b><br>Discusso il 5 luglio: oggi l'interruttore in <code>impostazioni</code> è globale, vale per tutti gli utenti normali indistintamente. Per gestire un'eccezione su un singolo utente (es. "togli la Fattura Vocale solo a questa persona") serve una <b>seconda tabella</b>, <code>permessi_utente</code> (una riga solo per chi ha davvero un'eccezione, non per tutti), con logica a due livelli nel wizard: prima controlla se esiste un'eccezione per l'utente specifico, altrimenti usa il default globale come oggi. Da costruire: la tabella, endpoint GET/PATCH per i permessi di un utente, l'aggiunta della logica a due livelli nel controllo esistente del wizard, e nel pannello Assistente Admin un modo per cercare un utente per nome e impostare le sue eccezioni — probabilmente la parte più delicata da progettare bene, non tecnicamente complessa ma da pensare con calma lato interfaccia. Dimensioni di lavoro paragonabili alla Rubrica.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🚪</span>
+        <div><b>Pulsante "Esci" contestuale in Assistente Admin</b><br>Discusso il 5 luglio: oggi <code>chiudiAssistente()</code> fa solo <code>window.close()</code> con un avviso di fallback — funziona bene quando la pagina è stata aperta dal wizard (window.open dal pulsante home), meno quando si accede con l'indirizzo diretto (i browser impediscono a una pagina di chiudersi da sola se non è stata aperta via script). Da rendere esplicito invece che lasciato al caso: controllare se è presente un token nell'URL (segno che si arriva dal wizard) — in quel caso <code>window.close()</code> come oggi; altrimenti, mostrare un messaggio chiaro tipo "Chiudi pure questa scheda" invece del comportamento silenzioso attuale. Stessa logica utile anche per <code>rubrica_diva.html</code> e <code>calendario_diva_prototipo.html</code>, che hanno lo stesso meccanismo.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🖼️</span>
+        <div><b>Rubrica — foto contatto</b><br>L'importazione vCard (.vcf) del 4 luglio legge già cognome/nome/telefoni/email/note dal file, ma ignora volutamente il campo foto — presente e leggibile nel file, semplicemente non estratto per tenere semplice la prima versione. Per aggiungerla: <b>non</b> salvarla dentro la tabella <code>rubrica</code> insieme ai dati testuali (appesantirebbe inutilmente ogni lettura della lista contatti), ma nel <b>bucket Storage</b> di Supabase — stesso identico meccanismo già usato per i PDF delle fatture — con solo un link testuale salvato in tabella. Conto fatto il 4 luglio: anche nel caso più pesante (50-100 utenti, rubrica piena di foto ciascuno) si resterebbe sotto il limite gratuito di 1 GB Storage, ma senza margine enorme — da tenere d'occhio se il numero di utenti cresce molto. Import ancora da collegare: leggere il campo foto dal vCard, caricarla sul bucket, salvare il link, mostrarla al posto dell'icona 👤 generica nell'elenco.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🚪</span>
+        <div><b>Pulsante "Esci" esplicito nel calendario</b><br>Oggi la freccia "←" nell'header chiude già la scheda, ma un pulsante "Esci" dedicato renderebbe l'azione più chiara a chi lo usa. Modifica piccola, rimandata con calma.</div>
+      </li>
+      <li>
+        <span class="priority-icon">✏️</span>
+        <div><b>"Modifica ad hoc" per appuntamento già fatturato</b><br>Oggi un appuntamento con fattura già emessa è completamente bloccato in modifica (per design, evita disallineamenti tra agenda e fattura salvata) — l'unico modo per correggere un dato è eliminare l'intera fattura e ricreare. Da valutare un percorso più mirato per correzioni minori, senza passare da elimina-tutto-e-ricrea.</div>
+      </li>
+      <li>
+        <span class="priority-icon">📧</span>
+        <div><b>Email settimanale automatica (livello 2 promemoria)</b><br>Digest email dei prossimi 7 giorni usando EmailJS già collegato. Richiede un trigger esterno (cron job) che chiami un endpoint Render, perché EmailJS oggi parte solo da un'azione utente nel browser.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🔑</span>
+        <div><b>Dati reali del titolare per l'informativa privacy</b><br>Il testo GDPR (art. 13) riscritto il 3 luglio ha ancora <code>[YYYY]</code> come segnaposto per nome/ragione sociale, indirizzo, email, PEC, P.IVA/C.F. del titolare, oltre a un secondo <code>[YYYY]</code> sull'ubicazione dei server (serve verificare se sono fuori UE, nel qual caso va aggiunta una clausola sui trasferimenti extra-UE). Presente identico in due punti: <code>Nuovo_DIVA_Mobile_Wizard.html</code> (overlay interno "il mio profilo") e nella cronologia del file esterno ormai eliminato. Prima del go-live con dati reali.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🗣</span>
+        <div><b>Fix dizionario vocale TIPO_OPERA_WORDS</b><br>Il dizionario usato per i comandi vocali (conta/elenca/visualizza) riconosce solo 6 valori e non distingue "Doc No Sync" da "Doc" semplice, mentre il modulo fattura li tratta come due tipi separati con tariffe diverse. Non blocca la tendina del calendario (che ha già tutti e 7 i valori corretti), ma va sistemato per non confondere le richieste vocali.</div>
+      </li>
+      <li>
+        <span class="priority-icon">📱</span>
+        <div><b>Campo "fonetica" nel database aziende</b><br>Per risolvere i problemi di riconoscimento vocale di nomi come "3CYCLE": campo dove scrivere manualmente la pronuncia corretta, usato come fallback dal server. Da popolare gradualmente, prima per le aziende con nomi problematici.</div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">Priorità bassa / idee esplorate</div>
+    <h2 class="sec-title">Nice-to-have e idee future</h2>
+
+    <ul class="priority-list">
+      <li>
+        <span class="priority-icon">🧾</span>
+        <div><b>XML fattura elettronica</b> (specifiche 1.9.1 Agenzia Entrate)<br>Nome file <code>IT+CodiceFiscale+_+progressivo.xml</code>, progressivo calcolato per singolo utente (non globale come <code>rif_nbr</code> attuale). Dipende dal reset dati di test descritto sopra.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🎙</span>
+        <div><b>Agenda vocale — completata la parte "creare", resta "consultare"</b><br><span class="badge badge-green">FATTO IL 6 LUGLIO — vedi Fase 21</span> Sara può già prendere un appuntamento a voce (solo data/ora, il resto si completa a mano) con controllo automatico delle sovrapposizioni. <b>Resta da fare</b>: consultare a voce gli appuntamenti già presi ("cosa ho martedì prossimo?") — la notifica push mattutina col riepilogo del giorno dopo è stata invece completata e verificata il 10 luglio (vedi Fase 24 nello storico e la voce dedicata in "Sviluppi da completare"). <b>Deciso di non fare</b>, valutato e scartato il 6 luglio: eliminare un appuntamento a voce — troppa ambiguità nel trovare quello giusto, azione irreversibile su un dato magari già completato a mano. Resta gestibile solo dal calendario, a vista.</div>
+      </li>
+      <li>
+        <span class="priority-icon">📊</span>
+        <div><b>Sara — analisi comparativa tra periodi/aziende</b><br>Oggi l'assistente vocale sa solo filtrare e mostrare (conta/elenca/visualizza), non confrontare ("quanto ho fatturato a giugno rispetto a maggio?", "quale azienda mi fa fatturare di più?"). Disegno già concordato il 6 luglio (vedi Fase 21): nuovo dizionario di parole-chiave per il confronto, motore di calcolo in Python (mai Claude a fare i conti a mente), prompt dedicato con solo i numeri già pronti. Da costruire quando si sceglieranno le 3-4 domande "tipo" da coprire per prime.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🖱️</span>
+        <div><b>Calendario — spostare un appuntamento trascinandolo (drag and drop)</b><br>Discusso il 6 luglio (vedi Fase 21): fattibile senza stravolgimenti, il codice posiziona già ogni appuntamento con coordinate pixel esatte legate all'orario. Limitato alle viste Giorno/Settimana (in Mese le celle sono troppo piccole), prima versione solo desktop — il trascinamento nativo funziona male al tocco, il click-e-modifica di oggi resterebbe comunque disponibile su mobile.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🔍</span>
+        <div><b>Apertura PDF multipli / scelta tra fatture simili</b><br>Se la ricerca vocale trova più aziende simili, mostrarle raggruppate nel pannello invece di una sola. Solo discusso concettualmente.</div>
+      </li>
+      <li>
+        <span class="priority-icon">📱</span>
+        <div><b>APK Android</b><br>Pacchettizzazione con Capacitor o WebView per il Play Store. Sconsigliato prima della PWA, che si aggiorna automaticamente contro un APK che richiede ridistribuzione ad ogni versione.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🎭</span>
+        <div><b>Voce clonata personale</b> — <span class="tag tag-red">scartata per ora</span><br>Valutato clonare la voce del proprietario con OpenVoice/Chatterbox. Costa 4x crediti rispetto a Kokoro (consumerebbe i 15.000 crediti gratuiti in poche decine di risposte), l'alternativa gratuita richiede GPU non disponibile. Riconsiderabile in futuro con budget dedicato (~$5-9/mese).</div>
+      </li>
+      <li>
+        <span class="priority-icon">⚙️</span>
+        <div><b>Ottimizzazione ulteriore costi token AI</b><br>Quando il database cresce molto, valutare se limitare le fatture passate a Claude alle ultime N invece di tutte. Non necessario ai volumi attuali.</div>
+      </li>
+      <li>
+        <span class="priority-icon">🧹</span>
+        <div><b>File duplicato da rimuovere su GitHub</b><br><code>calendario_diva_prototipo(2).html</code> caricato per errore sul repository <code>Simulatore-enpals</code> durante un upload — non è linkato da nessuna parte, nessun rischio, ma da ripulire quando comodo.</div>
+      </li>
+    </ul>
+  </div>
+
+</div>
+
+<div style="background:var(--bg2); padding:1.2rem 2rem; text-align:center; border-top:1px solid var(--border);">
+  <p style="font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); letter-spacing:.1em;">
+    DIVA — Documentazione Completa · Consolidato da 4 documenti di stato + sessioni di sviluppo · Aggiornato al 7 Luglio 2026
+  </p>
+</div>
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>{ if(b.getAttribute('onclick').includes("'"+name+"'")) b.classList.add('active'); });
+  document.querySelectorAll('.nav-link').forEach(b=>{ if(b.getAttribute('onclick').includes("'"+name+"'")) b.classList.add('active'); });
+}
+</script>
+</body>
+</html>

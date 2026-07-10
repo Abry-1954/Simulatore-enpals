@@ -882,7 +882,7 @@ function toggleMain(){
         <div style="height:0.5px;background:linear-gradient(to right,transparent,#c9922a,transparent);margin:0 20px 6px;opacity:0.5;"></div>
 
         <!-- Acronimo -->
-        <div class="diva-sub" style="font-family:'DM Sans','Segoe UI',sans-serif;font-size:9px;letter-spacing:1.5px;color:#ffffff;margin-bottom:5px;">DUBBING INVOICE VERIFICATION &amp; AUDIT</div>
+        <div class="diva-sub" style="font-family:'DM Sans','Segoe UI',sans-serif;font-size:9px;letter-spacing:1.5px;color:#ffffff;margin-bottom:5px;">DUBBING INVOICE VERIFICATION AGENDA</div>
 
         <!-- Tagline -->
         <div class="diva-tag" style="font-family:'DM Sans','Segoe UI',sans-serif;font-size:12px;letter-spacing:1.5px;color:#f5d27a;">Ogni voce ha il suo valore</div>
@@ -963,10 +963,7 @@ function toggleMain(){
   <button class="btn-fetch" onclick="richiedeServer('Aggiorna i 4 DB', fetchDB);" id="btn-fetch" title="Ricarica i dati dai database .db nella stessa cartella">⬇ Aggiorna i 4 DB</button>
   <button class="btn-gestione" onclick="richiedeServer('Gestisci i 4 DB', apriGestione);" title="Apri gestione database">🗄 Gestisci i 4 DB</button>
   <button class="btn-fetch" id="btn-salva-html" onclick="salvaHTML();" title="Scarica Spettacolo.html con DB aggiornati embedded" style="display:none;">💾 Salva HTML</button>
-  <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;cursor:pointer;margin-right:4px;" title="Aggiunge filigrana PROFORMA al documento">
-    <input type="checkbox" id="chk-proforma" style="cursor:pointer;accent-color:#f87171;">
-    <span style="color:#fca5a5;font-weight:600;">PROFORMA</span>
-  </label>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#fca5a5;font-weight:600;margin-right:4px;" title="Ogni documento emesso è sempre una Fattura Proforma, con filigrana, finché non risulta pagata">🔖 SEMPRE PROFORMA</span>
   <button class="btn-stampa" onclick="stampaFattura();" title="Stampa/Salva PDF">🖨 Stampa Fattura</button>
   <button class="btn-salva" onclick="richiedeServer('Salva su DB Fatture', salvaFatturaSuDB);" title="Salva fattura su database">💾 Salva Fatture su DB</button>
   <button class="btn-carica" onclick="richiedeServer('Carica Fattura', apriModaleFatture);" title="Carica fattura da database">📂 Carica Fattura da DB</button>
@@ -1967,7 +1964,7 @@ function stampaFattura(titoloPDF){
   var nomEl=document.getElementById("inp-nom");
   var nominativo=nomEl?nomEl.value.trim():"";
   if(!nominativo){alert("Seleziona prima un lavoratore.");return;}
-  var isProforma = document.getElementById('chk-proforma') && document.getElementById('chk-proforma').checked;
+  var isProforma = true; // Ogni documento emesso da qui è sempre una Fattura Proforma, finché non risulta pagata (vedi campo "pagata")
 
   // ── Prima della stampa logga simulazioni di tutte le righe attive ──
   if(typeof _logSimulazioneRiga==='function'){
