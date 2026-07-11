@@ -3874,6 +3874,16 @@ async function registraNotifichePush(){
 try{
   firebase.messaging().onMessage(function(payload){
     console.log('Notifica ricevuta ad app aperta:', payload);
+    // Prima mancava qui: arrivava un log invisibile, nessuna notifica
+    // visibile a schermo se l'app era già aperta in quel momento (bug
+    // scoperto l'11 luglio — "inviato: true" lato server, ma nulla visto
+    // sul telefono). Mostro la notifica anche in questo caso, stessa
+    // forma di quella che il service worker mostra ad app chiusa.
+    var titolo = (payload.notification && payload.notification.title) || 'DIVA';
+    var corpo  = (payload.notification && payload.notification.body) || '';
+    navigator.serviceWorker.ready.then(function(reg){
+      reg.showNotification(titolo, { body: corpo, tag: 'diva-promemoria' });
+    }).catch(function(e){ console.log('Notifica non mostrata:', e.message); });
   });
 }catch(e){ /* browser senza supporto notifiche: nessun problema, si ignora */ }
 </script>
