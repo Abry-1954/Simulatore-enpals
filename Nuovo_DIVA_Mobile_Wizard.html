@@ -3803,6 +3803,22 @@ const DIVA_VAPID_KEY = "BNcmHW0OVUFK0tv2ljO1iVM3VKo1D8ClfKKWZSKX3MI8Pe4jMCeJSn1h
 // ottiene il token del dispositivo da Firebase e lo manda al server.
 // Non blocca mai il login: qualunque errore qui resta silenzioso
 // (solo un log in console), il resto dell'app funziona comunque.
+// Identificativo di QUESTO dispositivo/browser, generato una volta sola
+// e salvato in localStorage (sopravvive al logout, diverso da sessionStorage
+// usato per il token di sessione) — permette a più persone diverse di
+// condividere lo stesso device, e alla stessa persona di avere più
+// dispositivi registrati insieme (telefono, tablet, PC...), aggiunto l'11
+// luglio dopo aver notato che un solo token per nominativo faceva sì che
+// l'ultimo login sovrascrivesse gli altri dispositivi.
+function idDispositivo(){
+  let id = localStorage.getItem('diva_device_id');
+  if(!id){
+    id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2)));
+    localStorage.setItem('diva_device_id', id);
+  }
+  return id;
+}
+
 async function registraNotifichePush(){
   try{
     if(!('serviceWorker' in navigator) || !('Notification' in window)) return;
@@ -3815,6 +3831,15 @@ async function registraNotifichePush(){
 
     const reg = await navigator.serviceWorker.ready;
     const messaging = firebase.messaging();
+    // Il browser tiene una COPIA in cache del token e la ridà anche se
+    // Firebase, dalla sua parte, l'ha nel frattempo invalidata (scoperto
+    // l'11 luglio: un token dato per buono dal telefono falliva ogni
+    // invio reale). deleteToken() prima di richiederne uno nuovo forza
+    // Firebase a generarne davvero uno fresco, non solo a ripescare
+    // quello vecchio dalla cache locale. Se non c'era nessun token da
+    // cancellare, deleteToken() fallisce silenziosamente: va bene lo
+    // stesso, si prosegue con getToken().
+    try{ await messaging.deleteToken(); }catch(e){}
     const token = await messaging.getToken({
       vapidKey: DIVA_VAPID_KEY,
       serviceWorkerRegistration: reg
@@ -3825,7 +3850,7 @@ async function registraNotifichePush(){
     await fetch(SERVER+'/push-token', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+window._authToken },
-      body: JSON.stringify({ token: token })
+      body: JSON.stringify({ token: token, device_id: idDispositivo() })
     });
     console.log('Notifiche push attivate.');
   }catch(e){
