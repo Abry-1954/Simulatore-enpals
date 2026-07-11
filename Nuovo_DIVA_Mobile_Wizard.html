@@ -3787,14 +3787,23 @@ if('serviceWorker' in navigator){
 // I valori sotto NON sono segreti: Firebase li rende pubblici di
 // proposito, la sicurezza vera sta in altre regole lato Firebase.
 // ══════════════════════════════════════════════════════════════
-firebase.initializeApp({
-  apiKey: "AIzaSyCssZVGQk2EZup__CppWWKhQSv7ozOuwq8",
-  authDomain: "diva-ac68a.firebaseapp.com",
-  projectId: "diva-ac68a",
-  storageBucket: "diva-ac68a.firebasestorage.app",
-  messagingSenderId: "179797098713",
-  appId: "1:179797098713:web:61e4411e29c24700b6fec8"
-});
+// Protetto da try/catch: se Firebase non si carica per qualche motivo
+// (rete, blocco, o dentro l'iframe nascosto che il calendario usa per
+// generare le fatture, dove questo script gira comunque anche se lì non
+// serve), un errore qui non deve interrompere il resto del blocco — le
+// dichiarazioni sotto (DIVA_VAPID_KEY, idDispositivo, registraNotifichePush)
+// vanno comunque definite, altrimenti l'intera app rischia di rompersi
+// per un problema isolato alle notifiche push.
+try{
+  firebase.initializeApp({
+    apiKey: "AIzaSyCssZVGQk2EZup__CppWWKhQSv7ozOuwq8",
+    authDomain: "diva-ac68a.firebaseapp.com",
+    projectId: "diva-ac68a",
+    storageBucket: "diva-ac68a.firebasestorage.app",
+    messagingSenderId: "179797098713",
+    appId: "1:179797098713:web:61e4411e29c24700b6fec8"
+  });
+}catch(e){ console.log('Firebase non inizializzato:', e.message); }
 const DIVA_VAPID_KEY = "BNcmHW0OVUFK0tv2ljO1iVM3VKo1D8ClfKKWZSKX3MI8Pe4jMCeJSn1hNU1EUyRctCmBUFl0MlutzvEKVTzeM7o";
 
 // Chiamata dopo il login (vedi eseguiLogin): chiede il permesso di
