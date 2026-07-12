@@ -232,6 +232,21 @@
       </div>
 
       <div class="ad-section">
+        <div class="ad-section-title">🔔 Promemoria push ai lavoratori</div>
+        <div class="ad-section-sub">Controlla l'invio automatico giornaliero (ore 9:00) dei promemoria push ai doppiatori — attivo di default.</div>
+        <div class="ad-toggle-row">
+          <div>
+            <div class="ad-toggle-label">Invio promemoria attivo</div>
+            <div class="ad-toggle-hint">Se disattivato, nessun promemoria push viene inviato finché non lo riattivi</div>
+          </div>
+          <label class="ad-switch">
+            <input type="checkbox" id="tog-promemoria" onchange="salvaImpostazione('promemoria_push_attivi', this.checked)">
+            <span class="ad-switch-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ad-section">
         <div class="ad-section-title">🎛️ Funzionalità visibili agli utenti</div>
         <div class="ad-section-sub">Nascondi un pulsante agli utenti normali senza toccare il codice — gli admin vedono sempre tutto, a prescindere da questi interruttori.</div>
         <div class="ad-toggle-row">
@@ -420,6 +435,7 @@ async function caricaImpostazioni(){
     const imp = await apiFetch('/impostazioni');
     document.getElementById('tog-login').checked = !!imp.notifiche_login_attive;
     document.getElementById('tog-fattura').checked = !!imp.notifiche_fattura_attive;
+    document.getElementById('tog-promemoria').checked = imp.promemoria_push_attivi !== false;
     document.getElementById('tog-emetti').checked = imp.mostra_emetti_fattura !== false;
     document.getElementById('tog-vocale').checked = imp.mostra_fattura_vocale !== false;
     document.getElementById('tog-calendario').checked = imp.mostra_calendario !== false;
@@ -435,6 +451,7 @@ async function caricaImpostazioni(){
 const MAPPA_CAMPO_TOGGLE = {
   notifiche_login_attive: 'tog-login',
   notifiche_fattura_attive: 'tog-fattura',
+  promemoria_push_attivi: 'tog-promemoria',
   mostra_emetti_fattura: 'tog-emetti',
   mostra_fattura_vocale: 'tog-vocale',
   mostra_calendario: 'tog-calendario',
