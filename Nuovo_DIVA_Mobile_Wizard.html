@@ -2043,9 +2043,62 @@ function pips(id,tot,done){
 }
 function fe(n){return '€ '+n.toFixed(2).replace('.',',');}
 function r2(n){return Math.round(n*100)/100;}
-function calcolaFascia(impGG){
-  for(const f of FASCE){if(impGG>=f.da&&impGG<=f.a)return f.c;}
-  return FASCE[FASCE.length-1].c;
+// ════════════════════════════════════════════
+// VARIABILI PER ANNO — lette da Supabase (via /db) e rilette da capo
+// ad ogni fattura, perché l'admin può aggiornare tariffe/contributi/fasce
+// in Gestione in qualsiasi momento dell'anno (non solo a gennaio). Le
+// "COSTANTI 2026" qui sopra restano SOLO come ultimo fallback se il
+// caricamento fallisce del tutto: normalmente non vengono mai usate.
+// L'anno di riferimento per ogni riga è sempre quello della sua data di
+// lavorazione (r.datalav) — righe della stessa fattura su anni diversi
+// usano ciascuna i parametri del proprio anno, senza eccezioni.
+// ════════════════════════════════════════════
+let VARIABILI = null; // { [anno]: {tariffe:{categoria:{...}}, inpsLav:{...}, inpsDat:{...}, fasce:[...], massimali:{...}, tasse:{...}} }
+
+function _indicizzaVariabili(dbData){
+  const idx = {};
+  const ensure = (anno) => { if(!idx[anno]) idx[anno] = {tariffe:{}, inpsLav:{}, inpsDat:{}, fasce:[], massimali:null, tasse:null}; return idx[anno]; };
+  (dbData.tariffe||[]).forEach(r=>{ if(r.anno) ensure(r.anno).tariffe[r.cat] = r; });
+  (dbData.inps||[]).forEach(r=>{
+    if(!r.anno) return;
+    const y = ensure(r.anno);
+    if(r.tipo==='lavoratore') y.inpsLav[r.codice] = r.valore;
+    else if(r.tipo==='datore') y.inpsDat[r.codice] = r.valore;
+  });
+  (dbData.fasce||[]).forEach(r=>{ if(r.anno && r.da!=null) ensure(r.anno).fasce.push({da:r.da, a:(r.a==null?Infinity:r.a), c:r.contribuzione}); });
+  (dbData.massimali||[]).forEach(r=>{ if(r.anno) ensure(r.anno).massimali = {mass_gg:r.mass_retr_gg, mass_malat_gg:r.mass_malat_gg}; });
+  (dbData.tasse||[]).forEach(r=>{ if(r.anno) ensure(r.anno).tasse = r; });
+  Object.values(idx).forEach(y=>y.fasce.sort((a,b)=>a.da-b.da));
+  return idx;
+}
+
+async function caricaVariabili(){
+  const SERVER = 'https://enpals-server.onrender.com';
+  const token = window._authToken;
+  const res = await fetch(SERVER+'/db', { headers: token ? {'Authorization':'Bearer '+token} : {} });
+  if(!res.ok) throw new Error('Impossibile scaricare le tariffe aggiornate (/db → '+res.status+')');
+  const dbData = await res.json();
+  VARIABILI = _indicizzaVariabili(dbData);
+  return VARIABILI;
+}
+
+function _annoDaData(dataStr){
+  if(!dataStr) return null;
+  const p = String(dataStr).split('-'); // formato YYYY-MM-DD usato in tutto il wizard
+  return p.length===3 ? p[0] : String(new Date(dataStr).getFullYear());
+}
+
+function _variabiliAnno(anno){
+  if(!VARIABILI || !anno || !VARIABILI[anno]){
+    throw new Error('Tariffe non disponibili per l\'anno '+anno+'. Verificare che l\'admin le abbia inserite in Gestione → Variabili, oppure ricaricare la pagina.');
+  }
+  return VARIABILI[anno];
+}
+
+function calcolaFascia(impGG, fasce){
+  const f_arr = fasce || FASCE;
+  for(const f of f_arr){if(impGG>=f.da&&impGG<=f.a)return f.c;}
+  return f_arr[f_arr.length-1].c;
 }
 function fmtData(d){if(!d)return'';const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;}
 function fmtDataNascita(d){
@@ -2069,26 +2122,73 @@ function fmtDataNascita(d){
 // ════════════════════════════════════════════
 // CALCOLO IMPONIBILE
 // ════════════════════════════════════════════
-function calcImp(lav,op,turni,righe){
+function calcImp(lav,op,turni,righe,anno){
+  const annoEff = anno || String(new Date().getFullYear());
+  let va;
+  try{ va = _variabiliAnno(annoEff); }
+  catch(e){
+    console.warn('calcImp: variabili anno '+annoEff+' non disponibili, uso fallback locale.', e.message);
+    if(lav==='DOPP'){
+      if(op==='DOC'){
+        // Fallback a scaglioni fissi (stessi valori di default usati da Gestione)
+        if(righe<=0) return 0;
+        if(righe<=50)  return 100.12;
+        if(righe<=100) return 122.36;
+        if(righe<=150) return 144.61;
+        if(righe<=200) return 166.86;
+        if(righe<=250) return 189.11;
+        if(righe<=300) return 211.36;
+        if(righe<=350) return 233.60;
+        if(righe<=400) return 255.85;
+        if(righe<=450) return 278.10;
+        if(righe<=500) return 318.35;
+        if(righe<=550) return 349.60;
+        return 380.85;
+      }
+      const t=TARIFFE[op];if(!t)return 0;
+      const eccedenza = t.lim ? Math.max(0,righe-t.lim) : righe;
+      return r2(turni*t.t+eccedenza*t.r);
+    }
+    if(lav==='DIR')  return r2(turni*T_DIR);
+    if(lav==='ASST') return r2(turni*T_ASST);
+    if(lav==='ADAT'){const ta=TARIFFE_ADAT[op];return ta?r2(turni*ta):0;}
+    return 0;
+  }
+  let categoria;
+  if(lav==='DOPP')      categoria = op;
+  else if(lav==='ADAT') categoria = 'ADATTATORE_'+op;
+  else if(lav==='ASST') categoria = 'ASSISTENTE_'+op;
+  else if(lav==='DIR')  categoria = 'DIRETTORE_'+op;
+  else return 0;
+  const t = va.tariffe[categoria];
+  if(!t) return 0;
   if(lav==='DOPP'){
-    // Doppiatore: tariffa turno (84€) + tariffa per riga
-    const t=TARIFFE[op];if(!t)return 0;
-    const rEff=t.lim?Math.min(righe,t.lim):righe;
-    return r2(turni*t.t+rEff*t.r);
+    if(op==='DOC'){
+      // Categoria DOC: tariffa a scaglioni fissi in base al numero di righe,
+      // NON turno+riga come le altre categorie (regola di Gestione/ENP-Management).
+      if(righe<=0) return 0;
+      if(righe<=50)  return t.b50  ?? 100.12;
+      if(righe<=100) return t.b100 ?? 122.36;
+      if(righe<=150) return t.b150 ?? 144.61;
+      if(righe<=200) return t.b200 ?? 166.86;
+      if(righe<=250) return t.b250 ?? 189.11;
+      if(righe<=300) return t.b300 ?? 211.36;
+      if(righe<=350) return t.b350 ?? 233.60;
+      if(righe<=400) return t.b400 ?? 255.85;
+      if(righe<=450) return t.b450 ?? 278.10;
+      if(righe<=500) return t.b500 ?? 318.35;
+      if(righe<=550) return t.b550 ?? 349.60;
+      return t.b_oltre ?? 380.85;
+    }
+    if(t.turno==null) return 0;
+    const lim = t.limite_righe;
+    // Il limite è una soglia oltre la quale si paga l'eccedenza (es. DOC NO SYNC),
+    // non un tetto massimo di righe pagate.
+    const rEff = lim ? Math.max(0,righe-lim) : righe;
+    return r2(turni*t.turno + rEff*(t.riga||0));
   }
-  if(lav==='DIR'){
-    // Direttore: tariffa fissa 230€/turno — NO righe
-    return r2(turni*T_DIR);
-  }
-  if(lav==='ASST'){
-    // Assistente: tariffa fissa 130€/turno — NO righe
-    return r2(turni*T_ASST);
-  }
-  if(lav==='ADAT'){
-    // Adattatore: tariffa fissa per tipo opera — NO righe
-    const ta=TARIFFE_ADAT[op];return ta?r2(turni*ta):0;
-  }
-  return 0;
+  if(t.turno==null) return 0;
+  return r2(turni*t.turno);
 }
 
 // ════════════════════════════════════════════
@@ -2105,25 +2205,57 @@ function calcEnpalsFattura(righi,anz){
   let totIvsDat=0,totDisDat=0,totSolDat=0,totMalDat=0,totMalDet=0;
   const giorniContributivi=Object.keys(gruppi).length;
   for(const data in gruppi){
+    // Ogni gruppo è per data ESATTA, quindi appartiene ad un solo anno:
+    // i parametri contributivi usati sono sempre quelli dell'anno di
+    // QUESTA data di lavorazione, mai un anno "medio" o quello corrente.
+    const anno = _annoDaData(data);
+    let va, IVS_LAV_y,ADD_LAV_y,CON_SOL_LAV_y,IND_DIS_LAV_y;
+    let IVS_DAT_y,IND_DIS_DAT_y,CON_SOL_DAT_y,IND_MAL_DAT_y,MASS_GG_y,MASS_MALAT_GG_y,fasceY;
+    try{
+      va = _variabiliAnno(anno);
+      IVS_LAV_y=va.inpsLav.IVS_LAV; ADD_LAV_y=va.inpsLav.ADD_LAV; CON_SOL_LAV_y=va.inpsLav.CON_SOL_LAV; IND_DIS_LAV_y=va.inpsLav.IND_DIS_LAV;
+      IVS_DAT_y=va.inpsDat.IVS_DAT; IND_DIS_DAT_y=va.inpsDat.IND_DIS_DAT; CON_SOL_DAT_y=va.inpsDat.CON_SOL_DAT; IND_MAL_DAT_y=va.inpsDat.IND_MAL_DAT;
+      MASS_GG_y = va.massimali ? va.massimali.mass_gg : null;
+      MASS_MALAT_GG_y = va.massimali ? va.massimali.mass_malat_gg : null;
+      fasceY = va.fasce && va.fasce.length ? va.fasce : FASCE;
+    }catch(e){
+      console.warn('calcEnpalsFattura: variabili anno '+anno+' non disponibili, uso fallback locale.', e.message);
+      IVS_LAV_y=IVS_LAV;ADD_LAV_y=ADD_LAV;CON_SOL_LAV_y=CON_SOL_LAV;IND_DIS_LAV_y=IND_DIS_LAV;
+      IVS_DAT_y=IVS_DAT;IND_DIS_DAT_y=IND_DIS_DAT;CON_SOL_DAT_y=CON_SOL_DAT;IND_MAL_DAT_y=IND_MAL_DAT;
+      MASS_GG_y=MASS_GG;MASS_MALAT_GG_y=MASS_MALAT_GG;fasceY=FASCE;
+    }
     const impGG=gruppi[data].impTot;
-    const fascia=calcolaFascia(impGG);
-    // LAV
-    const ivs=r2(impGG*IVS_LAV);
-    let add=0;
-    const base919=impGG<fascia?impGG:fascia;
-    if(impGG>=MASS_GG){const baseAdd=base919-MASS_GG;if(baseAdd>0)add=r2(baseAdd*ADD_LAV);}
-    const sol=(anz==='SY'&&impGG>fascia)?r2((impGG-fascia)*CON_SOL_LAV):0;
-    const dis=(impGG>=fascia)?r2((impGG-fascia)*IND_DIS_LAV):0;
+    const fascia=calcolaFascia(impGG,fasceY);
+    // LAV — regola vera (verificata su ENP-Management): con anzianità SC il
+    // lavoratore paga SOLO l'IVS piena (non capata alla fascia); addizionale,
+    // solidarietà e indennità di disoccupazione esistono solo per anzianità
+    // diversa da SC, e in quel caso l'IVS stessa è capata alla fascia.
+    let ivs, add=0, sol=0, dis=0;
+    if(anz==='SC'){
+      ivs = r2(impGG*IVS_LAV_y);
+    } else {
+      const base919 = impGG<fascia?impGG:fascia;
+      ivs = r2(base919*IVS_LAV_y);
+      if(MASS_GG_y!=null && impGG>=MASS_GG_y){
+        const baseAdd = base919-MASS_GG_y;
+        if(baseAdd>0) add = r2(baseAdd*ADD_LAV_y);
+      }
+      if(impGG>fascia) sol = r2((impGG-fascia)*CON_SOL_LAV_y);
+      if(Number(anno)>=2024 && impGG>=fascia) dis = r2((impGG-fascia)*IND_DIS_LAV_y);
+    }
     totIvs=r2(totIvs+ivs);totAdd=r2(totAdd+add);totSol=r2(totSol+sol);totDis=r2(totDis+dis);
     // DAT
     const base15=anz==='SC'?Math.round(impGG):(impGG>fascia?Math.round(fascia):Math.round(impGG));
-    const ivsDat=r2(base15*IVS_DAT);
-    const disDat=r2(Math.round(impGG)*IND_DIS_DAT);
-    const solDat=(anz==='SY'&&impGG>fascia)?r2((impGG-fascia)*CON_SOL_DAT):0;
+    const ivsDat=r2(base15*IVS_DAT_y);
+    const disDat=r2(Math.round(impGG)*IND_DIS_DAT_y);
+    const solDat=(anz==='SY'&&impGG>fascia)?r2((impGG-fascia)*CON_SOL_DAT_y):0;
     const base18=anz==='SC'?Math.round(impGG):(impGG>fascia?Math.round(fascia):Math.round(impGG));
-    const malDat=r2(base18*IND_MAL_DAT);
-    const baseDet=(anz==='SC'?impGG:(impGG>fascia?fascia:impGG))-MASS_MALAT_GG;
-    const malDet=baseDet>0?r2(Math.round(baseDet)*IND_MAL_DAT):0;
+    const malDat=r2(base18*IND_MAL_DAT_y);
+    let malDet=0;
+    if(MASS_MALAT_GG_y!=null){
+      const baseDet=(anz==='SC'?impGG:(impGG>fascia?fascia:impGG))-MASS_MALAT_GG_y;
+      malDet=baseDet>0?r2(Math.round(baseDet)*IND_MAL_DAT_y):0;
+    }
     totIvsDat=r2(totIvsDat+ivsDat);totDisDat=r2(totDisDat+disDat);
     totSolDat=r2(totSolDat+solDat);totMalDat=r2(totMalDat+malDat);totMalDet=r2(totMalDet+malDet);
   }
@@ -2137,6 +2269,50 @@ function calcEnpalsFattura(righi,anz){
 }
 
 // ════════════════════════════════════════════
+// TOTALI FATTURA — IVA e ritenuta d'acconto, per anno (stesso principio:
+// se le righe della fattura sono su anni diversi, ognuna usa le aliquote
+// del proprio anno, poi si sommano). Sostituisce il calcolo duplicato che
+// prima esisteva in 4 punti diversi del wizard con aliquote fisse.
+// ════════════════════════════════════════════
+function calcTotaliFattura(righi,tf,anz){
+  const gruppiAnno={};
+  righi.forEach(r=>{
+    const anno=_annoDaData(r.datalav);
+    if(!gruppiAnno[anno]) gruppiAnno[anno]=0;
+    gruppiAnno[anno]=r2(gruppiAnno[anno]+r.imp);
+  });
+  let iva=0, ra=0;
+  for(const anno in gruppiAnno){
+    const impAnno=gruppiAnno[anno];
+    let t;
+    try{ t = _variabiliAnno(anno).tasse || {}; }
+    catch(e){
+      console.warn('calcTotaliFattura: variabili anno '+anno+' non disponibili, uso fallback locale.', e.message);
+      t = {iva:0.22, rit_acc_noada:0.20, rit_acc_ada_min36:0.60, rit_acc_ada_mag36:0.75};
+    }
+    if(tf.cod==='FO'){
+      iva=r2(iva+impAnno*(t.iva!=null?t.iva:0));
+      ra =r2(ra +impAnno*(t.rit_acc_noada!=null?t.rit_acc_noada:0));
+    } else if(tf.cod==='RS'){
+      ra =r2(ra +impAnno*(t.rit_acc_noada!=null?t.rit_acc_noada:0));
+    } else if(tf.cod==='RA'){
+      const perc = anz==='SY' ? (t.rit_acc_ada_mag36!=null?t.rit_acc_ada_mag36:0) : (t.rit_acc_ada_min36!=null?t.rit_acc_ada_min36:0);
+      ra =r2(ra +impAnno*perc);
+    }
+    // FA, RGA: niente IVA, niente ritenuta — non aggiungono nulla
+  }
+  const impTot=r2(righi.reduce((a,r)=>a+r.imp,0));
+  const totFatt=r2(impTot+iva);
+  const enp=calcEnpalsFattura(righi,anz);
+  // Il netto pagato al lavoratore sottrae solo IVS + addizionale (come la
+  // regola vera verificata su ENP-Management, funzione ricalcolaTutto) —
+  // solidarietà e disoccupazione fanno parte di enp.totLav come dato
+  // informativo/di riepilogo, ma NON riducono il netto in busta.
+  const netto=r2(totFatt-ra-enp.totIvs-enp.totAdd);
+  return {impTot, iva, ra, totFatt, netto, enp};
+}
+
+// ════════════════════════════════════════════
 // CALCOLO LIVE
 // ════════════════════════════════════════════
 function aggiornaCalcolo(){
@@ -2145,7 +2321,7 @@ function aggiornaCalcolo(){
   const datalav=document.getElementById('inp-datalav').value;
   const pr=document.getElementById('calc-preview');
   if(!turni&&!righe){pr.style.display='none';return;}
-  const imp=calcImp(S.tipoLav,S.tipoOpera,turni,righe);
+  const imp=calcImp(S.tipoLav,S.tipoOpera,turni,righe,_annoDaData(datalav));
   document.getElementById('calc-imp').textContent=fe(imp);
   const t=TARIFFE[S.tipoOpera];
   let det='';
@@ -2421,13 +2597,18 @@ async function caricaDatiHeadless(token, nominativoAtteso){
 // una fattura con dati fiscali sbagliati o incompleti.
 // ════════════════════════════════════════════
 function generaFatturaAutomaticaDaAgenda(payload){
-  return new Promise(function(resolve, reject){
+  return new Promise(async function(resolve, reject){
     window._agendaResolve = resolve;
     window._agendaReject = reject;
 
     try{
       if(!S.lav || !S.lav.nominativo) throw new Error('Utente non identificato: eseguire prima caricaDatiHeadless().');
       if(!payload || !Array.isArray(payload.records) || !payload.records.length) throw new Error('Nessun record da fatturare.');
+
+      // Rilettura da capo delle tariffe/contributi per questa fattura —
+      // stesso motivo del flusso manuale: l'admin può averle aggiornate
+      // in qualsiasi momento.
+      await caricaVariabili();
 
       const tf = mapPersonaTipoFatt(S.lav.tipo_fatt);
       if(!tf) throw new Error('Regime fiscale non impostato o non riconosciuto in Persone (tipo_fatt="'+(S.lav.tipo_fatt||'')+'"). Aggiornalo dal profilo prima di generare fatture automatiche.');
@@ -2696,8 +2877,21 @@ async function doLogin(){
 
 // ════════════════════════════════════════════
 // NAVIGAZIONE HOME
-function goEmettiFattura(){
+async function goEmettiFattura(){
   S.righi=[]; S.rigoIdx=0;
+  // Rilettura da capo delle tariffe/contributi ad ogni nuova fattura:
+  // l'admin può averle aggiornate in Gestione da quando abbiamo fatto
+  // login, quindi non va mai riusata una copia vecchia.
+  const spinner = document.getElementById('saving-spinner');
+  try{
+    if(spinner){ spinner.style.display='flex'; }
+    await caricaVariabili();
+  }catch(e){
+    if(spinner){ spinner.style.display='none'; }
+    alert('Impossibile scaricare le tariffe aggiornate. Verificare la connessione e riprovare.\n\n('+e.message+')');
+    return;
+  }
+  if(spinner){ spinner.style.display='none'; }
   buildTipoFatt();
   showScreen('s-tipofatt');
 }
@@ -3020,7 +3214,7 @@ function salvaRigo(){
   const turni=parseInt(document.getElementById('inp-turni').value)||0;
   const righe=parseInt(document.getElementById('inp-righe').value)||0;
   if(!titolo||!datalav||!turni){alert('Compila i campi obbligatori: Titolo, Data lavoro e Turni.');return;}
-  const imp=calcImp(S.tipoLav,S.tipoOpera,turni,righe);
+  const imp=calcImp(S.tipoLav,S.tipoOpera,turni,righe,_annoDaData(datalav));
   const nuovoRigo={n:S.rigoIdx+1,tipoLav:S.tipoLav,tipoLavLabel:S.tipoLavLabel,tipoOpera:S.tipoOpera,tipoOperaLabel:S.tipoOperaLabel,titolo,datalav,datafatt,turni,righe,imp};
   S.righi.push(nuovoRigo);
   inviaLogSimulazione(nuovoRigo); // LOG SIMULAZIONI
@@ -3079,14 +3273,8 @@ function goFattura(){
 
 function goStampa(autoPrint, onReady){
   const tf=S.tipoFatt;
-  const impTot=r2(S.righi.reduce((a,r)=>a+r.imp,0));
-  const iva=r2(impTot*(tf.iva||0));
-  const totFatt=r2(impTot+iva);
-  const enp=calcEnpalsFattura(S.righi,S.anzianita);
-  let ra=0;
-  if(tf.cod==='FO'||tf.cod==='RS') ra=r2(impTot*0.20);
-  else if(tf.cod==='RA') ra=r2(impTot*0.20*(S.anzianita==='SY'?0.75:0.60));
-  const netto=r2(totFatt-ra-enp.totLav);
+  const _tot=calcTotaliFattura(S.righi,tf,S.anzianita);
+  const impTot=_tot.impTot, iva=_tot.iva, totFatt=_tot.totFatt, ra=_tot.ra, netto=_tot.netto, enp=_tot.enp;
   const dateMultiple=new Set(Object.keys(enp.gruppi).filter(d=>enp.gruppi[d].idxs.length>1));
   const lav=S.lav, soc=S.soc;
   const oggi=new Date().toLocaleDateString('it-IT');
@@ -3209,15 +3397,9 @@ async function salvaSuDB(){
   const spinner = document.getElementById('saving-spinner');
   if(spinner){ spinner.style.display='flex'; }
 
-  const imp  = r2(S.righi.reduce((a,r)=>a+r.imp,0));
-  const enp  = calcEnpalsFattura(S.righi,S.anzianita);
   const tf   = S.tipoFatt||{};
-  const iva  = r2(imp*(tf.iva||0));
-  const totF = r2(imp+iva);
-  let ra=0;
-  if(tf.cod==='FO'||tf.cod==='RS') ra=r2(imp*0.20);
-  else if(tf.cod==='RA') ra=r2(imp*0.20*(S.anzianita==='SY'?0.75:0.60));
-  const netto = r2(totF-ra-enp.totLav);
+  const _tot = calcTotaliFattura(S.righi,tf,S.anzianita);
+  const imp  = _tot.impTot, iva = _tot.iva, totF = _tot.totFatt, ra = _tot.ra, netto = _tot.netto, enp = _tot.enp;
 
   // Nome file / riferimento
   // Recupera progressivo dal server
@@ -3382,15 +3564,9 @@ function mostraDialogDopoSalvataggio(rif_nbr){
   const r = document.getElementById('salva-dialog-rif');
   if(r) r.textContent = rif_nbr;
   // ── DIVA MONITOR: notifica fattura salvata ──
-  var _enp = calcEnpalsFattura(S.righi, S.anzianita);
   var _tf  = S.tipoFatt||{};
-  var _imp = r2(S.righi.reduce(function(a,r){return a+r.imp;},0));
-  var _iva = r2(_imp*(_tf.iva||0));
-  var _tot = r2(_imp+_iva);
-  var _ra  = 0;
-  if(_tf.cod==='FO'||_tf.cod==='RS') _ra=r2(_imp*0.20);
-  else if(_tf.cod==='RA') _ra=r2(_imp*0.20*(S.anzianita==='SY'?0.75:0.60));
-  var _netto = r2(_tot-_ra-_enp.totLav);
+  var _calc = calcTotaliFattura(S.righi, _tf, S.anzianita);
+  var _netto = _calc.netto;
   var _det = (S.lav&&S.lav.nominativo||S.user||'') +
              ' | ' + (S.soc&&S.soc.ragione_sociale||'') +
              ' | ' + rif_nbr +
@@ -3606,14 +3782,8 @@ function dialogEsci(){
 function inviaEmail(){
   // Prepara mailto
   const tf=S.tipoFatt;
-  const impTot=r2(S.righi.reduce((a,r)=>a+r.imp,0));
-  const enp=calcEnpalsFattura(S.righi,S.anzianita);
-  const iva=r2(impTot*(tf.iva||0));
-  const totFatt=r2(impTot+iva);
-  let ra=0;
-  if(tf.cod==='FO'||tf.cod==='RS') ra=r2(impTot*0.20);
-  else if(tf.cod==='RA') ra=r2(impTot*0.20*(S.anzianita==='SY'?0.75:0.60));
-  const netto=r2(totFatt-ra-enp.totLav);
+  const _tot=calcTotaliFattura(S.righi,tf,S.anzianita);
+  const impTot=_tot.impTot, iva=_tot.iva, totFatt=_tot.totFatt, ra=_tot.ra, netto=_tot.netto, enp=_tot.enp;
   const oggi=new Date().toLocaleDateString('it-IT');
   const nomeFile=buildNomeFile();
 
@@ -4770,6 +4940,15 @@ async function vocaleCompilaSalva(){
   // ── Popola S con i dati vocali ──────────────────────────
   // Reset S
   S.righi=[];S.rigoIdx=0;
+
+  // Rilettura da capo delle tariffe/contributi per questa fattura.
+  try{
+    await caricaVariabili();
+  }catch(e){
+    vocaleSetStato("Errore: tariffe non disponibili");
+    console.error('vocaleCompilaSalva: caricaVariabili fallito', e.message);
+    return;
+  }
 
   // Tipo fattura
   var tf=vocaleMapTipoFatt(_voc.rigaCorrente.tipo||"");
