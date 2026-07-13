@@ -3897,31 +3897,33 @@ function nuovaFattura(){
 }
 </script>
 <script>
-// ── SERVICE WORKER: cancella tutto e re-registra sempre ──────
+// ── SERVICE WORKER: registra e lascia il browser gestire gli
+// aggiornamenti nel modo standard, SENZA smontare e rimontare tutto
+// ad ogni apertura ──────────────────────────────────────────
+// Fino al 13 luglio faceva unregister() di TUTTI i service worker più
+// cancellazione di TUTTA la cache ad ogni singolo caricamento della
+// pagina, anche quando non c'era nessun aggiornamento da fare. È
+// proprio questo smontaggio ripetuto a orfanizzare la sottoscrizione
+// push (e quindi il token) agganciata al vecchio service worker, prima
+// ancora che Firebase la invalidi da sola — scoperto il 13 luglio
+// confrontando la frequenza di apertura/login di due utenti con esiti
+// opposti sui promemoria (chi aveva aperto/fatto login più volte in un
+// giorno aveva il token morto, chi non aveva toccato l'app da due
+// giorni no). Il browser sa già controllare da solo se il file
+// service-worker.js è cambiato, grazie a updateViaCache:'none' (che
+// impedisce solo la cache HTTP del file stesso, non tutta la cache
+// dell'app) — non serve distruggere tutto ad ogni volta per farlo.
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){
 
-    // 1) Cancella TUTTI i SW registrati e TUTTA la cache
-    navigator.serviceWorker.getRegistrations().then(function(registrations){
-      var unregPromises = registrations.map(function(reg){
-        return reg.unregister();
-      });
-      // Cancella anche tutte le cache
-      var cachePromise = caches.keys().then(function(keys){
-        return Promise.all(keys.map(function(k){ return caches.delete(k); }));
-      });
-      return Promise.all(unregPromises.concat([cachePromise]));
-    })
-    .then(function(){
-      // 2) Re-registra il SW fresco (updateViaCache:none = non casha mai il file SW)
-      return navigator.serviceWorker.register('service-worker.js?v=5', {
-        updateViaCache: 'none'
-      });
+    navigator.serviceWorker.register('service-worker.js?v=5', {
+      updateViaCache: 'none'
     })
     .then(function(reg){
-      console.log('SW re-registrato:', reg.scope);
+      console.log('SW registrato:', reg.scope);
 
-      // 3) Forza attivazione immediata
+      // Se un aggiornamento era già pronto e in attesa da una visita
+      // precedente, attivalo subito.
       if(reg.waiting) { reg.waiting.postMessage({type:'SKIP_WAITING'}); }
 
       reg.addEventListener('updatefound', function(){
@@ -3937,7 +3939,7 @@ if('serviceWorker' in navigator){
     })
     .catch(function(err){ console.log('SW errore:', err); });
 
-    // 4) Quando il nuovo SW prende controllo → ricarica UNA SOLA VOLTA
+    // Quando il nuovo SW prende controllo → ricarica UNA SOLA VOLTA
     navigator.serviceWorker.addEventListener('controllerchange', function(){
       if(sessionStorage.getItem('sw_reloading')) return;
       sessionStorage.setItem('sw_reloading', '1');
