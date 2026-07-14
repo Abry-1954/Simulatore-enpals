@@ -27,9 +27,17 @@ messaging.onBackgroundMessage(function(payload){
     body: corpo,
     tag: 'diva-promemoria' // stesso tag = sostituisce una notifica precedente invece di accumularle
   });
+  // Numero sull'icona dell'app (Badging API) — "1" per segnalare che c'è
+  // qualcosa di non letto, azzerato quando l'app viene riaperta (vedi
+  // Nuovo_DIVA_Mobile_Wizard.html). Non è un conteggio vero e proprio,
+  // solo un promemoria visivo: più notifiche non ancora aperte restano
+  // comunque "1", non si accumulano.
+  if('setAppBadge' in navigator){
+    navigator.setAppBadge(1).catch(function(){});
+  }
 });
 
-const CACHE_NAME = 'diva-mobile-v5'; // ← incrementato: bump precedente v4, va sempre incrementato ad ogni deploy
+const CACHE_NAME = 'diva-mobile-v6'; // ← incrementato: bump precedente v5, va sempre incrementato ad ogni deploy
 const ASSETS = [
   '/Simulatore-enpals/Nuovo_DIVA_Mobile_Wizard.html',
   '/Simulatore-enpals/gestione.html'

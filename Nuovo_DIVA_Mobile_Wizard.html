@@ -3916,7 +3916,7 @@ function nuovaFattura(){
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){
 
-    navigator.serviceWorker.register('service-worker.js?v=5', {
+    navigator.serviceWorker.register('service-worker.js?v=6', {
       updateViaCache: 'none'
     })
     .then(function(reg){
@@ -4056,6 +4056,9 @@ try{
     navigator.serviceWorker.ready.then(function(reg){
       reg.showNotification(titolo, { body: corpo, tag: 'diva-promemoria' });
     }).catch(function(e){ console.log('Notifica non mostrata:', e.message); });
+    if('setAppBadge' in navigator){
+      navigator.setAppBadge(1).catch(function(){});
+    }
   });
 }catch(e){ /* browser senza supporto notifiche: nessun problema, si ignora */ }
 </script>
@@ -4186,6 +4189,19 @@ document.addEventListener("visibilitychange", function(){
   if(document.visibilityState==="visible" && _voc && (_voc._running||_voc.step>0) && !_wakeLock){
     attivaWakeLock();
   }
+});
+
+// ── Badge sull'icona app: azzerato ogni volta che l'app si apre o
+// torna in primo piano — l'utente l'ha appena vista, non c'è più nulla
+// di "non letto" da segnalare sull'icona. ──────────────────────────
+function _azzeraBadgeApp(){
+  if('clearAppBadge' in navigator){
+    navigator.clearAppBadge().catch(function(){});
+  }
+}
+window.addEventListener('load', _azzeraBadgeApp);
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible'){ _azzeraBadgeApp(); }
 });
 
 function vocaleIsAnnulla(testo){
